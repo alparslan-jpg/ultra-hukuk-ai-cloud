@@ -422,18 +422,13 @@ app.post('/api/adminauth/login', (req: Request, res: Response) => {
     return res.status(401).json({ success: false, message: 'Hatalı kullanıcı adı veya şifre.' });
   }
 
-  // Device Lock enforcement
-  if (!admin.boundDeviceId && deviceId) {
+  // Device Lock — Cloud modda cihaz değişikliğine izin ver (güncelle)
+  if (deviceId) {
+    if (admin.boundDeviceId && admin.boundDeviceId !== deviceId) {
+      recordAudit(admin.username, 'Cihaz Güncellemesi', `Yeni tarayıcıdan giriş — cihaz kaydı güncellendi (${deviceId.slice(0, 8)}...)`, req);
+    }
     admin.boundDeviceId = deviceId;
     admin.isDeviceLocked = true;
-    recordAudit(admin.username, 'Güvenli Cihaz Kaydı', `İlk girişte cihaz mühürlendi (${deviceId.slice(0, 8)}...)`, req);
-  } else if (admin.isDeviceLocked && admin.boundDeviceId && admin.boundDeviceId !== deviceId) {
-    admin.failedLoginCount++;
-    recordAudit(admin.username, 'Tanınmayan Cihazdan Giriş Reddedildi', 'Kayıtlı olmayan tarayıcıdan deneme.', req);
-    return res.status(403).json({
-      success: false,
-      message: 'GÜVENLİK UYARISI: Bu adminatör hesabı başka bir tarayıcıya/cihaza kayıtlıdır.',
-    });
   }
 
   admin.failedLoginCount = 0;
