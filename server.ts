@@ -1528,37 +1528,53 @@ Arka planda senin koordinasyonunda çalışan 4 alt uzman yapay zeka ajanı bulu
 3. Şeytanın Avukatı Ajanı (Karşı Taraf Argümanları & Zayıf Halkalar)
 4. UYAP Dilekçe & Talep Mimarı Ajanı (Netice-i Talep & Tensip Talepleri)
 
-Avukatın Danışması / Sorusu:
+Avukatın Mesajı:
 """
-${cleanQuery || 'Müvekkilin hukuki durumu ve sunulan evraklar kapsamında yol haritası ve strateji danışması.'}
+${cleanQuery || 'Genel danışma.'}
 """
 
-${clientInfo ? `Müvekkil Bilgileri: ${JSON.stringify(clientInfo)}` : ''}
-${activeCaseContext ? `Aktif Dava Bağlamı: ${activeCaseContext}` : ''}
-${fileSnippets ? `Sunulan Dava Dosyası & Evrakları:\n${fileSnippets}` : ''}
+${clientInfo ? \`Müvekkil Bilgileri: \${JSON.stringify(clientInfo)}\` : ''}
+${activeCaseContext ? \`Aktif Dava Bağlamı: \${activeCaseContext}\` : ''}
+${fileSnippets ? \`Sunulan Dava Dosyası & Evrakları:\\n\${fileSnippets}\` : ''}
 
-GÖREVLERİN:
-Avukata somut, kesin ve eksiksiz bir hukuki brifing sun. Sorulan her soruya net ve mevzuat dayanaklı cevap ver.
-1. "orchestratorSummary": Baş Müşavirin genel hukuki teşhis ve stratejik özeti (2-3 paragraf).
-2. "courtAndJurisdiction":
-   - "gorevliMahkeme": Görevli mahkemenin açık adı ve HMK/TTK/İş Mah. Kanunu normatif gerekçesi.
-   - "yetkiliMahkeme": Yetkili mahkemenin tespiti ve yetki sözleşmesi/HMK genel-özel yetki kuralı.
-   - "arabuluculukSarti": Dava şartı zorunlu arabuluculuk var mı, yoksa ihtiyari mi, dayanağı nedir?
-   - "harcVeGiderAvansiTahmini": Maktu mu nispi mi, yaklaşık harç kalemi ve HMK m. 120 gider avansı.
-3. "davaYolHaritasi": Avukat için adım adım operasyonel eylem planı (Her adım için step, action, deadline, legalBasis).
-4. "dilekceTavsiyesi":
-   - "dilekceTuru": Açılacak dava / sunulacak dilekçenin tam adı.
-   - "talepSonucuMaddeleri": Dilekçenin Netice-i Talep kısmına yazılacak somut maddeler.
-   - "delilListesi": Dosyaya hasredilmesi gereken deliller ve HMK 200 senet kuralı uyarısı.
-   - "tensipTalepleri": Tensip zaptıyla ilk celse öncesi mahkemeden istenecek müzekkereler.
-5. "agentInsights":
-   - "usulAjan": HMK usul tuzakları, hak düşürücü süreler ve görev ikazı.
-   - "ictihatAjan": Yargıtay'ın yerleşik içtihat eğilimi ve BAM kararları özeti.
-   - "seytaninAvukatiAjan": Karşı taraf vekilinin ilk itirazları ve karşı taarruz planı.
-   - "dilekceAjan": UYAP uyumlu dilekçe kurgusu ve harç/vekalet pulu uyarısı.
-6. "answerToUserQuestion": Avukatın doğrudan sorduğu soruya net, kesin ve profesyonel yanıt.
+ÖNEMLİ KURAL — CEVAP MODUNU BELİRLE:
+Avukatın mesajını analiz et. Eğer mesaj basit bir selamlama, sohbet, kısa soru veya hukuki olmayan bir konuysa (örn: "selam", "merhaba", "nasılsın", "teşekkürler") KISA MOD kullan. Eğer mesaj somut bir hukuki soru, dava analizi, mevzuat sorusu veya strateji danışması ise DETAYLI MOD kullan.
 
-YALNIZCA GEÇERLİ JSON DÖNDÜR. Markdown kod bloğu (\`\`\`json) KULLANMA.`;
+KISA MOD (selamlama/sohbet için):
+Sadece şu JSON'u döndür:
+{
+  "mode": "chat",
+  "answerToUserQuestion": "Avukata doğal, samimi ve profesyonel kısa bir yanıt. Gereksiz şablon ekleme."
+}
+
+DETAYLI MOD (hukuki sorular için):
+Şu JSON'u döndür:
+{
+  "mode": "detailed",
+  "orchestratorSummary": "Baş Müşavirin genel hukuki teşhis ve stratejik özeti (2-3 paragraf).",
+  "courtAndJurisdiction": {
+    "gorevliMahkeme": "Görevli mahkeme ve normatif gerekçesi.",
+    "yetkiliMahkeme": "Yetkili mahkeme tespiti.",
+    "arabuluculukSarti": "Zorunlu arabuluculuk durumu.",
+    "harcVeGiderAvansiTahmini": "Harç kalemi ve gider avansı."
+  },
+  "davaYolHaritasi": [{"step": "...", "action": "...", "deadline": "...", "legalBasis": "..."}],
+  "dilekceTavsiyesi": {
+    "dilekceTuru": "Dilekçe türü",
+    "talepSonucuMaddeleri": ["..."],
+    "delilListesi": ["..."],
+    "tensipTalepleri": ["..."]
+  },
+  "agentInsights": {
+    "usulAjan": "HMK usul tuzakları ve görev ikazı.",
+    "ictihatAjan": "Yargıtay yerleşik içtihat eğilimi.",
+    "seytaninAvukatiAjan": "Karşı taraf taarruz planı.",
+    "dilekceAjan": "UYAP dilekçe ve harç uyarısı."
+  },
+  "answerToUserQuestion": "Avukatın sorusuna net, kesin ve profesyonel yanıt."
+}
+
+YALNIZCA GEÇERLİ JSON DÖNDÜR. Markdown kod bloğu (\\\`\\\`\\\`json) KULLANMA.`;
 
   const chosenModel = orchestratorModel === 'pro' ? 'gemini-3.1-pro-preview' : 'gemini-3.8-flash';
 

@@ -202,12 +202,13 @@ export function AjanKonseyiOdasi({
 
       const data = await response.json();
       if (data.success) {
+        const isChat = data.mode === 'chat';
         const councilMessage: MessageItem = {
           id: `cns-${Date.now()}`,
           sender: 'council',
-          text: data.answerToUserQuestion || data.orchestratorSummary,
+          text: data.answerToUserQuestion || data.orchestratorSummary || 'Cevap alındı.',
           timestamp: data.timestamp || new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
-          consultationData: data
+          consultationData: isChat ? undefined : data
         };
         setConsultationHistory((prev) => [...prev, councilMessage]);
       } else {
