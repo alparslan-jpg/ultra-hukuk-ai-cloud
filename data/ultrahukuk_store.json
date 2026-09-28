@@ -1,0 +1,82 @@
+{
+  "adminUsers": [
+    {
+      "id": "admin-1",
+      "username": "Alparslan",
+      "passwordHash": "$2b$10$UoS3pjyoQ3VA7xGrBxI9VOVpowaEvuX.yIskl0FDroRZgq5hfV/qe",
+      "role": "SuperAdmin",
+      "isActive": true,
+      "failedLoginCount": 0,
+      "lockedUntil": null,
+      "lastLoginAt": "2026-09-28T03:12:03.563Z",
+      "boundDeviceId": null,
+      "isDeviceLocked": false,
+      "mustChangePassword": false
+    }
+  ],
+  "lawyerUsers": [
+    {
+      "id": "usr-8109",
+      "fullName": "Av. Osman Turgut",
+      "sicilNo": "8109",
+      "baroAdi": "İstanbul Barosu",
+      "email": "av.osmanturgut@hukukburosu.av.tr",
+      "tcKimlik": "10000008109",
+      "subscriptionStartDate": "2026-09-28T03:12:03.564Z",
+      "subscriptionEndDate": "2027-09-28T03:12:03.564Z",
+      "daysRemaining": 365,
+      "isActive": true,
+      "isHardwareLocked": false,
+      "boundHardwareId": null,
+      "status": "AKTİF"
+    }
+  ],
+  "whitelist": [
+    {
+      "id": "wl-8109",
+      "tcKimlikNo": "10000008109",
+      "sicilNo": "8109",
+      "baroAdi": "İstanbul Barosu",
+      "fullName": "Av. Osman Turgut",
+      "email": "av.osmanturgut@hukukburosu.av.tr",
+      "isUsed": true,
+      "addedAt": "2026-09-28T03:12:03.564Z",
+      "addedVia": "Sistem Yöneticisi"
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": "log-1",
+      "timestamp": "2026-09-28T03:12:03.564Z",
+      "adminUsername": "Alparslan",
+      "action": "Avukat Tanımlandı",
+      "details": "Av. Osman Turgut (Sicil: 8109) lisansı aktif edildi.",
+      "ipAddress": "127.0.0.1"
+    }
+  ],
+  "dataBreachIncidents": [
+    {
+      "id": "br-1",
+      "detectedAt": "2026-09-27T03:12:03.564Z",
+      "description": "VPN sunucusunda başarısız erişim denemeleri tespit edildi; güvenlik duvarı kuralı güncellendi.",
+      "severity": "Orta",
+      "kvkkReportedAt": "2026-09-27T15:12:03.564Z",
+      "notes": "Kişisel veri sızıntısı olmadığı tespit edildi, önlem raporu KVKK formatında arşivlendi."
+    }
+  ],
+  "geminiUsage": [
+    {
+      "id": "gu-1",
+      "lawyerSicilNo": "8109",
+      "queryCount": 0,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "estimatedCostUsd": 0,
+      "lastUsedAt": "2026-09-28T03:12:03.564Z"
+    }
+  ],
+  "settings": {
+    "createdAt": "2026-09-28T03:11:43.220Z",
+    "version": "2.6.4"
+  }
+}

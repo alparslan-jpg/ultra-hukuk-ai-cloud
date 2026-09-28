@@ -11,6 +11,7 @@ import { LawyerCaseListSection } from './components/LawyerCaseListSection';
 import { LawyerCaseAnalyticsCharts } from './components/LawyerCaseAnalyticsCharts';
 import { DailyTaskReminders } from './components/DailyTaskReminders';
 import { LoginScreen } from './components/LoginScreen';
+import { HukukiHesaplamaAraclariModal } from './components/HukukiHesaplamaAraclariModal';
 import {
   getClientList,
   setActiveLawyerSicil,
@@ -40,7 +41,8 @@ import {
   CheckCircle2,
   Calendar,
   AlertTriangle,
-  Camera
+  Camera,
+  Calculator
 } from 'lucide-react';
 
 export type AppPage =
@@ -96,6 +98,9 @@ export default function App() {
   const [kvkkConsentRecord, setKvkkConsentRecord] = useState<KvkkConsentRecord | null>(() =>
     getKvkkConsent(initialLawyers[0].sicilNo)
   );
+
+  // Hukuki Hesaplama Araçları Modal State
+  const [hesaplamaModalOpen, setHesaplamaModalOpen] = useState<boolean>(false);
 
   // Update scoped store and KVKK consent status when lawyer changes
   useEffect(() => {
@@ -348,6 +353,14 @@ export default function App() {
               }`}
             >
               Mobil APK
+            </button>
+            <button
+              type="button"
+              onClick={() => setHesaplamaModalOpen(true)}
+              className="px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors text-slate-600 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 flex items-center gap-1.5"
+            >
+              <Calculator className="w-3.5 h-3.5" />
+              Hesaplama
             </button>
           </nav>
 
@@ -1147,6 +1160,12 @@ export default function App() {
         onConsentSuccess={(rec) => {
           setKvkkConsentRecord(rec);
         }}
+      />
+
+      {/* Hukuki Hesaplama Araçları Modal (AAÜT, Faiz, SMM, HMK 200) */}
+      <HukukiHesaplamaAraclariModal
+        isOpen={hesaplamaModalOpen}
+        onClose={() => setHesaplamaModalOpen(false)}
       />
     </div>
   );
