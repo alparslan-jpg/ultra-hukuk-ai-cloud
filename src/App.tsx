@@ -74,11 +74,6 @@ export default function App() {
     return 'workspace';
   });
 
-  if (!isAuthenticated) {
-    return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
-  }
-
-
   const [registeredLawyersList, setRegisteredLawyersList] = useState<LawyerUser[]>(initialLawyers);
   const [currentLawyer, setCurrentLawyer] = useState<LawyerUser>(initialLawyers[0]);
   const [currentPage, setCurrentPage] = useState<AppPage>('home');
@@ -135,6 +130,11 @@ export default function App() {
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
+
+  // Login gate — placed AFTER all hooks (React Rules of Hooks)
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
+  }
 
   const handleAddNewLawyer = (e: React.FormEvent) => {
     e.preventDefault();
