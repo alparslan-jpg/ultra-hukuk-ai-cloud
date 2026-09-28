@@ -6,7 +6,12 @@ interface LoginScreenProps {
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
-  const [activeTab, setActiveTab] = useState<'login' | 'register' | 'admin'>('login');
+  const [activeTab, setActiveTab] = useState<'login' | 'register' | 'admin'>(() => {
+    if (typeof window !== 'undefined' && (window.location.hash === '#admin' || window.location.pathname === '/admin')) {
+      return 'admin';
+    }
+    return 'login';
+  });
   
   // Login State
   const [loginSicilNo, setLoginSicilNo] = useState('');
