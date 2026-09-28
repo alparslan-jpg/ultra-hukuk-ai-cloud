@@ -1036,6 +1036,78 @@ app.post('/api/auth/login-handshake', (req: Request, res: Response) => {
   });
 });
 
+// Register endpoint with Whitelist check
+app.post('/api/auth/register', async (req: Request, res: Response) => {
+  const { fullName, tcKimlikNo, sicilNo, baroAdi, email } = req.body;
+
+  // Validate inputs
+  if (!fullName || !tcKimlikNo || !sicilNo || !baroAdi || !email) {
+    return res.status(400).json({ success: false, message: 'Lütfen tüm alanları doldurunuz.' });
+  }
+
+  // Check if user already exists
+  const userExists = registeredUsers.find(
+    (u) => u.tcKimlik === tcKimlikNo || u.sicilNo === sicilNo || u.email === email
+  );
+  
+  if (userExists) {
+    return res.status(400).json({ success: false, message: 'Bu TC Kimlik, Sicil No veya E-posta ile daha önce kayıt olunmuş.' });
+  }
+
+  // Check whitelist if there are entries
+  if (whitelistEntries.length > 0) {
+    const whitelistEntryIndex = whitelistEntries.findIndex(
+      (entry) => entry.tcKimlik === tcKimlikNo && entry.sicilNo === sicilNo && !entry.isUsed
+    );
+
+    if (whitelistEntryIndex === -1) {
+      return res.status(403).json({ success: false, message: 'Sisteme erişim yetkiniz bulunmamaktadır veya davetiniz kullanılmış.' });
+    }
+
+    // Mark as used
+    whitelistEntries[whitelistEntryIndex].isUsed = true;
+    whitelistEntries[whitelistEntryIndex].usedAt = new Date().toISOString();
+  }
+
+  const now = new Date();
+  const endDate = new Date(now);
+  endDate.setDate(endDate.getDate() + 30); // 30-day trial
+
+  const newUser = {
+    id: `usr-${Date.now()}`,
+    fullName,
+    sicilNo,
+    baroAdi,
+    email,
+    tcKimlik: tcKimlikNo,
+    subscriptionStartDate: now.toISOString(),
+    subscriptionEndDate: endDate.toISOString(),
+    daysRemaining: 30,
+    isActive: true,
+    isHardwareLocked: false,
+    boundHardwareId: null,
+    status: 'AKTİF' as const,
+  };
+
+  registeredUsers.push(newUser);
+
+  const token = jwt.sign({ id: newUser.id, sicilNo: newUser.sicilNo, fullName: newUser.fullName }, JWT_SECRET, { expiresIn: '7d' });
+
+  return res.json({
+    success: true,
+    user: {
+      id: newUser.id,
+      fullName: newUser.fullName,
+      sicilNo: newUser.sicilNo,
+      baroAdi: newUser.baroAdi,
+      email: newUser.email,
+      daysRemaining: newUser.daysRemaining,
+      status: newUser.status,
+    },
+    token,
+  });
+});
+
 // ... existing code ...
 app.post('/api/ai/case-summary', async (req: Request, res: Response) => {
   const { caseData } = req.body;

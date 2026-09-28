@@ -133,7 +133,16 @@ export default function App() {
 
   // Login gate — placed AFTER all hooks (React Rules of Hooks)
   if (!isAuthenticated) {
-    return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
+    return (
+      <LoginScreen 
+        onLogin={(userData) => { 
+          setIsAuthenticated(true); 
+          if (userData && !userData.isAdmin) {
+            setCurrentLawyer(userData);
+          }
+        }} 
+      />
+    );
   }
 
   const handleAddNewLawyer = (e: React.FormEvent) => {
