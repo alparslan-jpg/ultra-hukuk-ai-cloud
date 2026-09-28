@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: ultra-hukuk-ai
+    runtime: node
+    region: frankfurt
+    plan: free
+    buildCommand: npm install && npx vite build
+    startCommand: npx tsx server.ts
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_BOOTSTRAP_USERNAME
+        value: Alparslan
+      - key: ADMIN_BOOTSTRAP_PASSWORD
+        sync: false
+    healthCheckPath: /api/health
+    autoDeploy: true

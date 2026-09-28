@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production build artifacts
+dist/
+build/
+
+# .NET / Binary artifacts that cause 403 Forbidden on GitHub
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs and cache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+tsconfig.tsbuildinfo
+.vite/
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

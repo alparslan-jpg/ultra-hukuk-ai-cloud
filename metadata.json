@@ -1,0 +1,8 @@
+{
+  "name": "Ultra Hukuk AI",
+  "description": "Yapay zekâ destekli Türk Hukuku dava analizi, çift taraflı Şeytanın Avukatı, UYAP dilekçe taslağı ve avukat lisans yönetim sistemi.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

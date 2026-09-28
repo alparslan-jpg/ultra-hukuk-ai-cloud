@@ -1,0 +1,649 @@
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  Brain,
+  Mic,
+  MicOff,
+  Send,
+  Upload,
+  Paperclip,
+  Sparkles,
+  Gavel,
+  Scale,
+  ShieldAlert,
+  FileText,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
+  ArrowRight,
+  RefreshCw,
+  Copy,
+  ChevronDown,
+  Layers,
+  FileCheck2,
+  FolderOpen,
+  HelpCircle,
+  Cpu,
+  MessageSquare
+} from 'lucide-react';
+import { CaseFileItem } from './MuvekkilDavaPortali';
+
+interface AjanKonseyiOdasiProps {
+  initialCaseContext?: {
+    clientName: string;
+    caseNumber: string;
+    subject: string;
+    files: CaseFileItem[];
+  } | null;
+  onApplyToPetition?: (text: string) => void;
+  onSyncGit?: () => void;
+}
+
+interface MessageItem {
+  id: string;
+  sender: 'lawyer' | 'council';
+  text: string;
+  timestamp: string;
+  audioDuration?: string;
+  consultationData?: any;
+}
+
+export function AjanKonseyiOdasi({
+  initialCaseContext,
+  onApplyToPetition,
+  onSyncGit
+}: AjanKonseyiOdasiProps) {
+  // Model router selection: Gemini 3.1 Pro (Deep Legal Reasoning) vs Gemini 3.8 Flash (High Speed)
+  const [orchestratorModel, setOrchestratorModel] = useState<'pro' | 'flash'>('pro');
+
+  // Input states
+  const [inputText, setInputText] = useState('');
+  const [attachedFiles, setAttachedFiles] = useState<Array<{ name: string; content: string; type: string }>>([]);
+  const [selectedCaseNote, setSelectedCaseNote] = useState<string>(
+    initialCaseContext
+      ? `Müvekkil: ${initialCaseContext.clientName} | Dava: ${initialCaseContext.caseNumber} - ${initialCaseContext.subject}`
+      : ''
+  );
+
+  // Audio / Speech-to-Text State
+  const [isRecording, setIsRecording] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const [audioTranscript, setAudioTranscript] = useState('');
+  const recognitionRef = useRef<any>(null);
+
+  // Loading & Consultation State
+  const [isConsulting, setIsConsulting] = useState(false);
+  const [consultationHistory, setConsultationHistory] = useState<MessageItem[]>([
+    {
+      id: 'welcome-msg',
+      sender: 'council',
+      timestamp: '09:00',
+      text: 'Merhaba Sayın Avukatım. Ben Ultra Hukuk AI Baş Hukuk Müşaviriyim. Arka planda HMK/CMK Usul ve Süre Ajanı, Yargıtay Emsal İçtihat Ajanı, Şeytanın Avukatı (Harp Odası) ve UYAP Dilekçe Mimarı ajanlarım aktif olarak görev başında çalışmaktadır.\n\nYeni gelen veya derdest bir dava dosyanızın evraklarını yükleyebilir, vakıaları yazabilir veya mikrofon simgesine basarak sesli anlatabilirsiniz. Size hangi mahkemede dava açılacağı, zorunlu arabuluculuk şartı, harçlar, adım adım dava yol haritası ve dilekçe kurgusu dahil net cevaplar vereceğiz.'
+    }
+  ]);
+
+  // Check speech recognition support
+  useEffect(() => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      setSpeechSupported(true);
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'tr-TR';
+
+      recognition.onresult = (event: any) => {
+        let currentTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          currentTranscript += event.results[i][0].transcript;
+        }
+        setAudioTranscript(currentTranscript);
+        setInputText((prev) => (prev ? `${prev} ${currentTranscript}` : currentTranscript));
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn('Speech recognition error:', event.error);
+        setIsRecording(false);
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  // Toggle voice recording
+  const handleToggleRecording = () => {
+    if (!speechSupported) {
+      alert('Tarayıcınızda Web Speech API mikrofon desteği bulunmamaktadır. Lütfen Chrome veya Edge kullanınız veya vakıaları metin olarak yazınız.');
+      return;
+    }
+
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+    } else {
+      setAudioTranscript('');
+      try {
+        recognitionRef.current?.start();
+        setIsRecording(true);
+      } catch (err) {
+        console.warn('Recognition start error:', err);
+      }
+    }
+  };
+
+  // Attach a local text/document file
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const content = event.target?.result as string;
+        setAttachedFiles((prev) => [
+          ...prev,
+          {
+            name: file.name,
+            content: content || 'Evrak içeriği okundu.',
+            type: file.type || 'Hukuki Belge'
+          }
+        ]);
+      };
+      reader.readAsText(file);
+    });
+  };
+
+  // Remove attached file
+  const removeAttachedFile = (index: number) => {
+    setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Send consultation request to AI Council
+  const handleSendConsultation = async () => {
+    const query = inputText.trim();
+    if (!query && attachedFiles.length === 0 && !selectedCaseNote) {
+      alert('Lütfen danışmak istediğiniz hukuki konuyu yazınız, sesli anlatınız veya bir evrak yükleyiniz.');
+      return;
+    }
+
+    // Stop voice if recording
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+    }
+
+    const userMessage: MessageItem = {
+      id: `usr-${Date.now()}`,
+      sender: 'lawyer',
+      text: query || 'Eklenen dava evrakları ve dosya bağlamı hakkında detaylı yol haritası ve danışma talebi.',
+      timestamp: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setConsultationHistory((prev) => [...prev, userMessage]);
+    setInputText('');
+    setIsConsulting(true);
+
+    try {
+      const response = await fetch('/api/ai/agent-council-consultation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query,
+          contextFiles: attachedFiles,
+          activeCaseContext: selectedCaseNote,
+          orchestratorModel,
+          inputMode: isRecording ? 'voice' : 'text'
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        const councilMessage: MessageItem = {
+          id: `cns-${Date.now()}`,
+          sender: 'council',
+          text: data.answerToUserQuestion || data.orchestratorSummary,
+          timestamp: data.timestamp || new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+          consultationData: data
+        };
+        setConsultationHistory((prev) => [...prev, councilMessage]);
+      } else {
+        alert('Danışma oluşturulurken bir hata oluştu: ' + (data.message || 'Bilinmeyen hata'));
+      }
+    } catch (err: any) {
+      alert('Sunucu iletişim hatası: ' + err.message);
+    } finally {
+      setIsConsulting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Top Banner & Multi-Agent Matrix Bar */}
+      <div className="bg-white dark:bg-[#0e1524] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-5 sm:p-6 shadow-sm relative overflow-hidden backdrop-blur-md">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2.5">
+              <span className="p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-600 dark:text-indigo-400">
+                <Brain className="w-5 h-5" />
+              </span>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
+                  Baş Hukuk Müşaviri & Ajan Konseyi Konsültasyon Odası
+                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                    · Çoklu Model Orkestrasyonu
+                  </span>
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Uygulamayı yöneten Baş Hukuk Müşaviri ve arka planda çalışan 4 uzman ajanla dava kurgusu, görevli mahkeme, yol haritası ve dilekçe mimarisi.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Model Toggle: Pro vs Flash & Git Sync */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center bg-slate-100 dark:bg-[#141d30] p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setOrchestratorModel('pro')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+                  orchestratorModel === 'pro'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Gemini 3.1 Pro (Derin Akıl)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setOrchestratorModel('flash')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+                  orchestratorModel === 'flash'
+                    ? 'bg-amber-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <Cpu className="w-3.5 h-3.5" />
+                <span>Gemini 3.8 Flash (Hızlı)</span>
+              </button>
+            </div>
+
+            {onSyncGit && (
+              <button
+                type="button"
+                onClick={onSyncGit}
+                className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition"
+                title="Değişiklikleri ve analizleri GitHub'a senkronize et"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-emerald-500" />
+                <span>GitHub Senkronize</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 4 Background Agents Live Status Ticker */}
+        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-2 md:grid-cols-4 gap-2.5">
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#141d30]/60 border border-slate-200 dark:border-slate-800/80 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+            <div className="overflow-hidden">
+              <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate">1. Usul & Süre Ajanı</div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">HMK Yetki, Görev & Arabuluculuk</div>
+            </div>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#141d30]/60 border border-slate-200 dark:border-slate-800/80 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-sky-500 shrink-0" />
+            <div className="overflow-hidden">
+              <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate">2. Yargıtay Emsal Ajanı</div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">HGK, Daire & BAM İlke Kararları</div>
+            </div>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#141d30]/60 border border-slate-200 dark:border-slate-800/80 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+            <div className="overflow-hidden">
+              <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate">3. Şeytanın Avukatı</div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">Karşı Savunma & Zayıf Halkalar</div>
+            </div>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#141d30]/60 border border-slate-200 dark:border-slate-800/80 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+            <div className="overflow-hidden">
+              <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate">4. Dilekçe Mimarı</div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">UYAP Netice-i Talep & Tensip</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Conversation & Roadmap Display */}
+      <div className="bg-white dark:bg-[#0e1524] border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-[640px]">
+        {/* Messages Stream */}
+        <div className="flex-1 p-5 overflow-y-auto space-y-6 max-h-[580px]">
+          {consultationHistory.map((msg) => {
+            const isLawyer = msg.sender === 'lawyer';
+
+            return (
+              <div
+                key={msg.id}
+                className={`flex gap-3 text-xs leading-relaxed ${isLawyer ? 'justify-end' : 'justify-start'}`}
+              >
+                {!isLawyer && (
+                  <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center shrink-0 text-indigo-400">
+                    <Brain className="w-4 h-4" />
+                  </div>
+                )}
+
+                <div
+                  className={`max-w-2xl rounded-2xl p-4.5 space-y-3 ${
+                    isLawyer
+                      ? 'bg-sky-600 text-white rounded-tr-none shadow-sm'
+                      : 'bg-slate-50 dark:bg-[#141d30] border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 rounded-tl-none shadow-sm'
+                  }`}
+                >
+                  {/* Sender & Timestamp */}
+                  <div className={`flex items-center justify-between gap-3 text-[11px] pb-1 border-b ${
+                    isLawyer ? 'border-white/20 opacity-90' : 'border-slate-200 dark:border-slate-800 opacity-70'
+                  }`}>
+                    <span className="font-bold flex items-center gap-1.5">
+                      {isLawyer ? 'Avukat' : 'Baş Hukuk Müşaviri & Ajan Konseyi'}
+                    </span>
+                    <span className="font-mono text-[10px] tabular-nums">{msg.timestamp}</span>
+                  </div>
+
+                  {/* Main Message Text */}
+                  <p className="whitespace-pre-line text-xs font-normal leading-relaxed">
+                    {msg.text}
+                  </p>
+
+                  {/* Deep Structured Consultation Cards (If available) */}
+                  {msg.consultationData && (
+                    <div className="space-y-4 pt-2 border-t border-slate-200 dark:border-slate-800">
+                      {/* KVKK & Avukat İnceleme Sorumluluk Şerhi */}
+                      <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 text-[11px] flex items-center gap-2">
+                        <Scale className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                        <span>
+                          <strong>1136 S.K. m. 34 & KVKK:</strong> Ajan konseyi tavsiyeleri nihai otomatik karar değildir; taslak dilekçe ve talepler sorumlu avukatın bizzat denetim ve onayından sonra UYAP'a sunulmalıdır.
+                        </span>
+                      </div>
+
+                      {/* Court & Jurisdiction Card */}
+                      {msg.consultationData.courtAndJurisdiction && (
+                        <div className="p-3.5 rounded-xl bg-white dark:bg-[#090d16] border border-slate-200 dark:border-slate-800 space-y-2">
+                          <h4 className="font-bold text-amber-700 dark:text-amber-300 text-xs flex items-center gap-1.5">
+                            <Gavel className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                            Görevli ve Yetkili Mahkeme / Usuli Dava Şartları
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
+                            <div>
+                              <strong className="text-slate-500 dark:text-slate-400">Görevli Mahkeme: </strong>
+                              <span className="text-slate-900 dark:text-slate-100">{msg.consultationData.courtAndJurisdiction.gorevliMahkeme}</span>
+                            </div>
+                            <div>
+                              <strong className="text-slate-500 dark:text-slate-400">Yetkili Mahkeme: </strong>
+                              <span className="text-slate-900 dark:text-slate-100">{msg.consultationData.courtAndJurisdiction.yetkiliMahkeme}</span>
+                            </div>
+                            <div className="md:col-span-2">
+                              <strong className="text-slate-500 dark:text-slate-400">Zorunlu Arabuluculuk: </strong>
+                              <span className="text-emerald-600 dark:text-emerald-400 font-medium">{msg.consultationData.courtAndJurisdiction.arabuluculukSarti}</span>
+                            </div>
+                            <div className="md:col-span-2">
+                              <strong className="text-slate-500 dark:text-slate-400">Harç & Gider Avansı: </strong>
+                              <span className="text-slate-700 dark:text-slate-300 tabular-nums">{msg.consultationData.courtAndJurisdiction.harcVeGiderAvansiTahmini}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Step-by-Step Roadmap */}
+                      {msg.consultationData.davaYolHaritasi && msg.consultationData.davaYolHaritasi.length > 0 && (
+                        <div className="p-3.5 rounded-xl bg-white dark:bg-[#090d16] border border-slate-200 dark:border-slate-800 space-y-2">
+                          <h4 className="font-bold text-sky-700 dark:text-sky-300 text-xs flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                            Dava Stratejisi ve Adım Adım Eylem Haritası
+                          </h4>
+                          <div className="space-y-2">
+                            {msg.consultationData.davaYolHaritasi.map((step: any, idx: number) => (
+                              <div key={idx} className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-50 dark:bg-[#141d30]/80 border border-slate-200 dark:border-slate-800/80">
+                                <span className="w-5 h-5 rounded-full bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20 flex items-center justify-center font-bold text-[10px] shrink-0 tabular-nums">
+                                  {step.step || idx + 1}
+                                </span>
+                                <div className="space-y-0.5 flex-1">
+                                  <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px]">{step.action}</div>
+                                  <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
+                                    <span>Zamanlama: <strong className="text-amber-600 dark:text-amber-400 tabular-nums">{step.deadline}</strong></span>
+                                    <span className="font-mono text-slate-400 dark:text-slate-500">{step.legalBasis}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Petition & Claim Recommendation */}
+                      {msg.consultationData.dilekceTavsiyesi && (
+                        <div className="p-3.5 rounded-xl bg-white dark:bg-[#090d16] border border-slate-200 dark:border-slate-800 space-y-2.5">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-bold text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-1.5">
+                              <FileCheck2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                              Verilecek Dilekçe & Netice-i Talep Kurgusu
+                            </h4>
+                            {onApplyToPetition && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const petitionText = `DİLEKÇE TÜRÜ: ${msg.consultationData.dilekceTavsiyesi.dilekceTuru}\n\nNETİCE-İ TALEP MADDELERİ:\n${msg.consultationData.dilekceTavsiyesi.talepSonucuMaddeleri.map((m: string, i: number) => `${i + 1}. ${m}`).join('\n')}\n\nDELİL LİSTESİ:\n${msg.consultationData.dilekceTavsiyesi.delilListesi.join('\n')}`;
+                                  onApplyToPetition(petitionText);
+                                }}
+                                className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[10px] font-semibold flex items-center gap-1 transition"
+                              >
+                                <Copy className="w-3 h-3" />
+                                <span>Dilekçe Laboratuvarına Aktar</span>
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="text-[11px] text-slate-800 dark:text-slate-200 font-semibold">
+                            Tavsiye Edilen Dilekçe: <span className="text-amber-700 dark:text-amber-300">{msg.consultationData.dilekceTavsiyesi.dilekceTuru}</span>
+                          </div>
+
+                          {/* Netice-i Talep Maddeleri */}
+                          <div className="space-y-1 bg-slate-50 dark:bg-[#141d30]/60 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800/80">
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Netice-i Talep Önerisi:</span>
+                            <ul className="list-disc pl-4 space-y-1 text-[11px] text-slate-700 dark:text-slate-300">
+                              {msg.consultationData.dilekceTavsiyesi.talepSonucuMaddeleri?.map((item: string, i: number) => (
+                                <li key={i}>{item}</li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          {/* Tensip Talepleri */}
+                          {msg.consultationData.dilekceTavsiyesi.tensipTalepleri && (
+                            <div className="space-y-1 bg-slate-50 dark:bg-[#141d30]/60 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800/80">
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Mahkemeden İlk Celse Öncesi İstenecek Tensip Talepleri:</span>
+                              <ul className="list-disc pl-4 space-y-0.5 text-[11px] text-slate-700 dark:text-slate-300">
+                                {msg.consultationData.dilekceTavsiyesi.tensipTalepleri.map((item: string, i: number) => (
+                                  <li key={i}>{item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* 4 Agent Special Insights Grid */}
+                      {msg.consultationData.agentInsights && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
+                          <div className="p-3 rounded-xl bg-white dark:bg-[#090d16] border border-slate-200 dark:border-slate-800 space-y-1">
+                            <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                              <Gavel className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Usul Ajanı Notu:
+                            </span>
+                            <p className="text-slate-700 dark:text-slate-300">{msg.consultationData.agentInsights.usulAjan}</p>
+                          </div>
+
+                          <div className="p-3 rounded-xl bg-white dark:bg-[#090d16] border border-slate-200 dark:border-slate-800 space-y-1">
+                            <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 flex items-center gap-1">
+                              <Scale className="w-3 h-3 text-sky-600 dark:text-sky-400" /> Yargıtay Emsal Notu:
+                            </span>
+                            <p className="text-slate-700 dark:text-slate-300">{msg.consultationData.agentInsights.ictihatAjan}</p>
+                          </div>
+
+                          <div className="p-3 rounded-xl bg-white dark:bg-[#090d16] border border-slate-200 dark:border-slate-800 space-y-1">
+                            <span className="text-[10px] font-bold text-rose-700 dark:text-rose-400 flex items-center gap-1">
+                              <ShieldAlert className="w-3 h-3 text-rose-600 dark:text-rose-400" /> Şeytanın Avukatı Uyarısı:
+                            </span>
+                            <p className="text-slate-700 dark:text-slate-300">{msg.consultationData.agentInsights.seytaninAvukatiAjan}</p>
+                          </div>
+
+                          <div className="p-3 rounded-xl bg-white dark:bg-[#090d16] border border-slate-200 dark:border-slate-800 space-y-1">
+                            <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                              <FileCheck2 className="w-3 h-3 text-amber-600 dark:text-amber-400" /> Dilekçe Mimarı Uyarısı:
+                            </span>
+                            <p className="text-slate-700 dark:text-slate-300">{msg.consultationData.agentInsights.dilekceAjan}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {isLawyer && (
+                  <div className="w-8 h-8 rounded-xl bg-sky-500/20 border border-sky-500/40 flex items-center justify-center shrink-0 text-sky-400">
+                    <span className="text-xs font-bold font-mono">AV</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {isConsulting && (
+            <div className="flex gap-3 text-xs justify-start items-center">
+              <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center shrink-0 text-indigo-400">
+                <Brain className="w-4 h-4 animate-spin" />
+              </div>
+              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-slate-300 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
+                <span>
+                  Baş Hukuk Müşaviri ({orchestratorModel === 'pro' ? 'Gemini 3.1 Pro' : 'Gemini 3.8 Flash'}) ve 4 arka plan ajanı uyuşmazlığı inceliyor...
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Input & Controls Bottom Bar */}
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-[#090d16] space-y-3">
+          {/* Active Case Context Chip & Attached Files Bar */}
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            {selectedCaseNote && (
+              <span className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/80 flex items-center gap-1.5 font-mono text-[11px] tabular-nums">
+                <FolderOpen className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                <span className="truncate max-w-[280px]">{selectedCaseNote}</span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCaseNote('')}
+                  className="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200 ml-1 font-bold"
+                >
+                  &times;
+                </button>
+              </span>
+            )}
+
+            {attachedFiles.map((file, idx) => (
+              <span
+                key={idx}
+                className="px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/80 flex items-center gap-1.5 font-mono text-[11px]"
+              >
+                <Paperclip className="w-3 h-3 text-sky-600 dark:text-sky-400" />
+                <span className="truncate max-w-[160px]">{file.name}</span>
+                <button
+                  type="button"
+                  onClick={() => removeAttachedFile(idx)}
+                  className="text-sky-600 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-200 ml-1 font-bold"
+                >
+                  &times;
+                </button>
+              </span>
+            ))}
+
+            {isRecording && (
+              <span className="px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80 flex items-center gap-1.5 animate-pulse text-[11px]">
+                <Mic className="w-3 h-3 text-rose-600 dark:text-rose-400" />
+                <span>Sesli anlatım dinleniyor... (Konuşabilirsiniz)</span>
+              </span>
+            )}
+          </div>
+
+          {/* Text Area & Action Buttons */}
+          <div className="flex items-end gap-2">
+            {/* File Upload Trigger */}
+            <label className="p-2.5 rounded-xl bg-white dark:bg-[#141d30] border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700 cursor-pointer transition shadow-sm">
+              <Upload className="w-4 h-4" />
+              <input
+                type="file"
+                multiple
+                onChange={handleFileUpload}
+                className="hidden"
+                accept=".txt,.pdf,.docx,.doc,.rtf"
+              />
+            </label>
+
+            {/* Speech-to-Text Button */}
+            <button
+              type="button"
+              onClick={handleToggleRecording}
+              className={`p-2.5 rounded-xl border transition shadow-sm ${
+                isRecording
+                  ? 'bg-rose-600 text-white border-rose-500 animate-pulse'
+                  : 'bg-white dark:bg-[#141d30] border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400'
+              }`}
+              title={isRecording ? 'Kaydı Durdur' : 'Sesli Anlatım Başlat'}
+            >
+              {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            </button>
+
+            {/* Input textarea */}
+            <div className="flex-1 relative">
+              <textarea
+                rows={2}
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendConsultation();
+                  }
+                }}
+                placeholder="Vakıaları yazın, evrak yükleyin veya sesli anlatın: Hangi mahkemede dava açılmalı, harçlar, yol haritası ve dilekçe kurgusu..."
+                className="w-full bg-white dark:bg-[#141d30] border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-indigo-500 resize-none shadow-sm"
+              />
+            </div>
+
+            {/* Send Button */}
+            <button
+              type="button"
+              disabled={isConsulting}
+              onClick={handleSendConsultation}
+              className="p-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold flex items-center justify-center transition disabled:opacity-40 shadow-sm"
+              title="Baş Hukuk Müşavirine ve Ajan Konseyine Gönder"
+            >
+              {isConsulting ? (
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
