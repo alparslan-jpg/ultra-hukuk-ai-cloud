@@ -8,10 +8,12 @@
     "dev": "tsx server.ts",
     "build": "tsc --noEmit && vite build",
     "start": "tsx server.ts",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "db:migrate": "tsx db/migrate.ts"
   },
   "dependencies": {
     "@google/genai": "latest",
+    "@neondatabase/serverless": "^0.10.0",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "d3": "^7.9.0",

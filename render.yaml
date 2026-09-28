@@ -19,5 +19,7 @@ services:
         value: Alparslan
       - key: ADMIN_BOOTSTRAP_PASSWORD
         sync: false
+      - key: DATABASE_URL
+        sync: false
     healthCheckPath: /api/health
     autoDeploy: true
