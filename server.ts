@@ -1533,9 +1533,9 @@ Avukatın Mesajı:
 ${cleanQuery || 'Genel danışma.'}
 """
 
-${clientInfo ? \`Müvekkil Bilgileri: \${JSON.stringify(clientInfo)}\` : ''}
-${activeCaseContext ? \`Aktif Dava Bağlamı: \${activeCaseContext}\` : ''}
-${fileSnippets ? \`Sunulan Dava Dosyası & Evrakları:\\n\${fileSnippets}\` : ''}
+${clientInfo ? `Müvekkil Bilgileri: ${JSON.stringify(clientInfo)}` : ''}
+${activeCaseContext ? `Aktif Dava Bağlamı: ${activeCaseContext}` : ''}
+${fileSnippets ? `Sunulan Dava Dosyası & Evrakları:\n${fileSnippets}` : ''}
 
 ÖNEMLİ KURAL — CEVAP MODUNU BELİRLE:
 Avukatın mesajını analiz et. Eğer mesaj basit bir selamlama, sohbet, kısa soru veya hukuki olmayan bir konuysa (örn: "selam", "merhaba", "nasılsın", "teşekkürler") KISA MOD kullan. Eğer mesaj somut bir hukuki soru, dava analizi, mevzuat sorusu veya strateji danışması ise DETAYLI MOD kullan.
@@ -1574,7 +1574,7 @@ DETAYLI MOD (hukuki sorular için):
   "answerToUserQuestion": "Avukatın sorusuna net, kesin ve profesyonel yanıt."
 }
 
-YALNIZCA GEÇERLİ JSON DÖNDÜR. Markdown kod bloğu (\\\`\\\`\\\`json) KULLANMA.`;
+YALNIZCA GEÇERLİ JSON DÖNDÜR. Markdown kod bloğu kullanma.`;
 
   const chosenModel = orchestratorModel === 'pro' ? 'gemini-3.1-pro-preview' : 'gemini-3.8-flash';
 
