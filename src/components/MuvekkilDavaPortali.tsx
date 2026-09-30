@@ -108,6 +108,54 @@ export function MuvekkilDavaPortali({
   const [newFileType, setNewFileType] = useState<CaseFileItem['type']>('Tensip Zaptı');
   const [newFileContent, setNewFileContent] = useState('');
 
+  // Multi-file upload state
+  const [pendingFiles, setPendingFiles] = useState<{name: string; size: number; type: string; content: string}[]>([]);
+
+  const detectFileType = (fileName: string): string => {
+    const name = fileName.toLowerCase();
+    if (name.includes('tensip') || name.includes('zapt')) return 'Tensip Zaptı';
+    if (name.includes('bilirkisi') || name.includes('rapor')) return 'Bilirkişi Raporu';
+    if (name.includes('fatura') || name.includes('irsaliye')) return 'Fatura / İrsaliye';
+    if (name.includes('ihtar')) return 'İhtarname';
+    if (name.includes('durusma') || name.includes('tutanak')) return 'Duruşma Tutanağı';
+    if (name.includes('sozlesme') || name.includes('sözleşme')) return 'Sözleşme';
+    if (name.includes('vekaletname') || name.includes('vekalet')) return 'Vekaletname';
+    if (name.includes('dekont') || name.includes('banka')) return 'Banka Dekontu';
+    return 'Diğer';
+  };
+
+  const handleMultiFileSelect = (files: File[]) => {
+    const newPending = files.map(file => ({
+      name: file.name,
+      size: file.size,
+      type: detectFileType(file.name),
+      content: `${file.name} — ${Math.round(file.size / 1024)} KB — Sisteme yüklenmiştir.`
+    }));
+    setPendingFiles(prev => [...prev, ...newPending]);
+  };
+
+  const handleBatchFileUpload = () => {
+    if (!selectedCaseId || !selectedClientId || pendingFiles.length === 0) return;
+    const newFiles: CaseFileItem[] = pendingFiles.map((pf, idx) => ({
+      id: `file-${Date.now()}-${idx}`,
+      name: pf.name.endsWith('.pdf') || pf.name.endsWith('.docx') || pf.name.endsWith('.jpg') || pf.name.endsWith('.png') ? pf.name : `${pf.name}.pdf`,
+      type: pf.type,
+      size: pf.size || 50000,
+      uploadedAt: new Date().toLocaleDateString('tr-TR'),
+      evidentiaryValue: 'Yazılı Delil Başlangıcı' as const,
+      contentPreview: pf.content || 'Belge içeriği sisteme kaydedilmiştir.',
+      analysisSummary: 'Yeni yüklenen evrak incelenmeye hazırdır.',
+    }));
+    updateClientsAndStore((prev) =>
+      prev.map((c) => c.id === selectedClientId
+        ? { ...c, cases: c.cases.map((cs) => cs.id === selectedCaseId ? { ...cs, files: [...newFiles, ...cs.files] } : cs) }
+        : c
+      )
+    );
+    setPendingFiles([]);
+    setShowAddFileModal(false);
+  };
+
   // Currently active selected client & case
   const selectedClient = clients.find((c) => c.id === selectedClientId) || clients[0] || null;
   const selectedCase = selectedClient?.cases.find((cs) => cs.id === selectedCaseId) || selectedClient?.cases[0] || null;
@@ -1100,80 +1148,70 @@ export function MuvekkilDavaPortali({
         </div>
       )}
 
-      {/* Modal: Yeni Evrak Yükle */}
+      {/* Modal: Çoklu Evrak Yükle */}
       {showAddFileModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
                 <Upload className="w-4 h-4 text-emerald-400" />
-                Dava Dosyasına Evrak / Belge Yükle
+                Dava Dosyasına Evrak Yükle (Çoklu)
               </h3>
-              <button
-                type="button"
-                onClick={() => setShowAddFileModal(false)}
-                className="text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800"
-              >
+              <button type="button" onClick={() => { setShowAddFileModal(false); setPendingFiles([]); }} className="text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800">
                 <X className="w-4 h-4" />
               </button>
             </div>
-
-            <form onSubmit={handleAddFileSubmit} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Belge Adı / Dosya İsmi *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Bilirkişi_Raporu_Ek_1.pdf"
-                  value={newFileName}
-                  onChange={(e) => setNewFileName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500"
-                />
+            <div
+              className="border-2 border-dashed border-slate-700 hover:border-emerald-500/60 rounded-xl p-6 text-center cursor-pointer transition-colors"
+              onClick={() => document.getElementById('multi-file-input')?.click()}
+              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-emerald-500', 'bg-emerald-950/20'); }}
+              onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove('border-emerald-500', 'bg-emerald-950/20'); }}
+              onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove('border-emerald-500', 'bg-emerald-950/20'); handleMultiFileSelect(Array.from(e.dataTransfer.files)); }}
+            >
+              <Upload className="w-8 h-8 text-slate-500 mx-auto mb-2" />
+              <p className="text-sm text-slate-400 font-medium">Dosyaları sürükleyin veya tıklayarak seçin</p>
+              <p className="text-[10px] text-slate-500 mt-1">PDF, DOCX, JPG, PNG, XLSX — Birden fazla dosya seçebilirsiniz</p>
+              <input id="multi-file-input" type="file" multiple accept=".pdf,.docx,.doc,.jpg,.jpeg,.png,.xlsx,.xls,.txt,.rtf" className="hidden"
+                onChange={(e) => { if (e.target.files) handleMultiFileSelect(Array.from(e.target.files)); e.target.value = ''; }} />
+            </div>
+            {pendingFiles.length > 0 && (
+              <div className="max-h-48 overflow-y-auto space-y-1.5">
+                <p className="text-[10px] text-slate-400 font-semibold">{pendingFiles.length} dosya seçildi:</p>
+                {pendingFiles.map((pf, idx) => (
+                  <div key={idx} className="flex items-center justify-between bg-slate-950 rounded-lg px-3 py-2 text-xs border border-slate-800">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                      <span className="text-slate-200 truncate max-w-[200px]">{pf.name}</span>
+                      <span className="text-slate-500 shrink-0">{Math.round(pf.size / 1024)} KB</span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <select value={pf.type} onChange={(e) => setPendingFiles(prev => prev.map((f, i) => i === idx ? {...f, type: e.target.value} : f))}
+                        className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-[10px] text-slate-300">
+                        <option value="Tensip Zaptı">Tensip Zaptı</option>
+                        <option value="Bilirkişi Raporu">Bilirkişi Raporu</option>
+                        <option value="Fatura / İrsaliye">Fatura / İrsaliye</option>
+                        <option value="İhtarname">İhtarname</option>
+                        <option value="Duruşma Tutanağı">Duruşma Tutanağı</option>
+                        <option value="Sözleşme">Sözleşme</option>
+                        <option value="Vekaletname">Vekaletname</option>
+                        <option value="Banka Dekontu">Banka Dekontu</option>
+                        <option value="Diğer">Diğer</option>
+                      </select>
+                      <button type="button" onClick={() => setPendingFiles(prev => prev.filter((_, i) => i !== idx))} className="text-rose-400 hover:text-rose-300 p-0.5">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Belge Türü</label>
-                <select
-                  value={newFileType}
-                  onChange={(e) => setNewFileType(e.target.value as any)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500"
-                >
-                  <option value="Tensip Zaptı">Tensip Zaptı</option>
-                  <option value="Bilirkişi Raporu">Bilirkişi Raporu</option>
-                  <option value="Fatura / İrsaliye">Fatura / İrsaliye</option>
-                  <option value="İhtarname">İhtarname</option>
-                  <option value="Duruşma Tutanağı">Duruşma Tutanağı</option>
-                  <option value="Diğer">Diğer</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Belge İçeriği / Metin Özeti</label>
-                <textarea
-                  rows={3}
-                  placeholder="Evrakın önemli paragrafları, imza durumu veya tebliğ şerhi..."
-                  value={newFileContent}
-                  onChange={(e) => setNewFileContent(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowAddFileModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
-                >
-                  Vazgeç
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md shadow-emerald-900/30"
-                >
-                  Evrakı Ekle & Dosyala
-                </button>
-              </div>
-            </form>
+            )}
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+              <button type="button" onClick={() => { setShowAddFileModal(false); setPendingFiles([]); }} className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Vazgeç</button>
+              <button type="button" disabled={pendingFiles.length === 0} onClick={handleBatchFileUpload}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold shadow-md shadow-emerald-900/30">
+                {pendingFiles.length > 0 ? `${pendingFiles.length} Evrakı Ekle & Dosyala` : 'Evrak Seçin'}
+              </button>
+            </div>
           </div>
         </div>
       )}
