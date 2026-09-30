@@ -512,6 +512,50 @@ export function AjanKonseyiOdasi({
                           </div>
                         </div>
                       )}
+
+                      {/* Evrak Referansları (Dip Notlar) */}
+                      {msg.consultationData.dilekceTavsiyesi?.evrakReferanslari && msg.consultationData.dilekceTavsiyesi.evrakReferanslari.length > 0 && (
+                        <div className="bg-white dark:bg-[#090d16] border border-slate-200 dark:border-slate-800 rounded-xl p-3 space-y-2">
+                          <span className="text-[10px] font-bold text-violet-700 dark:text-violet-400 flex items-center gap-1">
+                            <FileCheck2 className="w-3 h-3" /> Evrak Referansları (Dip Notlar)
+                          </span>
+                          <div className="space-y-1.5">
+                            {msg.consultationData.dilekceTavsiyesi.evrakReferanslari.map((ref: any, i: number) => (
+                              <div key={i} className="flex gap-2 text-[11px]">
+                                <span className="text-violet-600 dark:text-violet-400 font-bold shrink-0">[{ref.no || i + 1}]</span>
+                                <div>
+                                  <span className="font-semibold text-slate-800 dark:text-slate-200">{ref.evrakAdi}</span>
+                                  {ref.bolum && <span className="text-slate-500 dark:text-slate-400">, {ref.bolum}</span>}
+                                  {ref.aciklama && <p className="text-slate-600 dark:text-slate-400 mt-0.5">{ref.aciklama}</p>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Emsal Kararlar ve URL'leri */}
+                      {msg.consultationData.emsalKararlar && msg.consultationData.emsalKararlar.length > 0 && (
+                        <div className="bg-white dark:bg-[#090d16] border border-slate-200 dark:border-slate-800 rounded-xl p-3 space-y-2">
+                          <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 flex items-center gap-1">
+                            <Scale className="w-3 h-3" /> Emsal Kararlar ve Kaynakları
+                          </span>
+                          <div className="space-y-1.5">
+                            {msg.consultationData.emsalKararlar.map((emsal: any, i: number) => (
+                              <div key={i} className="text-[11px] p-2 rounded-lg bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/50">
+                                <p className="font-semibold text-slate-800 dark:text-slate-200">{emsal.karar}</p>
+                                {emsal.ozet && <p className="text-slate-600 dark:text-slate-400 mt-0.5">{emsal.ozet}</p>}
+                                {emsal.url && (
+                                  <a href={emsal.url} target="_blank" rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 mt-1 text-sky-600 dark:text-sky-400 hover:underline">
+                                    🔗 {emsal.url}
+                                  </a>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

@@ -1563,8 +1563,16 @@ DETAYLI MOD (hukuki sorular için):
     "dilekceTuru": "Dilekçe türü",
     "talepSonucuMaddeleri": ["..."],
     "delilListesi": ["..."],
-    "tensipTalepleri": ["..."]
+    "tensipTalepleri": ["..."],
+    "evrakReferanslari": [
+      {"no": 1, "evrakAdi": "Referans verilen dosyadaki evrak adı", "bolum": "Evrakın hangi bölümü/maddesi", "aciklama": "Bu evrakın dilekçedeki hangi argümana dayanak olduğu"},
+      {"no": 2, "evrakAdi": "...", "bolum": "...", "aciklama": "..."}
+    ]
   },
+  "emsalKararlar": [
+    {"karar": "Yargıtay X. HD, YYYY/XXXX E., YYYY/XXXX K.", "ozet": "Kararın ilgili kısmının kısa özeti", "url": "https://karararama.yargitay.gov.tr"},
+    {"karar": "Danıştay veya BAM kararı", "ozet": "...", "url": "https://karararama.yargitay.gov.tr veya https://www.danistay.gov.tr"}
+  ],
   "agentInsights": {
     "usulAjan": "HMK usul tuzakları ve görev ikazı.",
     "ictihatAjan": "Yargıtay yerleşik içtihat eğilimi.",
@@ -2046,7 +2054,19 @@ Dava / Talep Konusu: ${subject || 'Alacak / İtirazın İptali Talebidir.'}
 Esas / Dosya No: ${caseNo || '[ESAS NO]'}
 Olay Açıklamaları: ${details || 'Taraflar arasındaki hukuki uyuşmazlığın çözümü.'}
 
-Dilekçeyi resmi Türk yargı terminolojisiyle, HUKUKİ SEBEPLER (HMK, TBK, vb.), HUKUKİ DELİLLER ve NETİCE-İ TALEP fıkralarıyla eksiksiz hazırla.
+DİLEKÇE KURALLARI:
+1. Dilekçeyi resmi Türk yargı terminolojisiyle, HUKUKİ SEBEPLER (HMK, TBK, vb.), HUKUKİ DELİLLER ve NETİCE-İ TALEP fıkralarıyla eksiksiz hazırla.
+
+2. EVRAK REFERANSLARI (DİP NOTLAR): Dilekçe metninde atıfta bulunulan her hukuki argüman ve vakıa için, dava dosyasındaki hangi evrakın hangi bölümüne istinaden olduğunu dip not olarak belirt. Örneğin:
+   [1] Kira Sözleşmesi, Madde 5/a - Kira bedeli ve ödeme tarihi hükmü
+   [2] İhtarname (Tarih: 01.05.2026), Tebliğ Şerhi - Noter tasdikli tebliğ belgesi
+   [3] Banka Dekontu (Tarih: 15.03.2026) - Ödeme yapılmadığının ispatı
+
+3. EMSAL KARAR URL'LERİ: Atıfta bulunulan her Yargıtay, Danıştay veya BAM kararının internet adresini dip not olarak ekle. Yargıtay kararları için https://karararama.yargitay.gov.tr sitesindeki arama formatını kullan. Örneğin:
+   [4] Yargıtay 3. HD, 2021/1234 E., 2022/5678 K. - https://karararama.yargitay.gov.tr
+   [5] Yargıtay HGK, 2020/100 E., 2021/200 K. - https://karararama.yargitay.gov.tr
+
+4. Dilekçenin sonuna "DİP NOTLAR VE KAYNAKLAR" başlığıyla tüm referansları toplu listele.
 `;
       const { text, modelUsed } = await callRoutedGemini('petition_draft', prompt, sicil);
       return res.json({ success: true, modelUsed, petitionText: text });
