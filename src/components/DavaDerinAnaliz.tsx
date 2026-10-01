@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Ghost, Target, Brain, 
-  Brain,
+import { Ghost, Target, Brain,
   Zap,
   UploadCloud,
   FileText,
