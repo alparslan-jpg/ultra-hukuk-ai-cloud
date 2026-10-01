@@ -598,6 +598,17 @@ export function AdliDelilVeSahitAjanPaneli({
                       </div>
                     </div>
 
+                    {item.ajanIcgorusleri && (
+                      <div className="bg-rose-950/20 border border-rose-900/40 rounded-xl p-3 mt-3">
+                        <span className="text-[10px] text-rose-400 uppercase tracking-wider block font-bold flex items-center gap-1.5 mb-1">
+                          <Search className="w-3.5 h-3.5" /> Ajan İçgörüleri & Eksik Tamamlama
+                        </span>
+                        <p className="text-xs text-rose-200/80 leading-relaxed italic">
+                          "{item.ajanIcgorusleri}"
+                        </p>
+                      </div>
+                    )}
+
                     <div className="pt-3 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                       <div className="flex items-center gap-1.5 text-slate-400 font-mono text-[11px]">
                         <Scale className="w-3.5 h-3.5 text-amber-400" />

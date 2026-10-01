@@ -3270,6 +3270,12 @@ GÖREV:
 Yukarıdaki tüm verileri mikroskobik düzeyde tara; tanık ifadelerindeki çelişkileri, yazılı delillerle uyuşmayan noktaları, tanıkların taraflarla gizli menfaat/akrabalık bağını, yalan tanıklık emarelerini, sahte/tahrif edilmiş evrak şüphelerini ve EN ÖNEMLİSİ:
 Dosyanın içinden "cımbızla çekilip" davanın seyrini yüzde yüz değiştirebilecek veya davayı doğrudan kazandırabilecek hayati ayrıntıları ortaya çıkar.
 
+ÖZEL TALİMAT (EN KRİTİK NOKTA VE STRATEJİK DETAYLAR):
+"Cımbız" (cimbizGameChangers) dizisinde, tespit ettiğin noktaları şu hiyerarşiyle sun:
+1. İlk kayıt: "EN KRİTİK NOKTA" başlığını taşısın ve TMK m. 1023 (iyiniyet) veya davayı kökten çözecek en ağır usul/esas hatasını içersin.
+2. Sonraki kayıtlar: "DAVA AKIŞINI LEHE ÇEVİRECEK STRATEJİK DETAYLAR" formatında, kökten yolsuz tescil, kesin hüküm yanılgısı (süre eksikliği), eski tarihli hava fotoğrafları/müktesep haklar ve bilirkişi çelişkileri gibi dosyadaki diğer gizli kalmış veya manipüle edilmiş detayları sıralasın.
+Her detaya, diğer arka plan ajanlarından (Şeytanın Avukatı, Usul Ajanı vb.) alınan yapay zeka içgörülerini ve tamamlayıcı eksik tespitlerini "ajanIcgorusleri" alanında ekle.
+
 ŞU JSON ŞEMASINDA YANIT VER:
 {
   "directorVerdict": {
@@ -4626,3 +4632,4 @@ async function startServer() {
 startServer().catch((err) => {
   console.error('Failed to start server:', err);
 });
+
