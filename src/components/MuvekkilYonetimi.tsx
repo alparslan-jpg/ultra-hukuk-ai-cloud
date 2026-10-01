@@ -3,7 +3,7 @@ import {
   Users, UserPlus, FolderPlus, Folder, FileText, ChevronRight,
   ChevronDown, X, Save, Trash2, Upload, Eye, Search,
   Phone, Mail, MapPin, Hash, Calendar, Paperclip, ArrowLeft,
-  Edit2, CheckCircle2, AlertCircle, Tag
+  Edit2, CheckCircle2, AlertCircle, Tag, Gavel
 } from 'lucide-react';
 
 // ── Tipler ──────────────────────────────────────────────────────────────────
@@ -579,5 +579,3 @@ function EvrakKart({ evrak, onSil }: { evrak: MuvekkilEvrak; onSil: () => void }
   );
 }
 
-// Gavel import eklendi (kullanılıyor)
-import { Gavel } from 'lucide-react';

@@ -38,7 +38,8 @@ import {
   UserCheck,
   Zap,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Users,
 } from 'lucide-react';
 import { CaseFileItem } from './MuvekkilDavaPortali';
 import { MuvekkilYonetimi } from './MuvekkilYonetimi';
@@ -253,6 +254,67 @@ export function AjanKonseyiOdasi({
     }
   };
 
+
+  // ── Evrak analiz ──────────────────────────────────────────────────────────
+  const handleFileAction = async (idx: number, action: 'analiz' | 'detayli' | 'cimbiz') => {
+    const f = attachedFiles[idx];
+    if (!f) return;
+    const labels = { analiz: 'Analiz Et', detayli: 'Detaylı Analiz', cimbiz: 'Cımbızla (TCK 272)' };
+    const prompts = {
+      analiz:   `Evrakı analiz et ve özet çıkar:\n\n${f.name}\n${(f.content || '').substring(0, 2000)}`,
+      detayli:  `Evrakı detaylı hukuki analiz et (delil değeri, hukuki nitelendirme, usul geçerliliği):\n\n${f.name}\n${(f.content || '').substring(0, 3000)}`,
+      cimbiz:   `Cımbızlama yap: çelişki, zayıf nokta, sahte bilgi, karşı taraf avantajı tespit et:\n\nTCK 272 / Cımbız modu aktif\n\n${f.name}\n${(f.content || '').substring(0, 3000)}`
+    };
+    const userMsg: MessageItem = { id: `fa-${Date.now()}`, sender: 'lawyer', text: `📎 ${labels[action]}: ${f.name}`, timestamp: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) };
+    setConsultationHistory(p => [...p, userMsg]);
+    setIsConsulting(true);
+    try {
+      const r = await fetch('/api/ai/agent-council-consultation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: prompts[action], contextFiles: [f], activeCaseContext: selectedCaseNote, orchestratorModel, inputMode: 'text' })
+      });
+      const d = await r.json();
+      if (d.success) {
+        setConsultationHistory(p => [...p, { id: `cns-${Date.now()}`, sender: 'council', text: d.answerToUserQuestion || d.orchestratorSummary || 'Analiz tamamlandı.', timestamp: d.timestamp || new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }), consultationData: d.mode !== 'chat' ? d : undefined }]);
+      }
+    } catch (e: any) { alert('Hata: ' + e.message); }
+    finally { setIsConsulting(false); }
+  };
+
+  // ── Dava dosyası oluştur & arşivle ────────────────────────────────────────
+  const handleCreateCaseFile = async () => {
+    const hasContent = inputText.trim() || attachedFiles.length > 0 || selectedCaseNote || consultationHistory.length > 1;
+    if (!hasContent) { alert('Dava dosyası oluşturmak için önce dava bilgisi girin, evrak yükleyin veya danışma yapın.'); return; }
+    setIsSavingCase(true);
+    const history = consultationHistory.map(m => `[${m.sender === 'lawyer' ? 'Avukat' : 'Müşavir'}] ${m.text}`).join('\n\n');
+    const fileNames = attachedFiles.map(f2 => f2.name).join(', ');
+    try {
+      const r = await fetch('/api/ai/agent-council-consultation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `DAVA DOSYASI OLUŞTUR:\n1. Müvekkil kaydı bilgilerini özetle\n2. Dava dosyası özeti (mahkeme, taraflar, konu, talep, deliller)\n3. Kapsamlı dilekçe taslağı (kanun maddeleriyle)\n4. Önerilen dava stratejisi\n\nDanışma geçmişi:\n${history}\n\nEvraklar: ${fileNames || 'Yok'}\nBağlam: ${selectedCaseNote || 'Belirtilmemiş'}\nLehine: ${lehineText || 'Belirtilmemiş'}`,
+          contextFiles: attachedFiles,
+          activeCaseContext: selectedCaseNote,
+          lehine: lehineText,
+          orchestratorModel,
+          inputMode: 'text'
+        })
+      });
+      const d = await r.json();
+      const summary = d.answerToUserQuestion || d.orchestratorSummary || 'Dava dosyası oluşturuldu.';
+      const newCase = { id: `case-${Date.now()}`, date: new Date().toISOString(), lawyerName: lawyerName || '', lawyerSicilNo: lawyerSicilNo || '', caseContext: selectedCaseNote || 'Dava Dosyası', lehine: lehineText, files: attachedFiles.map(f2 => f2.name), summary, consultationCount: consultationHistory.length };
+      const updated = [newCase, ...archivedCases].slice(0, 50);
+      setArchivedCases(updated);
+      localStorage.setItem('ultra_archived_cases', JSON.stringify(updated));
+      setConsultationHistory(p => [...p, { id: `arch-${Date.now()}`, sender: 'council', text: `✅ DAVA DOSYASI OLUŞTURULDU VE ARŞİVLENDİ\n\n${summary}`, timestamp: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) }]);
+      setSavedCaseSuccess(true);
+      setTimeout(() => setSavedCaseSuccess(false), 4000);
+    } catch (e: any) { alert('Hata: ' + e.message); }
+    finally { setIsSavingCase(false); }
+  };
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Top Banner & Multi-Agent Matrix Bar */}
@@ -354,6 +416,7 @@ export function AjanKonseyiOdasi({
             </div>
           </div>
         </div>
+      </div>{/* end Top Banner */}
 
       {/* BODY: Modül Sidebar + Chat */}
       <div className="flex flex-1 overflow-hidden" style={{minHeight: 0}}>
@@ -366,6 +429,35 @@ export function AjanKonseyiOdasi({
             {sidebarOpen ? <ChevronLeft className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
           </button>
           <div className="flex-1 overflow-y-auto py-1">
+            {/* 1. SIRADA: Müvekkil & Dava Dosyaları */}
+            <button
+              type="button"
+              title="Müvekkil & Dava Dosyaları"
+              onClick={() => {
+                setShowMuvekkilPanel(p => !p);
+                setActiveModule('muvekkil');
+              }}
+              className={`w-full flex items-center gap-2 px-2.5 py-2 transition text-left border-b border-slate-200 dark:border-slate-800 ${
+                showMuvekkilPanel
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60'
+              }`}
+            >
+              <Users className={`w-4 h-4 shrink-0 ${showMuvekkilPanel ? 'text-white' : 'text-indigo-600 dark:text-indigo-400'}`} />
+              {sidebarOpen && (
+                <span className="min-w-0 flex-1">
+                  <span className={`block text-[11px] font-bold truncate leading-tight ${showMuvekkilPanel ? 'text-white' : 'text-slate-900 dark:text-slate-100'}`}>
+                    1. Müvekkil & Dava Dosyaları
+                  </span>
+                  <span className={`block text-[9px] truncate ${showMuvekkilPanel ? 'text-indigo-100' : 'text-indigo-600 dark:text-indigo-400 font-medium'}`}>
+                    Müvekkil, Dava & Evraklar
+                  </span>
+                </span>
+              )}
+              {showMuvekkilPanel && sidebarOpen && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+              )}
+            </button>
             {[
               { id:'arsiv',     Icon:Archive,        label:'Arşivlenen Davalar',          sub:`${archivedCases.length} Arşiv`,  color:'text-amber-500'   },
               { id:'musavir',   Icon:Brain,          label:'Baş Müşavir & Ajan Konseyi',  sub:'Sesli + 4 Ajan',               color:'text-indigo-500'  },
@@ -414,6 +506,16 @@ export function AjanKonseyiOdasi({
         <div className="flex-1 flex flex-col overflow-hidden" style={{minHeight: 0}}>
 
       {/* Main Conversation & Roadmap Display */}
+        {showMuvekkilPanel ? (
+          <MuvekkilYonetimi
+            onCaseSelected={(ctx) => {
+              setSelectedCaseNote(`Müvekkil: ${ctx.clientName} | Dava: ${ctx.caseNumber} - ${ctx.subject}`);
+              setAttachedFiles(ctx.files.map(f => ({ name: f.name, content: f.content || '', type: f.type || 'Hukuki Belge' })));
+              setShowMuvekkilPanel(false);
+              setActiveModule('musavir');
+            }}
+          />
+        ) : (
       <div className="flex-1 bg-white dark:bg-[#0e1524] flex flex-col overflow-hidden" style={{minHeight: 0}}>
         {/* Messages Stream */}
         <div className="flex-1 p-5 overflow-y-auto space-y-6">
@@ -800,10 +902,22 @@ export function AjanKonseyiOdasi({
               <p className="text-[10px] text-slate-400 font-semibold mb-1.5">📎 Yüklenen Evraklar ({attachedFiles.length}):</p>
               <div className="flex flex-wrap gap-1.5">
                 {attachedFiles.map((f, idx) => (
-                  <div key={idx} className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 px-2.5 py-1.5 rounded-lg text-[10px] border border-slate-200 dark:border-slate-800">
-                    <FileText className="w-3 h-3 text-sky-500 shrink-0" />
-                    <span className="text-slate-700 dark:text-slate-300 max-w-[150px] truncate">{f.name}</span>
-                    <button type="button" onClick={() => removeAttachedFile(idx)} className="text-rose-400 hover:text-rose-300 p-0.5">
+                  <div key={idx} className="flex flex-wrap items-center gap-1.5 bg-slate-100 dark:bg-slate-900 px-2.5 py-1.5 rounded-lg text-[10px] border border-slate-200 dark:border-slate-800">
+                    <FileText className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                    <span className="text-slate-700 dark:text-slate-300 max-w-[120px] truncate font-medium">{f.name}</span>
+                    <button type="button" disabled={isConsulting} onClick={() => handleFileAction(idx, 'analiz')}
+                      className="px-1.5 py-0.5 rounded bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 text-[9px] font-semibold hover:bg-sky-200 dark:hover:bg-sky-800 transition disabled:opacity-40 flex items-center gap-0.5">
+                      <Sparkles className="w-2.5 h-2.5" />Analiz Et
+                    </button>
+                    <button type="button" disabled={isConsulting} onClick={() => handleFileAction(idx, 'detayli')}
+                      className="px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-[9px] font-semibold hover:bg-indigo-200 dark:hover:bg-indigo-800 transition disabled:opacity-40 flex items-center gap-0.5">
+                      <Layers className="w-2.5 h-2.5" />Detaylı Analiz
+                    </button>
+                    <button type="button" disabled={isConsulting} onClick={() => handleFileAction(idx, 'cimbiz')}
+                      className="px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300 text-[9px] font-semibold hover:bg-rose-200 dark:hover:bg-rose-800 transition disabled:opacity-40 flex items-center gap-0.5">
+                      <AlertTriangle className="w-2.5 h-2.5" />Cımbızla
+                    </button>
+                    <button type="button" onClick={() => removeAttachedFile(idx)} className="text-rose-400 hover:text-rose-300 p-0.5 ml-auto" title="Evrakı Kaldır">
                       <X className="w-3 h-3" />
                     </button>
                   </div>
@@ -857,6 +971,33 @@ export function AjanKonseyiOdasi({
               />
             </div>
 
+            {/* Dava Dosyası Oluştur */}
+            <button
+              type="button"
+              disabled={isSavingCase || isConsulting}
+              onClick={handleCreateCaseFile}
+              className={`px-3 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition shadow-sm shrink-0 ${
+                savedCaseSuccess
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white disabled:opacity-40'
+              }`}
+              title="Dava dosyası oluştur, müvekkil kaydı yap, dilekçe taslağı üret ve arşivle"
+            >
+              {isSavingCase ? (
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : savedCaseSuccess ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Kaydedildi!</span>
+                </>
+              ) : (
+                <>
+                  <FolderPlus className="w-4 h-4" />
+                  <span className="hidden sm:inline whitespace-nowrap">Dava Dosyası Oluştur</span>
+                </>
+              )}
+            </button>
+
             {/* Send Button */}
             <button
               type="button"
@@ -874,7 +1015,7 @@ export function AjanKonseyiOdasi({
           </div>
         </div>
       </div>
-      </div>{/* end main conv div */}
+        )}
         </div>{/* end right panel */}
       </div>{/* end sidebar flex row */}
     </div>
