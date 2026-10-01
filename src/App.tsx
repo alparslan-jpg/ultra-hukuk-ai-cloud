@@ -527,400 +527,90 @@ export default function App() {
             PAGE 1: ANA SAYFA (HOME HUB & BÜTÜNLÜKLÜ MODÜL MERKEZİ)
             ======================================================== */}
         {currentPage === 'home' && (
-          <div className="space-y-6">
-            {/* Welcome Banner Card */}
-            <div className="bg-gradient-to-r from-amber-500/10 via-slate-900/5 to-slate-900/10 dark:from-amber-500/10 dark:via-[#141d30] dark:to-[#0e1524] border border-amber-500/20 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm relative overflow-hidden backdrop-blur-md">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-                <div className="space-y-2.5">
-                  {/* Clean Unboxed Metadata Line with subtle separators */}
-                  <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
-                    <span className="font-semibold text-amber-700 dark:text-amber-300">1136 Sayılı Avukatlık Kanunu Uyumlu</span>
-                    <span aria-hidden="true">·</span>
-                    <span className="text-emerald-700 dark:text-emerald-400 font-medium">Veri İzolasyonu Aktif</span>
-                    <span aria-hidden="true">·</span>
-                    {kvkkConsentRecord ? (
-                      <button
-                        type="button"
-                        onClick={() => setKvkkModalOpen(true)}
-                        className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold hover:underline cursor-pointer"
-                        title="KVKK Onay Detaylarını Görüntüle"
-                      >
-                        <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>KVKK & AI Onaylı</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setKvkkModalOpen(true)}
-                        className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 font-bold hover:underline animate-pulse cursor-pointer"
-                        title="KVKK Aydınlatma Metnini Onaylayın"
-                      >
-                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                        <span>KVKK Onayı Bekleniyor</span>
-                      </button>
-                    )}
+          <div className="flex overflow-hidden" style={{height: 'calc(100vh - 76px)'}}>
+            <aside className="w-60 shrink-0 bg-white dark:bg-[#0e1524] border-r border-slate-200 dark:border-slate-800 flex flex-col overflow-y-auto">
+              <div className="p-4 border-b border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                    {currentLawyer.fullName.replace('Av. ', '').charAt(0)}
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight" style={{ textWrap: 'balance' } as React.CSSProperties}>
-                    Hoş Geldiniz, <span className="text-amber-600 dark:text-amber-400">{currentLawyer.fullName}</span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">{currentLawyer.fullName}</p>
+                    <p className="text-[10px] text-slate-500 font-mono truncate">{currentLawyer.baroAdi}</p>
+                    <p className="text-[10px] text-slate-500 font-mono">Sicil: {currentLawyer.sicilNo}</p>
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="bg-slate-50 dark:bg-[#141d30] rounded-xl p-2 text-center">
+                    <p className="text-lg font-bold text-sky-600 dark:text-sky-400 font-mono">{lawyerClients.length}</p>
+                    <p className="text-[9px] text-slate-500 uppercase font-semibold">Muvekkil</p>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-[#141d30] rounded-xl p-2 text-center">
+                    <p className="text-lg font-bold text-amber-600 dark:text-amber-400 font-mono">{totalActiveCasesCount}</p>
+                    <p className="text-[9px] text-slate-500 uppercase font-semibold">Derdest</p>
+                  </div>
+                </div>
+              </div>
+              <nav className="flex-1 p-2 space-y-0.5">
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1.5">Ana Islemler</p>
+                <button type="button" onClick={() => setCurrentPage('clients')} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-white text-xs font-bold transition shadow-sm active:scale-95 mb-1">
+                  <UserPlus className="w-4 h-4 shrink-0" /><span>Muvekkil / Dava Ekle</span>
+                </button>
+                <button type="button" onClick={() => setCurrentPage('clients')} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141d30] text-xs font-semibold text-slate-700 dark:text-slate-300 transition">
+                  <Users className="w-3.5 h-3.5 shrink-0 text-sky-500" /><span>Muvekkil and Davalar</span>
+                </button>
+                <button type="button" onClick={() => setCurrentPage('petitions')} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141d30] text-xs font-semibold text-slate-700 dark:text-slate-300 transition">
+                  <FileText className="w-3.5 h-3.5 shrink-0 text-indigo-500" /><span>Dilekce Laboratuvari</span>
+                </button>
+                <button type="button" onClick={() => setCurrentPage('analyzer')} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141d30] text-xs font-semibold text-slate-700 dark:text-slate-300 transition">
+                  <Brain className="w-3.5 h-3.5 shrink-0 text-emerald-500" /><span>Evrak Analizoru</span>
+                </button>
+                <button type="button" onClick={() => setCurrentPage('forensic')} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141d30] text-xs font-semibold text-slate-700 dark:text-slate-300 transition">
+                  <Crosshair className="w-3.5 h-3.5 shrink-0 text-rose-500" /><span>Adli Cimbiz Ajani</span>
+                </button>
+                <button type="button" onClick={() => setCurrentPage('legislation')} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141d30] text-xs font-semibold text-slate-700 dark:text-slate-300 transition">
+                  <BookOpen className="w-3.5 h-3.5 shrink-0 text-amber-500" /><span>Mevzuat and Ictihat</span>
+                </button>
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1.5 pt-3">Araclar</p>
+                <button type="button" onClick={() => setHesaplamaModalOpen(true)} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141d30] text-xs font-semibold text-slate-700 dark:text-slate-300 transition">
+                  <Calculator className="w-3.5 h-3.5 shrink-0 text-orange-500" /><span>Hukuki Hesaplama</span>
+                </button>
+                <button type="button" onClick={() => setCurrentPage('workspace_full')} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141d30] text-xs font-semibold text-slate-700 dark:text-slate-300 transition">
+                  <Layers className="w-3.5 h-3.5 shrink-0 text-violet-500" /><span>Calisma Masasi</span>
+                </button>
+                <button type="button" onClick={() => setCurrentPage('apk_download')} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141d30] text-xs font-semibold text-slate-700 dark:text-slate-300 transition">
+                  <Smartphone className="w-3.5 h-3.5 shrink-0 text-teal-500" /><span>Mobil APK Indir</span>
+                </button>
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1.5 pt-3">Sistem</p>
+                <button type="button" onClick={() => setKvkkModalOpen(true)} className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition ${kvkkConsentRecord ? 'hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400' : 'bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 animate-pulse'}`}>
+                  <ShieldCheck className="w-3.5 h-3.5 shrink-0" /><span>{kvkkConsentRecord ? 'KVKK Onaylı' : 'KVKK Onayı !'}</span>
+                </button>
+                <button type="button" onClick={() => { window.location.hash = '#admin'; setCurrentMode('admin'); }} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/20 text-xs font-semibold text-rose-600 dark:text-rose-400 transition">
+                  <Shield className="w-3.5 h-3.5 shrink-0" /><span>Adminator Paneli</span>
+                </button>
+              </nav>
+              <div className="p-3 border-t border-slate-200 dark:border-slate-800 text-center">
+                <p className="text-[9px] text-slate-400 font-mono">Ultra Hukuk AI</p>
+              </div>
+            </aside>
+            <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+              <div className="px-5 py-3 bg-white dark:bg-[#0e1524] border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
+                <div>
+                  <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <Scale className="w-4 h-4 text-amber-500" />
+                    Bas Hukuk Musaviri and Ajan Konseyi Konsultasyon Odasi
                   </h2>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
-                    Kişisel çalışma alanınızdasınız. Aşağıdaki modül kartlarını kullanarak müvekkil dosyalarınızı yönetebilir, 
-                    tanık ifadelerindeki çelişkileri cımbızlayabilir, evraklarınızı Gemini Flash/Pro ile analiz edebilir ve sicilinize özel Android APK'yı indirebilirsiniz.
-                  </p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Coklu Model Orkestrasyonu - Gemini Pro + Flash - 4 Uzman Ajan - UYAP Dilekce Mimari</p>
                 </div>
-
-                {/* Quick Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-2.5 self-start lg:self-center shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage('workspace_full')}
-                    className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs flex items-center gap-2 shadow-sm transition active:scale-95"
-                  >
-                    <Layers className="w-4 h-4" />
-                    <span>Tümleşik Çalışma Masası</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage('apk_download')}
-                    className="px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs flex items-center gap-2 shadow-sm transition active:scale-95"
-                  >
-                    <Smartphone className="w-4 h-4 text-emerald-500" />
-                    <span>Kişisel APK İndir</span>
-                  </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400">Ajanlar Aktif</span>
                 </div>
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <AjanKonseyiOdasi lawyerName={currentLawyer.fullName} lawyerSicilNo={currentLawyer.sicilNo} />
               </div>
             </div>
-
-            {/* Quick KPI Stats Row (High-density, tabular figures, single elevation) */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white dark:bg-[#0e1524] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm space-y-1">
-                <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
-                  <span className="font-medium">Aktif Müvekkiller</span>
-                  <Users className="w-4 h-4 text-sky-500" />
-                </div>
-                <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono tabular-nums">
-                  {lawyerClients.length}
-                </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Bu avukata ait portföy
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-[#0e1524] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm space-y-1">
-                <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
-                  <span className="font-medium">Derdest Dava Dosyaları</span>
-                  <FolderOpen className="w-4 h-4 text-amber-500" />
-                </div>
-                <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono tabular-nums flex items-center justify-between">
-                  <span>{totalActiveCasesCount}</span>
-                  {totalArchivedCasesCount > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setWorkspaceInitialTab('archived_cases');
-                        setCurrentPage('workspace_full');
-                      }}
-                      className="text-[11px] font-sans font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 transition cursor-pointer flex items-center gap-1"
-                      title="Arşivlenmiş davaları görüntüle"
-                    >
-                      <span>+{totalArchivedCasesCount} Arşiv</span>
-                    </button>
-                  )}
-                </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
-                  {totalFilesCount} kayıtlı delil evrakı
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-[#0e1524] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm space-y-1">
-                <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
-                  <span className="font-medium">Lisans Kalan Süre</span>
-                  <Clock className="w-4 h-4 text-emerald-500" />
-                </div>
-                <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">
-                  {currentLawyer.daysRemaining} Gün
-                </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Donanım mühürlü tekil lisans
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-[#0e1524] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm space-y-1">
-                <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
-                  <span className="font-medium">Mobil APK Güvenliği</span>
-                  <Smartphone className="w-4 h-4 text-purple-500" />
-                </div>
-                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 mt-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                  <span>24 Saat Kısıtlamalı</span>
-                </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Tek kullanımlık kurulum kilidi
-                </div>
-              </div>
-            </div>
-
-            {/* Günlük Görev ve Süre Hatırlatıcıları: Daily Task Reminders Compact Notification List */}
-            <DailyTaskReminders
-              lawyer={currentLawyer}
-              clients={lawyerClients}
-              onOpenCase={(clientId, caseId) => {
-                setWorkspaceInitialTab('portal');
-                setCurrentPage('clients');
-              }}
-              onNavigateToPetition={(caseNumber, subject) => {
-                setCurrentPage('petitions');
-              }}
-              onNavigateToFullTimeline={() => {
-                setWorkspaceInitialTab('temporal');
-                setCurrentPage('workspace_full');
-              }}
-            />
-
-            {/* Canlı Recharts Veri Görselleştirmesi: Aylık Dava Çözüm Oranı & Hukuk Dalları Dağılımı */}
-            <LawyerCaseAnalyticsCharts
-              lawyer={currentLawyer}
-              clients={lawyerClients}
-              onNavigateToArchived={() => {
-                setWorkspaceInitialTab('archived_cases');
-                setCurrentPage('workspace_full');
-              }}
-              onNavigateToCases={() => {
-                setCurrentPage('clients');
-              }}
-            />
-
-            {/* Dinamik Dava Süreleri ve Duruşma Zaman Çizelgesi (Visual Timeline Component) */}
-            <HomeCaseTimeline
-              lawyerName={currentLawyer.fullName}
-              lawyerSicilNo={currentLawyer.sicilNo}
-              clients={lawyerClients}
-              onOpenCase={(clientId, caseId) => {
-                setCurrentPage('clients');
-              }}
-              onNavigateToPetition={(draftNote) => {
-                setCurrentPage('petitions');
-              }}
-              onNavigateToFullTimeline={() => {
-                setCurrentPage('workspace_full');
-              }}
-            />
-
-            {/* Interactive Sub-Page Navigation Cards Grid */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-amber-500" />
-                Hukuk Portalı Alt Sayfaları ve Modülleri
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Modül 1: Müvekkil & Dava Portalı */}
-                <div
-                  onClick={() => setCurrentPage('clients')}
-                  className="group bg-white dark:bg-[#131d31] border border-slate-200 dark:border-slate-800 hover:border-sky-500/50 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-600 dark:text-sky-400 group-hover:scale-110 transition-transform">
-                        <Users className="w-5 h-5" />
-                      </div>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-700 dark:text-sky-300 font-semibold">
-                        Hiyerarşik Portföy
-                      </span>
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm group-hover:text-sky-500 transition-colors">
-                        Müvekkil & Dava Portalı
-                      </h4>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-                        Müvekkil kartları, UYAP dava safahatları, tensip zaptı kayıtları ve taraf delillerini yönetin.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="pt-4 mt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-semibold text-sky-600 dark:text-sky-400">
-                    <span>Dosyaları İncele</span>
-                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-
-                {/* Modül 2: Adli Hakikat & Cımbız Ajanı */}
-                <div
-                  onClick={() => setCurrentPage('forensic')}
-                  className="group bg-white dark:bg-[#131d31] border border-slate-200 dark:border-slate-800 hover:border-rose-500/50 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-600 dark:text-rose-400 group-hover:scale-110 transition-transform">
-                        <Crosshair className="w-5 h-5" />
-                      </div>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-700 dark:text-rose-300 font-semibold">
-                        TCK 272 Çelişki
-                      </span>
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm group-hover:text-rose-500 transition-colors">
-                        Adli Hakikat & Cımbız Ajanı
-                      </h4>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-                        Tanık beyanları ve polis tutanaklarındaki mantıksal ve kronolojik çelişkileri otomatik cımbızlayın.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="pt-4 mt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-semibold text-rose-600 dark:text-rose-400">
-                    <span>Çelişkileri Tara</span>
-                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-
-                {/* Modül 3: Dava Evrak Analizörü (Flash/Pro) */}
-                <div
-                  onClick={() => setCurrentPage('analyzer')}
-                  className="group bg-white dark:bg-[#131d31] border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
-                        <Brain className="w-5 h-5" />
-                      </div>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-semibold">
-                        Flash & Pro Analiz
-                      </span>
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm group-hover:text-emerald-500 transition-colors">
-                        Dava Evrak Analizörü
-                      </h4>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-                        Tensip zaptı, fatura ve delil dosyalarını yükleyin. Flash ile hızlı özet, Pro ile HMK 200 senet denetimi yürütün.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="pt-4 mt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                    <span>Evrak Analizini Başlat</span>
-                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-
-                {/* Modül 4: UYAP Dava Dilekçesi & Harp Odası */}
-                <div
-                  onClick={() => setCurrentPage('petitions')}
-                  className="group bg-white dark:bg-[#131d31] border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
-                        <FileText className="w-5 h-5" />
-                      </div>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-semibold">
-                        UYAP & Dilekçe
-                      </span>
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm group-hover:text-indigo-500 transition-colors">
-                        Dilekçe Laboratuvarı & Harp Odası
-                      </h4>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-                        4 uzman ajan konsültasyonuyla savunma kurgusu hazırlayın, şeytanın avukatı taktiğiyle karşı iddiaları çürütün.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="pt-4 mt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-semibold text-indigo-600 dark:text-indigo-400">
-                    <span>Dilekçeyi Düzenle</span>
-                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-
-                {/* Modül 5: Mevzuat & Emsal İçtihat & Hukuk Terimleri Sözlüğü */}
-                <div
-                  onClick={() => {
-                    setWorkspaceInitialTab('mevzuat');
-                    setCurrentPage('legislation');
-                  }}
-                  className="group bg-white dark:bg-[#131d31] border border-slate-200 dark:border-slate-800 hover:border-amber-500/50 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform">
-                        <BookOpen className="w-5 h-5" />
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-500/30">
-                          AI Sözlük
-                        </span>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 font-semibold">
-                          HMK / TBK / TMK
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm group-hover:text-amber-500 transition-colors">
-                        Pozitif Mevzuat & Terimler Sözlüğü
-                      </h4>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-                        Madde metinleri, semantik arama ve karmaşık kavramların yapay zeka ile otomatik açıklandığı Hukuk Terimleri Sözlüğü.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="pt-4 mt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-semibold text-amber-600 dark:text-amber-400">
-                    <span>Kanunları & Terimleri İncele</span>
-                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-
-                {/* Modül 6: Kişisel Mobil APK & Kurulum Mühürleme */}
-                <div
-                  onClick={() => setCurrentPage('apk_download')}
-                  className="group bg-white dark:bg-[#131d31] border border-slate-200 dark:border-slate-800 hover:border-teal-500/50 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-600 dark:text-teal-400 group-hover:scale-110 transition-transform">
-                        <Smartphone className="w-5 h-5" />
-                      </div>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 font-semibold">
-                        Sicil Mühürlü APK
-                      </span>
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm group-hover:text-teal-500 transition-colors">
-                        Kişisel Mobil APK & Lisans
-                      </h4>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-                        Sicil numaranıza özel Android APK'yı indirin. 24 saat kurulum süreli ve tek kullanımlık donanım kilidi mevcuttur.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="pt-4 mt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-semibold text-teal-600 dark:text-teal-400">
-                    <span>APK Paketini İndir</span>
-                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Case List Section with Live Search & Filter Bar scoped to this lawyer */}
-            <LawyerCaseListSection
-              lawyer={currentLawyer}
-              clients={lawyerClients}
-              onOpenCase={(clientId, caseId) => {
-                setWorkspaceInitialTab('portal');
-                setCurrentPage('clients');
-              }}
-              onOpenAllCases={() => {
-                setWorkspaceInitialTab('portal');
-                setCurrentPage('clients');
-              }}
-              onNavigateToAnalyzer={(caseNumber) => {
-                setCurrentPage('analyzer');
-              }}
-              onNavigateToPetition={(caseNumber, subject) => {
-                setCurrentPage('petitions');
-              }}
-              onNavigateToArchived={() => {
-                setWorkspaceInitialTab('archived_cases');
-                setCurrentPage('workspace_full');
-              }}
-            />
           </div>
         )}
 
