@@ -24,7 +24,21 @@ import {
   HelpCircle,
   Cpu,
   MessageSquare,
-  X
+  X,
+  Archive,
+  FolderPlus,
+  Crosshair,
+  Activity,
+  BarChart3,
+  FlaskConical,
+  Swords,
+  Timer,
+  CalendarDays,
+  ClipboardCheck,
+  UserCheck,
+  Zap,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { CaseFileItem } from './MuvekkilDavaPortali';
 
@@ -68,7 +82,6 @@ export function AjanKonseyiOdasi({
   });
   const [isSavingCase, setIsSavingCase] = useState(false);
   const [savedCaseSuccess, setSavedCaseSuccess] = useState(false);
-  const [fileActions, setFileActions] = useState<Record<number, string | null>>({});
 
   // Input states
   const [inputText, setInputText] = useState('');
@@ -239,7 +252,7 @@ export function AjanKonseyiOdasi({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="h-full flex flex-col overflow-hidden">
       {/* Top Banner & Multi-Agent Matrix Bar */}
       <div className="bg-white dark:bg-[#0e1524] border-b border-slate-200 dark:border-slate-800/80 px-5 py-4 shadow-sm relative overflow-hidden backdrop-blur-md shrink-0">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
@@ -339,7 +352,64 @@ export function AjanKonseyiOdasi({
             </div>
           </div>
         </div>
-      </div>
+
+      {/* BODY: Modül Sidebar + Chat */}
+      <div className="flex flex-1 overflow-hidden" style={{minHeight: 0}}>
+
+        {/* LEFT MODULE SIDEBAR */}
+        <div className={`shrink-0 flex flex-col bg-white dark:bg-[#0a1020] border-r border-slate-200 dark:border-slate-800 transition-all duration-200 ${sidebarOpen ? 'w-52' : 'w-10'}`}>
+          <button type="button" onClick={() => setSidebarOpen(p => !p)}
+            className="h-8 flex items-center justify-center border-b border-slate-200 dark:border-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition shrink-0"
+            title={sidebarOpen ? 'Kenar çubuğunu kapat' : 'Kenar çubuğunu aç'}>
+            {sidebarOpen ? <ChevronLeft className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          </button>
+          <div className="flex-1 overflow-y-auto py-1">
+            {[
+              { id:'arsiv',     Icon:Archive,        label:'Arşivlenen Davalar',          sub:`${archivedCases.length} Arşiv`,  color:'text-amber-500'   },
+              { id:'musavir',   Icon:Brain,          label:'Baş Müşavir & Ajan Konseyi',  sub:'Sesli + 4 Ajan',               color:'text-indigo-500'  },
+              { id:'git',       Icon:RefreshCw,      label:'Seçmeli Özellikler & Git',    sub:'GitHub Sync',                  color:'text-emerald-500' },
+              { id:'cimbiz',    Icon:Crosshair,      label:'Adli Hakikat & Cımbız Ajanı', sub:'TCK 272 / Cımbız',           color:'text-rose-500',   page:'forensic' },
+              { id:'apk',       Icon:Zap,            label:'Kişisel Mobil APK',            sub:'Sicil Mühürlü',               color:'text-teal-500',   page:'apk_download' },
+              { id:'derin',     Icon:Activity,       label:'Dava Derin Analiz',            sub:'Flash & Pro',                 color:'text-purple-500', page:'analyzer' },
+              { id:'analytics', Icon:BarChart3,      label:'Case Analytics',               sub:'D3.js',                       color:'text-cyan-500',   page:'workspace_full' },
+              { id:'lab',       Icon:FlaskConical,   label:'Dava Analiz Laboratuvarı',    sub:'',                            color:'text-green-500',  page:'analyzer' },
+              { id:'brifing',   Icon:FileText,       label:'Stratejik Dava Brifingi',     sub:'',                            color:'text-blue-500'    },
+              { id:'harp',      Icon:Swords,         label:'Harp Odası & Karşı Savunma',  sub:'',                            color:'text-red-500',    page:'forensic' },
+              { id:'faiz',      Icon:Timer,          label:'Zamanaşımı & Faiz',           sub:'',                            color:'text-orange-500', page:'workspace_full' },
+              { id:'takvim',    Icon:CalendarDays,   label:'Dava Zaman Çizelgesi & Takvim', sub:'',                        color:'text-sky-500',    page:'workspace_full' },
+              { id:'usul',      Icon:ClipboardCheck, label:'35 Noktalı Usul Denetimi',    sub:'',                            color:'text-violet-500', page:'workspace_full' },
+              { id:'bilirkisi', Icon:UserCheck,      label:'Bilirkişi İtiraz Lab (HMK 281)', sub:'',                        color:'text-pink-500',   page:'workspace_full' },
+              { id:'durusma',   Icon:Gavel,          label:'Duruşma Stratejisi',           sub:'',                            color:'text-amber-600',  page:'workspace_full' },
+              { id:'sesli',     Icon:Mic,            label:'Adli Sesli Dikte & Duruşma Zaptı', sub:'',                      color:'text-rose-400'    },
+              { id:'dilekce',   Icon:FileCheck2,     label:'UYAP Dilekçe Lab',             sub:'',                            color:'text-indigo-400', page:'petitions' },
+              { id:'emsal',     Icon:Layers,         label:'Emsal Karar',                  sub:'',                            color:'text-yellow-500', page:'workspace_full' },
+              { id:'ocr',       Icon:Upload,         label:'Adli Belge / Evrak Okuma (OCR)', sub:'',                         color:'text-emerald-400',page:'analyzer' },
+              { id:'denetim',   Icon:HelpCircle,     label:'Denetleme Paneli (Mevzuat & Atıf)', sub:'',                    color:'text-slate-400',  page:'legislation' },
+              { id:'capraz',    Icon:MessageSquare,  label:'Mevzuat Çapraz Doğrulama',    sub:'',                            color:'text-lime-500',   page:'legislation' },
+              { id:'mevzuat',   Icon:Sparkles,       label:'Mevzuat Sorgulama',            sub:'',                            color:'text-blue-400',   page:'legislation' },
+              { id:'sozluk',    Icon:ChevronDown,    label:'Hukuk Terimleri Sözlüğü',    sub:'',                            color:'text-amber-400',  page:'legislation' },
+            ].map(({ id, Icon, label, sub, color, page }: any) => (
+              <button key={id} type="button" title={label}
+                onClick={() => { setActiveModule(id); if (page && onNavigateTo) onNavigateTo(page); }}
+                className={`w-full flex items-center gap-2 px-2 py-1.5 transition text-left ${activeModule===id ? 'bg-indigo-50 dark:bg-indigo-950/40 border-r-2 border-indigo-500' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
+              >
+                <Icon className={`w-3.5 h-3.5 shrink-0 ${color}`} />
+                {sidebarOpen && (
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[10px] font-semibold text-slate-700 dark:text-slate-200 truncate leading-tight">{label}</span>
+                    {sub && <span className="block text-[9px] text-slate-400 dark:text-slate-500 truncate">{sub}</span>}
+                  </span>
+                )}
+                {id==='arsiv' && archivedCases.length>0 && sidebarOpen && (
+                  <span className="shrink-0 text-[8px] bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-1 py-0.5 rounded-full font-bold">{archivedCases.length}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* RIGHT: Chat Panel */}
+        <div className="flex-1 flex flex-col overflow-hidden" style={{minHeight: 0}}>
 
       {/* Main Conversation & Roadmap Display */}
       <div className="flex-1 bg-white dark:bg-[#0e1524] flex flex-col overflow-hidden" style={{minHeight: 0}}>
@@ -802,6 +872,9 @@ export function AjanKonseyiOdasi({
           </div>
         </div>
       </div>
+      </div>{/* end main conv div */}
+        </div>{/* end right panel */}
+      </div>{/* end sidebar flex row */}
     </div>
   );
 }
