@@ -384,7 +384,7 @@ export function MuvekkilDavaPortali({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto w-full px-2">
       {/* Top Header Card */}
       <div className="bg-white dark:bg-[#0e1524] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm relative overflow-hidden backdrop-blur-md">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
@@ -394,13 +394,13 @@ export function MuvekkilDavaPortali({
                 <Users className="w-5 h-5" />
               </span>
               <div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
                   Müvekkil & Dava Dosyaları Yönetim Portalı
-                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                  <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
                     · Hiyerarşik Dosya Ağı
                   </span>
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   Müvekkil &rarr; Dava Dosyaları &rarr; Evraklar hiyerarşisi. Dosyaları tek tek veya seçili olarak toplu analiz edebilir ve indirebilirsiniz.
                 </p>
               </div>
@@ -412,9 +412,9 @@ export function MuvekkilDavaPortali({
             <button
               type="button"
               onClick={() => setShowAddClientModal(true)}
-              className="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"
+              className="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold flex items-center gap-1.5 transition shadow-sm"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4" />
               <span>Yeni Müvekkil Ekle</span>
             </button>
 
@@ -422,10 +422,10 @@ export function MuvekkilDavaPortali({
               <button
                 type="button"
                 onClick={onSyncGit}
-                className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition"
+                className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-sm font-semibold flex items-center gap-1.5 transition"
                 title="Değişiklikleri GitHub ile senkronize et"
               >
-                <RefreshCw className="w-3.5 h-3.5 text-emerald-500" />
+                <RefreshCw className="w-4 h-4 text-emerald-500" />
                 <span>GitHub Senkronize</span>
               </button>
             )}
@@ -438,27 +438,27 @@ export function MuvekkilDavaPortali({
         {/* Column 1: Müvekkil Listesi (3 Cols) */}
         <div className="lg:col-span-3 bg-white dark:bg-[#0e1524] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-sky-500" />
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <Users className="w-4 h-4 text-sky-500" />
               Müvekkiller ({filteredClients.length})
             </h3>
-            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">1. Kademe</span>
+            <button onClick={() => setShowAddClientModal(true)} className="px-3 py-1.5 bg-sky-600/20 text-sky-600 dark:text-sky-400 hover:bg-sky-600/30 rounded-lg text-base font-bold flex items-center gap-1"><Plus className="w-4 h-4"/> Müvekkil Ekle</button>
           </div>
 
           {/* Search & Filter */}
           <div className="space-y-2">
             <div className="relative">
-              <Search className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 placeholder="Müvekkil ara..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-[#141d30] border border-slate-200 dark:border-slate-800 rounded-xl pl-7 pr-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-50 dark:bg-[#141d30] border border-slate-200 dark:border-slate-800 rounded-xl pl-7 pr-2.5 py-1.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-sky-500"
               />
             </div>
 
-            <div className="flex gap-1 text-[10px]">
+            <div className="flex gap-1 text-xs">
               <button
                 type="button"
                 onClick={() => setClientTypeFilter('All')}
@@ -490,7 +490,7 @@ export function MuvekkilDavaPortali({
           </div>
 
           {/* Client List Items */}
-          <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-[65vh] overflow-y-auto pr-1">
             {filteredClients.map((client) => {
               const isSelected = selectedClientId === client.id;
               return (
@@ -501,7 +501,7 @@ export function MuvekkilDavaPortali({
                     setSelectedCaseId(client.cases[0]?.id || null);
                     setSelectedFileIds([]);
                   }}
-                  className={`p-3 rounded-xl border text-xs cursor-pointer transition ${
+                  className={`p-4 rounded-xl border text-sm cursor-pointer transition ${
                     isSelected
                       ? 'bg-sky-50/80 dark:bg-sky-950/30 border-sky-400 dark:border-sky-500/50 shadow-sm ring-1 ring-sky-500/20'
                       : 'bg-white dark:bg-[#141d30]/60 border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-[#141d30]'
@@ -509,11 +509,11 @@ export function MuvekkilDavaPortali({
                 >
                   <div className="flex items-start justify-between gap-1 mb-1">
                     <span className="font-bold text-slate-900 dark:text-slate-100 truncate">{client.fullName}</span>
-                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0 font-mono tabular-nums">
+                    <span className="text-xs px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0 font-mono tabular-nums">
                       {client.cases.length} Dava
                     </span>
                   </div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                  <div className="text-sm text-slate-500 dark:text-slate-400 flex items-center justify-between">
                     <span>{client.type}</span>
                     <span className="font-mono text-slate-400 dark:text-slate-500 tabular-nums">{client.idNumber}</span>
                   </div>
@@ -527,11 +527,11 @@ export function MuvekkilDavaPortali({
         <div className="lg:col-span-4 bg-white dark:bg-[#0e1524] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                <Briefcase className="w-3.5 h-3.5 text-amber-500" />
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Briefcase className="w-4 h-4 text-amber-500" />
                 Müvekkilin Davaları ({selectedClient?.cases.length || 0})
               </h3>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
                 {selectedClient?.fullName || 'Müvekkil seçilmedi'}
               </p>
             </div>
@@ -539,15 +539,15 @@ export function MuvekkilDavaPortali({
               type="button"
               disabled={!selectedClient}
               onClick={() => setShowAddCaseModal(true)}
-              className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[11px] font-semibold flex items-center gap-1 transition disabled:opacity-40"
+              className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-sm font-semibold flex items-center gap-1 transition disabled:opacity-40"
             >
-              <Plus className="w-3 h-3" />
+              <Plus className="w-4 h-4" />
               <span>Yeni Dava</span>
             </button>
           </div>
 
           {/* Cases List */}
-          <div className="space-y-2.5 max-h-[560px] overflow-y-auto pr-1">
+          <div className="space-y-2.5 max-h-[65vh] overflow-y-auto pr-1">
             {selectedClient && selectedClient.cases.length > 0 ? (
               selectedClient.cases.map((c) => {
                 const isSelected = selectedCaseId === c.id;
@@ -558,16 +558,16 @@ export function MuvekkilDavaPortali({
                       setSelectedCaseId(c.id);
                       setSelectedFileIds([]);
                     }}
-                    className={`p-3.5 rounded-xl border text-xs cursor-pointer transition ${
+                    className={`p-3.5 rounded-xl border text-sm cursor-pointer transition ${
                       isSelected
                         ? 'bg-amber-50/70 dark:bg-amber-950/25 border-amber-400 dark:border-amber-500/50 shadow-sm ring-1 ring-amber-500/20'
                         : 'bg-white dark:bg-[#141d30]/60 border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-[#141d30]'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-1 mb-1">
-                      <span className="font-bold text-slate-900 dark:text-slate-100 font-mono text-xs tabular-nums">{c.caseNumber}</span>
+                      <span className="font-bold text-slate-900 dark:text-slate-100 font-mono text-sm tabular-nums">{c.caseNumber}</span>
                       <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
+                        className={`text-xs px-2 py-0.5 rounded-full font-semibold border ${
                           c.status === 'Open'
                             ? 'bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-200 dark:border-sky-500/30'
                             : c.status === 'Pending'
@@ -579,16 +579,16 @@ export function MuvekkilDavaPortali({
                       </span>
                     </div>
 
-                    <div className="text-[11px] font-medium text-amber-600 dark:text-amber-400 mb-1 flex items-center gap-1">
-                      <Gavel className="w-3 h-3 shrink-0" />
+                    <div className="text-sm font-medium text-amber-600 dark:text-amber-400 mb-1 flex items-center gap-1">
+                      <Gavel className="w-4 h-4 shrink-0" />
                       <span className="truncate">{c.court}</span>
                     </div>
 
-                    <p className="text-[11px] text-slate-600 dark:text-slate-300 line-clamp-2 mb-2 leading-relaxed">
+                    <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2 mb-2 leading-relaxed">
                       {c.subject}
                     </p>
 
-                    <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-800 pt-2">
+                    <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-800 pt-2">
                       <span>Aşama: <strong className="text-slate-700 dark:text-slate-300">{c.stage}</strong></span>
                       <span className="font-mono text-indigo-600 dark:text-indigo-400 font-semibold tabular-nums">{c.files.length} Evrak</span>
                     </div>
@@ -596,7 +596,7 @@ export function MuvekkilDavaPortali({
                 );
               })
             ) : (
-              <div className="py-8 text-center text-slate-400 dark:text-slate-500 text-xs">
+              <div className="py-8 text-center text-slate-400 dark:text-slate-500 text-sm">
                 Bu müvekkile ait kayıtlı dava dosyası bulunmuyor.
               </div>
             )}
@@ -609,11 +609,11 @@ export function MuvekkilDavaPortali({
           <div className="space-y-3 pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                  <FolderOpen className="w-3.5 h-3.5 text-emerald-500" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <FolderOpen className="w-4 h-4 text-emerald-500" />
                   Dava Evrakları & Dosyaları ({selectedCase?.files.length || 0})
                 </h3>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono tabular-nums">
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-mono tabular-nums">
                   {selectedCase?.caseNumber || 'Dava Seçilmedi'}
                 </p>
               </div>
@@ -623,9 +623,9 @@ export function MuvekkilDavaPortali({
                   type="button"
                   disabled={!selectedCase}
                   onClick={() => setShowAddFileModal(true)}
-                  className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold flex items-center gap-1 transition shadow-sm disabled:opacity-40"
+                  className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold flex items-center gap-1 transition shadow-sm disabled:opacity-40"
                 >
-                  <Upload className="w-3 h-3" />
+                  <Upload className="w-4 h-4" />
                   <span>Evrak Yükle</span>
                 </button>
 
@@ -640,10 +640,10 @@ export function MuvekkilDavaPortali({
                         files: selectedCase.files
                       })
                     }
-                    className="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold flex items-center gap-1 transition shadow-sm"
+                    className="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold flex items-center gap-1 transition shadow-sm"
                     title="Bu davayı Baş Hukuk Müşavirine danış"
                   >
-                    <Brain className="w-3 h-3" />
+                    <Brain className="w-4 h-4" />
                     <span>Müşavire Danış</span>
                   </button>
                 )}
@@ -652,16 +652,16 @@ export function MuvekkilDavaPortali({
 
             {/* Batch Controls Toolbar */}
             {selectedCase && selectedCase.files.length > 0 && (
-              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#141d30] border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#141d30] border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-sm">
                 <button
                   type="button"
                   onClick={toggleSelectAllFiles}
                   className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium"
                 >
                   {selectedFileIds.length === selectedCase.files.length ? (
-                    <CheckSquare className="w-3.5 h-3.5 text-emerald-500" />
+                    <CheckSquare className="w-4 h-4 text-emerald-500" />
                   ) : (
-                    <Square className="w-3.5 h-3.5 text-slate-400" />
+                    <Square className="w-4 h-4 text-slate-400" />
                   )}
                   <span>
                     {selectedFileIds.length === selectedCase.files.length
@@ -675,12 +675,12 @@ export function MuvekkilDavaPortali({
                     type="button"
                     disabled={selectedFileIds.length === 0 || batchAnalyzing}
                     onClick={handleAnalyzeBatch}
-                    className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-[11px] font-semibold flex items-center gap-1 transition disabled:opacity-40"
+                    className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-sm font-semibold flex items-center gap-1 transition disabled:opacity-40"
                   >
                     {batchAnalyzing ? (
-                      <span className="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                      <span className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
                     ) : (
-                      <Sparkles className="w-3 h-3 text-indigo-500" />
+                      <Sparkles className="w-4 h-4 text-indigo-500" />
                     )}
                     <span>Seçilenleri Toplu Analiz Et</span>
                   </button>
@@ -689,9 +689,9 @@ export function MuvekkilDavaPortali({
                     type="button"
                     disabled={selectedFileIds.length === 0}
                     onClick={handleDownloadBatch}
-                    className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-[11px] font-semibold flex items-center gap-1 transition disabled:opacity-40"
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-sm font-semibold flex items-center gap-1 transition disabled:opacity-40"
                   >
-                    <Download className="w-3 h-3 text-sky-500" />
+                    <Download className="w-4 h-4 text-sky-500" />
                     <span>Toplu İndir</span>
                   </button>
                 </div>
@@ -709,7 +709,7 @@ export function MuvekkilDavaPortali({
                 return (
                   <div
                     key={file.id}
-                    className={`p-3 rounded-xl border text-xs transition ${
+                    className={`p-4 rounded-xl border text-sm transition ${
                       isSelected
                         ? 'bg-emerald-50/80 dark:bg-emerald-950/20 border-emerald-400 dark:border-emerald-500/50 shadow-sm'
                         : 'bg-white dark:bg-[#141d30]/60 border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700'
@@ -730,12 +730,12 @@ export function MuvekkilDavaPortali({
                         </button>
                         <div>
                           <div className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                            <FileText className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                            <FileText className="w-4 h-4 text-sky-500 shrink-0" />
                             <span className="truncate max-w-[220px]" title={file.name}>
                               {file.name}
                             </span>
                           </div>
-                          <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5 tabular-nums">
+                          <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5 tabular-nums">
                             <span>{file.type}</span>
                             <span aria-hidden="true">·</span>
                             <span>{Math.round(file.size / 1024)} KB</span>
@@ -746,18 +746,18 @@ export function MuvekkilDavaPortali({
                       </div>
 
                       {/* Evidentiary Value Badge */}
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-mono border border-amber-200 dark:border-amber-800 shrink-0 font-medium">
+                      <span className="text-xs px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-mono border border-amber-200 dark:border-amber-800 shrink-0 font-medium">
                         {file.evidentiaryValue}
                       </span>
                     </div>
 
-                    <p className="text-[11px] text-slate-600 dark:text-slate-300 line-clamp-2 bg-slate-50 dark:bg-[#090d16] p-2 rounded-lg border border-slate-100 dark:border-slate-800/80 mb-2 leading-relaxed">
+                    <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2 bg-slate-50 dark:bg-[#090d16] p-2 rounded-lg border border-slate-100 dark:border-slate-800/80 mb-2 leading-relaxed">
                       {file.contentPreview}
                     </p>
 
                     {/* File Action Buttons */}
-                    <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/80 text-[11px]">
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/80 text-sm">
+                      <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">
                         {file.lawArticle || 'HMK Genel'}
                       </span>
 
@@ -766,7 +766,7 @@ export function MuvekkilDavaPortali({
                           type="button"
                           disabled={isCurrentlyAnalyzing}
                           onClick={() => handleAnalyzeSingleFile(file)}
-                          className="px-2 py-1 rounded-md bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-[10px] font-semibold flex items-center gap-1 transition"
+                          className="px-2 py-1 rounded-md bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-xs font-semibold flex items-center gap-1 transition"
                         >
                           {isCurrentlyAnalyzing ? (
                             <span className="w-2.5 h-2.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
@@ -779,7 +779,7 @@ export function MuvekkilDavaPortali({
                         <button
                           type="button"
                           onClick={() => handleDownloadSingle(file)}
-                          className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-[10px] font-semibold flex items-center gap-1 transition"
+                          className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-semibold flex items-center gap-1 transition"
                           title="Evrakı indir"
                         >
                           <Download className="w-2.5 h-2.5 text-sky-500" />
@@ -791,7 +791,7 @@ export function MuvekkilDavaPortali({
                 );
               })
             ) : (
-              <div className="py-8 text-center text-slate-400 dark:text-slate-500 text-xs">
+              <div className="py-8 text-center text-slate-400 dark:text-slate-500 text-sm">
                 Bu dava dosyasına henüz evrak eklenmemiş. Yukarıdaki "Evrak Yükle" butonunu kullanabilirsiniz.
               </div>
             )}
@@ -805,11 +805,11 @@ export function MuvekkilDavaPortali({
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="space-y-0.5">
-                <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
                   <Brain className="w-4 h-4 text-indigo-400" />
                   Evrak Hukuki Analiz Raporu
                 </h3>
-                <p className="text-xs text-slate-400 font-mono">{singleAnalysisModal.name}</p>
+                <p className="text-sm text-slate-400 font-mono">{singleAnalysisModal.name}</p>
               </div>
               <button
                 type="button"
@@ -820,23 +820,23 @@ export function MuvekkilDavaPortali({
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
-              <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1">
-                <span className="text-[10px] text-slate-400 font-semibold uppercase">İspat Gücü & HMK Niteliği</span>
-                <div className="font-bold text-amber-300 text-sm">{singleAnalysisModal.evidentiaryValue}</div>
-                <div className="text-[11px] text-slate-300">{singleAnalysisModal.lawArticle}</div>
+            <div className="space-y-3 text-sm">
+              <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1">
+                <span className="text-xs text-slate-400 font-semibold uppercase">İspat Gücü & HMK Niteliği</span>
+                <div className="font-bold text-amber-300 text-base">{singleAnalysisModal.evidentiaryValue}</div>
+                <div className="text-sm text-slate-300">{singleAnalysisModal.lawArticle}</div>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1">
-                <span className="text-[10px] text-slate-400 font-semibold uppercase">Yapay Zeka Analiz Notu</span>
+              <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1">
+                <span className="text-xs text-slate-400 font-semibold uppercase">Yapay Zeka Analiz Notu</span>
                 <p className="text-slate-200 leading-relaxed">
                   {singleAnalysisModal.analysisSummary || 'Belge uyuşmazlığın ispatı bakımından geçerli yazılı delil niteliğindedir.'}
                 </p>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1">
-                <span className="text-[10px] text-slate-400 font-semibold uppercase">Evrak İçerik Özeti</span>
-                <p className="text-slate-300 font-mono text-[11px] leading-relaxed">
+              <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1">
+                <span className="text-xs text-slate-400 font-semibold uppercase">Evrak İçerik Özeti</span>
+                <p className="text-slate-300 font-mono text-sm leading-relaxed">
                   {singleAnalysisModal.contentPreview}
                 </p>
               </div>
@@ -846,15 +846,15 @@ export function MuvekkilDavaPortali({
               <button
                 type="button"
                 onClick={() => handleDownloadSingle(singleAnalysisModal)}
-                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition"
+                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold flex items-center gap-1.5 transition"
               >
-                <Download className="w-3.5 h-3.5 text-sky-400" />
+                <Download className="w-4 h-4 text-sky-400" />
                 <span>Raporu İndir</span>
               </button>
               <button
                 type="button"
                 onClick={() => setSingleAnalysisModal(null)}
-                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition"
+                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition"
               >
                 Tamam
               </button>
@@ -869,11 +869,11 @@ export function MuvekkilDavaPortali({
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl p-6 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="space-y-0.5">
-                <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-indigo-400" />
                   Toplu Dava Evrakları Karşılaştırmalı Analiz Sentezi
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-sm text-slate-400">
                   {batchAnalysisModal.totalFilesAnalyzed} adet evrak çapraz denetimden geçirildi.
                 </p>
               </div>
@@ -887,16 +887,16 @@ export function MuvekkilDavaPortali({
             </div>
 
             {/* Synthesis Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-800/50 space-y-1">
-                <span className="text-[10px] text-emerald-400 font-semibold uppercase">Genel Delil Gücü</span>
+                <span className="text-xs text-emerald-400 font-semibold uppercase">Genel Delil Gücü</span>
                 <div className="font-bold text-emerald-300">
                   {batchAnalysisModal.comparativeSynthesis?.genelDelilKuvveti}
                 </div>
               </div>
 
               <div className="p-3.5 rounded-xl bg-sky-950/30 border border-sky-800/50 space-y-1">
-                <span className="text-[10px] text-sky-400 font-semibold uppercase">Çelişki Durumu</span>
+                <span className="text-xs text-sky-400 font-semibold uppercase">Çelişki Durumu</span>
                 <div className="font-bold text-sky-300">
                   {batchAnalysisModal.comparativeSynthesis?.celiskiDurumu}
                 </div>
@@ -904,19 +904,19 @@ export function MuvekkilDavaPortali({
             </div>
 
             {/* Detailed per-file summary */}
-            <div className="space-y-2 text-xs">
+            <div className="space-y-2 text-sm">
               <h4 className="font-bold text-slate-300">Tek Tek İncelenen Evraklar:</h4>
               <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                 {batchAnalysisModal.documentAnalyses?.map((item: any, i: number) => (
-                  <div key={i} className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1">
+                  <div key={i} className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-slate-200">{item.fileName}</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-amber-300 font-mono">
+                      <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-amber-300 font-mono">
                         {item.hukukiNitelik}
                       </span>
                     </div>
-                    <p className="text-slate-300 text-[11px]">{item.ozet}</p>
-                    <div className="text-[10px] text-slate-500 font-mono">İspat Gücü: {item.ispatGucu}</div>
+                    <p className="text-slate-300 text-sm">{item.ozet}</p>
+                    <div className="text-xs text-slate-500 font-mono">İspat Gücü: {item.ispatGucu}</div>
                   </div>
                 ))}
               </div>
@@ -926,15 +926,15 @@ export function MuvekkilDavaPortali({
               <button
                 type="button"
                 onClick={handleDownloadBatch}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition"
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold flex items-center gap-1.5 transition"
               >
-                <Download className="w-3.5 h-3.5 text-sky-400" />
+                <Download className="w-4 h-4 text-sky-400" />
                 <span>Seçili Dosyaları İndir</span>
               </button>
               <button
                 type="button"
                 onClick={() => setBatchAnalysisModal(null)}
-                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition"
+                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition"
               >
                 Kapat
               </button>
@@ -948,7 +948,7 @@ export function MuvekkilDavaPortali({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+              <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
                 <Users className="w-4 h-4 text-sky-400" />
                 Portföye Yeni Müvekkil Ekle
               </h3>
@@ -961,7 +961,7 @@ export function MuvekkilDavaPortali({
               </button>
             </div>
 
-            <form onSubmit={handleAddClientSubmit} className="space-y-3 text-xs">
+            <form onSubmit={handleAddClientSubmit} className="space-y-3 text-sm">
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">Müvekkil Adı / Şirket Ünvanı *</label>
                 <input
@@ -1036,13 +1036,13 @@ export function MuvekkilDavaPortali({
                 <button
                   type="button"
                   onClick={() => setShowAddClientModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold"
                 >
                   Vazgeç
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-md shadow-sky-900/30"
+                  className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold shadow-md shadow-sky-900/30"
                 >
                   Müvekkili Kaydet
                 </button>
@@ -1057,7 +1057,7 @@ export function MuvekkilDavaPortali({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+              <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
                 <Briefcase className="w-4 h-4 text-amber-400" />
                 Müvekkil İçin Yeni Dava Dosyası Aç
               </h3>
@@ -1070,7 +1070,7 @@ export function MuvekkilDavaPortali({
               </button>
             </div>
 
-            <form onSubmit={handleAddCaseSubmit} className="space-y-3 text-xs">
+            <form onSubmit={handleAddCaseSubmit} className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">Esas Numarası *</label>
@@ -1132,13 +1132,13 @@ export function MuvekkilDavaPortali({
                 <button
                   type="button"
                   onClick={() => setShowAddCaseModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold"
                 >
                   Vazgeç
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-md shadow-amber-900/30"
+                  className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-sm font-semibold shadow-md shadow-amber-900/30"
                 >
                   Davayı Aç & Ekle
                 </button>
@@ -1153,7 +1153,7 @@ export function MuvekkilDavaPortali({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+              <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
                 <Upload className="w-4 h-4 text-emerald-400" />
                 Dava Dosyasına Evrak Yükle (Çoklu)
               </h3>
@@ -1169,24 +1169,24 @@ export function MuvekkilDavaPortali({
               onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove('border-emerald-500', 'bg-emerald-950/20'); handleMultiFileSelect(Array.from(e.dataTransfer.files)); }}
             >
               <Upload className="w-8 h-8 text-slate-500 mx-auto mb-2" />
-              <p className="text-sm text-slate-400 font-medium">Dosyaları sürükleyin veya tıklayarak seçin</p>
-              <p className="text-[10px] text-slate-500 mt-1">PDF, DOCX, JPG, PNG, XLSX — Birden fazla dosya seçebilirsiniz</p>
+              <p className="text-base text-slate-400 font-medium">Dosyaları sürükleyin veya tıklayarak seçin</p>
+              <p className="text-xs text-slate-500 mt-1">PDF, DOCX, JPG, PNG, XLSX — Birden fazla dosya seçebilirsiniz</p>
               <input id="multi-file-input" type="file" multiple accept=".pdf,.docx,.doc,.jpg,.jpeg,.png,.xlsx,.xls,.txt,.rtf" className="hidden"
                 onChange={(e) => { if (e.target.files) handleMultiFileSelect(Array.from(e.target.files)); e.target.value = ''; }} />
             </div>
             {pendingFiles.length > 0 && (
               <div className="max-h-48 overflow-y-auto space-y-1.5">
-                <p className="text-[10px] text-slate-400 font-semibold">{pendingFiles.length} dosya seçildi:</p>
+                <p className="text-xs text-slate-400 font-semibold">{pendingFiles.length} dosya seçildi:</p>
                 {pendingFiles.map((pf, idx) => (
-                  <div key={idx} className="flex items-center justify-between bg-slate-950 rounded-lg px-3 py-2 text-xs border border-slate-800">
+                  <div key={idx} className="flex items-center justify-between bg-slate-950 rounded-lg px-3 py-2 text-sm border border-slate-800">
                     <div className="flex items-center gap-2 min-w-0">
-                      <FileText className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                      <FileText className="w-4 h-4 text-sky-400 shrink-0" />
                       <span className="text-slate-200 truncate max-w-[200px]">{pf.name}</span>
                       <span className="text-slate-500 shrink-0">{Math.round(pf.size / 1024)} KB</span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <select value={pf.type} onChange={(e) => setPendingFiles(prev => prev.map((f, i) => i === idx ? {...f, type: e.target.value} : f))}
-                        className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-[10px] text-slate-300">
+                        className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-300">
                         <option value="Tensip Zaptı">Tensip Zaptı</option>
                         <option value="Bilirkişi Raporu">Bilirkişi Raporu</option>
                         <option value="Fatura / İrsaliye">Fatura / İrsaliye</option>
@@ -1198,7 +1198,7 @@ export function MuvekkilDavaPortali({
                         <option value="Diğer">Diğer</option>
                       </select>
                       <button type="button" onClick={() => setPendingFiles(prev => prev.filter((_, i) => i !== idx))} className="text-rose-400 hover:text-rose-300 p-0.5">
-                        <X className="w-3 h-3" />
+                        <X className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -1206,9 +1206,9 @@ export function MuvekkilDavaPortali({
               </div>
             )}
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
-              <button type="button" onClick={() => { setShowAddFileModal(false); setPendingFiles([]); }} className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Vazgeç</button>
+              <button type="button" onClick={() => { setShowAddFileModal(false); setPendingFiles([]); }} className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold">Vazgeç</button>
               <button type="button" disabled={pendingFiles.length === 0} onClick={handleBatchFileUpload}
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold shadow-md shadow-emerald-900/30">
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold shadow-md shadow-emerald-900/30">
                 {pendingFiles.length > 0 ? `${pendingFiles.length} Evrakı Ekle & Dosyala` : 'Evrak Seçin'}
               </button>
             </div>
