@@ -1505,16 +1505,19 @@ app.post('/api/ai/agent-council-consultation', async (req: Request, res: Respons
     contextFiles = [],
     activeCaseContext,
     clientInfo,
-    inputMode = 'text', // 'text' | 'voice'
-    orchestratorModel = 'pro', // 'pro' | 'flash'
+    lehine,
+    inputMode = 'text',
+    orchestratorModel = 'pro',
     lawyerSicilNo
   } = req.body;
 
   const sicil = lawyerSicilNo || '8109';
   const cleanQuery = (query || '').trim();
+  const todayStr = new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const todayISO = new Date().toISOString().split('T')[0];
 
   const fileSnippets = (contextFiles || [])
-    .map((f: any, idx: number) => `[Belge ${idx + 1}: ${f.name} (${f.type || 'Evrak'})]: ${(f.content || '').slice(0, 1500)}`)
+    .map((f: any, idx: number) => `[Belge ${idx + 1}: ${f.name} (Tür: ${f.type || 'Evrak'}, Kurum/Birim: ${f.institution || 'Belirtilmemiş'}, Tarih: ${f.date || 'Belirtilmemiş'}, Sayı: ${f.referenceNo || 'Belirtilmemiş'})]: ${(f.content || '').slice(0, 2000)}`)
     .join('\n\n');
 
   const fullPrompt = `
@@ -1528,6 +1531,11 @@ Arka planda senin koordinasyonunda çalışan 4 alt uzman yapay zeka ajanı bulu
 3. Şeytanın Avukatı Ajanı (Karşı Taraf Argümanları & Zayıf Halkalar)
 4. UYAP Dilekçe & Talep Mimarı Ajanı (Netice-i Talep & Tensip Talepleri)
 
+=== KRİTİK BİLGİ ===
+BUGÜNÜN TARİHİ: ${todayStr} (${todayISO})
+Bu tarihi tüm zamanaşımı, hak düşürücü süre, cevap süresi, istinaf/temyiz süresi hesaplamalarında MUTLAKA dikkate al.
+${lehine ? `İNCELEME/DİLEKÇE KİMİN LEHİNE: ${lehine}` : ''}
+
 Avukatın Mesajı:
 """
 ${cleanQuery || 'Genel danışma.'}
@@ -1537,21 +1545,55 @@ ${clientInfo ? `Müvekkil Bilgileri: ${JSON.stringify(clientInfo)}` : ''}
 ${activeCaseContext ? `Aktif Dava Bağlamı: ${activeCaseContext}` : ''}
 ${fileSnippets ? `Sunulan Dava Dosyası & Evrakları:\n${fileSnippets}` : ''}
 
+=== ZORUNLU ATIF VE KAYNAK KURALLARI ===
+
+1. APA FORMATINDA EVRAK ATIFI (ÇOK ÖNEMLİ):
+Dilekçe veya analiz metninde dosyadaki bir evraka atıf yapıldığında, o evrakın ait olduğu kurum/birim/kuruluş adı, tarih ve sayısı APA formatında parantez içinde yazılır. Bu şekilde hakim dosya içinden o evrakı bulup inceleyebilir.
+Örnek format: "...davalının temerrüde düştüğü sabit olup (T.C. Ankara 3. Noterliği, 15.03.2026 tarihli, Yevmiye No: 04821 sayılı İhtarname) bu husus tartışmasızdır."
+Diğer örnek: "...ödemenin yapılmadığı (Ziraat Bankası Kızılay Şubesi, 01.04.2026 tarihli Hesap Ekstresi, Dekont No: TRF-2026-11492) açıkça sabittir."
+
+2. DOKTRİN DAYANAAKLI EMSAL KARAR KULLANIMI (ÇOK ÖNEMLİ):
+Emsal karar kullanılırken ÖNCE doktrindeki makale, kitap veya tez gibi yazılı akademik kaynaklara atıfta bulunulur, sonra o kaynak üzerinden emsal karara değinilir. Böylece doktrin görüşü ile içtihat eş zamanlı değerlendirilmiş olur.
+Örnek format: "Nitekim doktrinde de bu husus açıkça ifade edilmiş olup (Kuru, Baki, Hukuk Muhakemeleri Usulü, C.II, 6. Baskı, 2001, s.1542; aynı yönde bkz. Yargıtay 3. HD, 2021/4567 E., 2022/1234 K., https://karararama.yargitay.gov.tr) davacının talebinin hukuki dayanağı mevcuttur."
+
+3. EMSAL KARAR İNTERNET KAYNAĞI (ÇOK ÖNEMLİ):
+Her emsal kararın bulunduğu internet kaynağının adı ve tıklanabilir URL'si parantez içinde verilir ki hakim doğrudan erişebilsin.
+Kullanılabilecek kaynaklar:
+- Yargıtay Karar Arama: https://karararama.yargitay.gov.tr
+- Lexpera: https://www.lexpera.com.tr
+- Kazancı İçtihat: https://www.kazanci.com.tr
+- Sinerji Mevzuat: https://www.sinerjimevzuat.com.tr
+- Danıştay: https://www.danistay.gov.tr
+
+4. UYAP UDF GÖNDERİM TARİHİ KONTROLÜ (KRİTİK):
+Dosyadaki evrakların UYAP sistemine ne zaman gönderildiğini kontrol et. UDF dokümanlarının altında gönderim tarihi yazar. Bu tarihi bugünün tarihi (${todayStr}) ile karşılaştırarak:
+- Cevap süresi geçmiş mi? (HMK m.127: 2 hafta)
+- İstinaf süresi geçmiş mi? (HMK m.345: 2 hafta)
+- Temyiz süresi geçmiş mi? (HMK m.361: 2 hafta)
+- İtiraz süresi geçmiş mi?
+- Zamanaşımı dolmuş mu?
+SÜRESİNİ KAÇIRMIŞ OLANLARI MUTLAKA "sureKacirmaUyarilari" alanında belirt.
+
 ÖNEMLİ KURAL — CEVAP MODUNU BELİRLE:
-Avukatın mesajını analiz et. Eğer mesaj basit bir selamlama, sohbet, kısa soru veya hukuki olmayan bir konuysa (örn: "selam", "merhaba", "nasılsın", "teşekkürler") KISA MOD kullan. Eğer mesaj somut bir hukuki soru, dava analizi, mevzuat sorusu veya strateji danışması ise DETAYLI MOD kullan.
+Avukatın mesajını analiz et. Eğer mesaj basit bir selamlama, sohbet, kısa soru veya hukuki olmayan bir konuysa KISA MOD kullan. Eğer mesaj somut bir hukuki soru, dava analizi, mevzuat sorusu veya strateji danışması ise DETAYLI MOD kullan.
 
 KISA MOD (selamlama/sohbet için):
 Sadece şu JSON'u döndür:
 {
   "mode": "chat",
-  "answerToUserQuestion": "Avukata doğal, samimi ve profesyonel kısa bir yanıt. Gereksiz şablon ekleme."
+  "answerToUserQuestion": "Avukata doğal, samimi ve profesyonel kısa bir yanıt."
 }
 
 DETAYLI MOD (hukuki sorular için):
 Şu JSON'u döndür:
 {
   "mode": "detailed",
-  "orchestratorSummary": "Baş Müşavirin genel hukuki teşhis ve stratejik özeti (2-3 paragraf).",
+  "incelemeLehineBilgi": "${lehine || 'Belirtilmemiş'}",
+  "incelemeTarihi": "${todayStr}",
+  "orchestratorSummary": "Baş Müşavirin genel hukuki teşhis ve stratejik özeti (2-3 paragraf). Metin içinde dosyadaki evraklara APA formatında atıf yap.",
+  "sureKacirmaUyarilari": [
+    {"evrak": "Evrak adı", "uyapGonderimTarihi": "dd.mm.yyyy", "sureTuru": "Cevap/İstinaf/Temyiz/İtiraz", "sonTarih": "dd.mm.yyyy", "kalan": "X gün kaldı / SÜRESİ GEÇMİŞ", "durum": "ACIL/Normal/Gecikmiş"}
+  ],
   "courtAndJurisdiction": {
     "gorevliMahkeme": "Görevli mahkeme ve normatif gerekçesi.",
     "yetkiliMahkeme": "Yetkili mahkeme tespiti.",
@@ -1565,13 +1607,17 @@ DETAYLI MOD (hukuki sorular için):
     "delilListesi": ["..."],
     "tensipTalepleri": ["..."],
     "evrakReferanslari": [
-      {"no": 1, "evrakAdi": "Referans verilen dosyadaki evrak adı", "bolum": "Evrakın hangi bölümü/maddesi", "aciklama": "Bu evrakın dilekçedeki hangi argümana dayanak olduğu"},
-      {"no": 2, "evrakAdi": "...", "bolum": "...", "aciklama": "..."}
+      {"no": 1, "kurum": "Evrakı düzenleyen kurum/birim adı", "tarih": "Evrak tarihi", "sayi": "Evrak sayısı/yevmiye no", "aciklama": "Dilekçedeki hangi argümana dayanak", "apaAtif": "(T.C. Ankara 3. Noterliği, 15.03.2026, Yevmiye No: 04821)"}
     ]
   },
   "emsalKararlar": [
-    {"karar": "Yargıtay X. HD, YYYY/XXXX E., YYYY/XXXX K.", "ozet": "Kararın ilgili kısmının kısa özeti", "url": "https://karararama.yargitay.gov.tr"},
-    {"karar": "Danıştay veya BAM kararı", "ozet": "...", "url": "https://karararama.yargitay.gov.tr veya https://www.danistay.gov.tr"}
+    {
+      "karar": "Yargıtay X. HD, YYYY/XXXX E., YYYY/XXXX K.",
+      "doktrinKaynagi": "Yazar Adı, Kitap/Makale Adı, Basım, Yıl, Sayfa (Örn: Kuru, Baki, İstinaf Sistemine Göre Yazılmış Medeni Usul Hukuku, 2021, s.345)",
+      "ozet": "Kararın ilgili kısmının kısa özeti ve doktrinle birlikte değerlendirmesi",
+      "kaynak": "Lexpera / Kazancı / Yargıtay Karar Arama",
+      "url": "https://karararama.yargitay.gov.tr"
+    }
   ],
   "agentInsights": {
     "usulAjan": "HMK usul tuzakları ve görev ikazı.",
@@ -1579,7 +1625,7 @@ DETAYLI MOD (hukuki sorular için):
     "seytaninAvukatiAjan": "Karşı taraf taarruz planı.",
     "dilekceAjan": "UYAP dilekçe ve harç uyarısı."
   },
-  "answerToUserQuestion": "Avukatın sorusuna net, kesin ve profesyonel yanıt."
+  "answerToUserQuestion": "Avukatın sorusuna net, kesin ve profesyonel yanıt. APA formatında evrak ve doktrin atıflarıyla."
 }
 
 YALNIZCA GEÇERLİ JSON DÖNDÜR. Markdown kod bloğu kullanma.`;
