@@ -220,6 +220,7 @@ interface WhitelistEntry {
   isUsed: boolean;
   addedAt: string;
   addedVia: string;
+  usedAt?: string;
 }
 
 interface GeminiUsageRecord {
@@ -1052,7 +1053,7 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
   // Check whitelist if there are entries
   if (whitelistEntries.length > 0) {
     const whitelistEntryIndex = whitelistEntries.findIndex(
-      (entry) => entry.tcKimlik === tcKimlikNo && entry.sicilNo === sicilNo && !entry.isUsed
+      (entry) => entry.tcKimlikNo === tcKimlikNo && entry.sicilNo === sicilNo && !entry.isUsed
     );
 
     if (whitelistEntryIndex === -1) {

@@ -12,6 +12,7 @@ import { LawyerCaseAnalyticsCharts } from './components/LawyerCaseAnalyticsChart
 import { DailyTaskReminders } from './components/DailyTaskReminders';
 import { LoginScreen } from './components/LoginScreen';
 import { HukukiHesaplamaAraclariModal } from './components/HukukiHesaplamaAraclariModal';
+import { AjanKonseyiOdasi } from './components/AjanKonseyiOdasi';
 import {
   getClientList,
   setActiveLawyerSicil,

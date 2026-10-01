@@ -23,11 +23,14 @@ import {
   FolderOpen,
   HelpCircle,
   Cpu,
-  MessageSquare
+  MessageSquare,
+  X
 } from 'lucide-react';
 import { CaseFileItem } from './MuvekkilDavaPortali';
 
 interface AjanKonseyiOdasiProps {
+  lawyerName?: string;
+  lawyerSicilNo?: string;
   initialCaseContext?: {
     clientName: string;
     caseNumber: string;
@@ -48,6 +51,8 @@ interface MessageItem {
 }
 
 export function AjanKonseyiOdasi({
+  lawyerName,
+  lawyerSicilNo,
   initialCaseContext,
   onApplyToPetition,
   onSyncGit

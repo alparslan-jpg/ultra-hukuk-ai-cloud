@@ -2470,7 +2470,7 @@ export function LawyerWorkspace({ user, initialTab, onNavigateHome }: LawyerWork
                         {
                           court,
                           caseNo,
-                          subject: petitionSubject,
+                          subject: subject,
                           plaintiff: client,
                           defendant: opponent,
                           lawyerName: user.fullName,
