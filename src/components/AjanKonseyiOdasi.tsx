@@ -76,7 +76,7 @@ export function AjanKonseyiOdasi({
   onNavigateTo
 }: AjanKonseyiOdasiProps) {
   // Model router selection: Gemini 3.1 Pro (Deep Legal Reasoning) vs Gemini 3.8 Flash (High Speed)
-  const [orchestratorModel, setOrchestratorModel] = useState<'pro' | 'flash'>('pro');
+  const [orchestratorModel, setOrchestratorModel] = useState<'pro' | 'flash'>('flash');
   const [showMuvekkilPanel, setShowMuvekkilPanel] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeModule, setActiveModule] = useState<string>('musavir');
@@ -233,6 +233,16 @@ export function AjanKonseyiOdasi({
         })
       });
 
+      if (!response.ok) {
+        const errText = await response.text();
+        let errMsg = `Sunucu hatası (${response.status})`;
+        try { const errJson = JSON.parse(errText); if (errJson.message) errMsg = errJson.message; } catch {}
+        throw new Error(errMsg);
+      }
+      const cType = response.headers.get('content-type') || '';
+      if (!cType.includes('application/json')) {
+        throw new Error('Sunucu yanıtı alınamadı (Ağ/Proxy zaman aşımı). Lütfen Hızlı modu seçip tekrar deneyin.');
+      }
       const data = await response.json();
       if (data.success) {
         const isChat = data.mode === 'chat';
@@ -274,6 +284,26 @@ export function AjanKonseyiOdasi({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: prompts[action], contextFiles: [f], activeCaseContext: selectedCaseNote, orchestratorModel, inputMode: 'text' })
       });
+      if (!r.ok) {
+        const errText = await r.text();
+        let errMsg = `Sunucu hatası (${r.status})`;
+        try { const errJson = JSON.parse(errText); if (errJson.message) errMsg = errJson.message; } catch {}
+        throw new Error(errMsg);
+      }
+      const cTypeF = r.headers.get('content-type') || '';
+      if (!cTypeF.includes('application/json')) {
+        throw new Error('Sunucu yanıtı alınamadı (Ağ/Proxy zaman aşımı). Lütfen tekrar deneyin.');
+      }
+      if (!r.ok) {
+        const errText = await r.text();
+        let errMsg = `Sunucu hatası (${r.status})`;
+        try { const errJson = JSON.parse(errText); if (errJson.message) errMsg = errJson.message; } catch {}
+        throw new Error(errMsg);
+      }
+      const cTypeC = r.headers.get('content-type') || '';
+      if (!cTypeC.includes('application/json')) {
+        throw new Error('Dava dosyası oluşturulurken zaman aşımı oluştu. Lütfen tekrar deneyin.');
+      }
       const d = await r.json();
       if (d.success) {
         setConsultationHistory(p => [...p, { id: `cns-${Date.now()}`, sender: 'council', text: d.answerToUserQuestion || d.orchestratorSummary || 'Analiz tamamlandı.', timestamp: d.timestamp || new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }), consultationData: d.mode !== 'chat' ? d : undefined }]);

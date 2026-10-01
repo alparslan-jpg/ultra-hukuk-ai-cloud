@@ -1639,25 +1639,46 @@ YALNIZCA GEÇERLİ JSON DÖNDÜR. Markdown kod bloğu kullanma.`;
       let usedModel = chosenModel;
 
       try {
-        const response = await genAI.models.generateContent({
-          model: chosenModel,
-          contents: fullPrompt,
+        const timeoutMs = chosenModel === 'gemini-3.1-pro-preview' ? 25000 : 20000;
+        let timer: any;
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error(`${chosenModel} zaman aşımına uğradı (${timeoutMs}ms)`)), timeoutMs);
         });
+
+        const response = await Promise.race([
+          genAI.models.generateContent({
+            model: chosenModel,
+            contents: fullPrompt,
+          }),
+          timeoutPromise
+        ]).finally(() => clearTimeout(timer));
+
         rawText = response.text || '';
         logAiUsage(sicil, fullPrompt.length, rawText.length);
       } catch (geminiErr: any) {
-        console.warn(`[Agent Council] ${chosenModel} hatası, flash modeline dönülüyor:`, geminiErr?.message);
+        console.warn(`[Agent Council] ${chosenModel} hatası / zaman aşımı, flash modeline dönülüyor:`, geminiErr?.message);
         if (chosenModel !== 'gemini-3.8-flash') {
           usedModel = 'gemini-3.8-flash';
-          const fallbackRes = await genAI.models.generateContent({
-            model: 'gemini-3.8-flash',
-            contents: fullPrompt,
-          });
-          rawText = fallbackRes.text || '';
-          logAiUsage(sicil, fullPrompt.length, rawText.length);
+          try {
+            let timerFb: any;
+            const fbTimeoutPromise = new Promise<never>((_, reject) => {
+              timerFb = setTimeout(() => reject(new Error('Flash fallback zaman aşımına uğradı (15000ms)')), 15000);
+            });
+            const fallbackRes = await Promise.race([
+              genAI.models.generateContent({
+                model: 'gemini-3.8-flash',
+                contents: fullPrompt,
+              }),
+              fbTimeoutPromise
+            ]).finally(() => clearTimeout(timerFb));
+
+            rawText = fallbackRes.text || '';
+            logAiUsage(sicil, fullPrompt.length, rawText.length);
+          } catch (fbErr: any) {
+            console.warn('[Agent Council] Flash fallback de başarısız oldu:', fbErr?.message);
+          }
         }
       }
-
       let parsed: any = null;
       try {
         let cleaned = rawText.trim();
