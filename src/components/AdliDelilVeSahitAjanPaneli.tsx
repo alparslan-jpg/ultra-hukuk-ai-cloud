@@ -398,10 +398,46 @@ export function AdliDelilVeSahitAjanPaneli({
           )}
         </div>
       </div>
-
       {/* 3. İNCELEME SONUÇLARI VE ÇOKLU AJAN PANELİ (Forensic Audit Results) */}
       {analysisResult && (
         <div className="space-y-6 pt-2">
+          {/* Stratejik Dilekçe Yaz Butonu */}
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={async () => {
+                const btn = document.getElementById('strategic-petition-btn');
+                if (btn) btn.innerHTML = '<span class="animate-pulse">Dilekçe Yazılıyor...</span>';
+                try {
+                  const res = await fetch('/api/ai/strategic-petition', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      analysisData: analysisResult,
+                      lawyerSicilNo: user.sicilNo,
+                      lawyerName: user.fullName
+                    }),
+                  });
+                  const data = await res.json();
+                  if (data.success) {
+                    onApplyToPetition && onApplyToPetition(data.petitionText);
+                    alert('Stratejik Dilekçe başarıyla oluşturuldu ve Uygulamanın Dilekçe modülüne (veya kopyalama panosuna) aktarıldı. Dilekçenizi kontrol ediniz!');
+                  } else {
+                    alert('Dilekçe oluşturulamadı.');
+                  }
+                } catch (e) {
+                  alert('Bir hata oluştu.');
+                }
+                if (btn) btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg> <span>Bu Ajan İçgörüleriyle Stratejik Dilekçe Yaz</span>';
+              }}
+              id="strategic-petition-btn"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-emerald-900/50 transition transform active:scale-95"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Bu Ajan İçgörüleriyle Stratejik Dilekçe Yaz</span>
+            </button>
+          </div>
+
           {/* Supreme Director Verdict Hero Card */}
           <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-2 border-indigo-500/40 rounded-2xl p-6 shadow-2xl relative overflow-hidden space-y-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
