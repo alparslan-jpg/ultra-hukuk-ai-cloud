@@ -26,8 +26,8 @@
       "subscriptionEndDate": "2027-09-28T03:12:03.564Z",
       "daysRemaining": 365,
       "isActive": true,
-      "isHardwareLocked": false,
-      "boundHardwareId": null,
+      "isHardwareLocked": true,
+      "boundHardwareId": "browser-uuid",
       "status": "AKTİF"
     }
   ],
@@ -68,11 +68,11 @@
     {
       "id": "gu-1",
       "lawyerSicilNo": "8109",
-      "queryCount": 0,
-      "inputTokens": 0,
-      "outputTokens": 0,
-      "estimatedCostUsd": 0,
-      "lastUsedAt": "2026-09-28T03:12:03.564Z"
+      "queryCount": 1,
+      "inputTokens": 2571,
+      "outputTokens": 4520,
+      "estimatedCostUsd": 0.001548825,
+      "lastUsedAt": "2026-10-01T11:49:40.247Z"
     }
   ],
   "settings": {

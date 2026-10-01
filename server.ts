@@ -2026,8 +2026,18 @@ KURALLAR:
 // 2. Dual Devil's Advocate (Çift Taraflı Şeytanın Avukatı - Harp Odası)
 // Multi-Model Router: Routed to Gemini-3.1-pro-preview (Kıdemli Baş Hukuk Danışmanı) with Gemini-3.8-Flash fallback
 app.post('/api/ai/devils-advocate', async (req: Request, res: Response) => {
-  const { caseSummary, clientClaims, evidenceList, lawyerSicilNo } = req.body;
+  const { caseSummary, clientClaims, evidenceList, lawyerSicilNo, files } = req.body;
   const sicil = lawyerSicilNo || '8109';
+
+  let filesContext = '';
+  if (files && Array.isArray(files) && files.length > 0) {
+    filesContext = '\n\nEKLENEN DAVA DOSYALARI VE EVRAK İÇERİKLERİ (TOPLU YÜKLEME):\n';
+    files.forEach((f: any, i: number) => {
+      // Metin çok uzunsa kırpıyoruz ki token sınırını aşmasın
+      const safeContent = f.content ? f.content.substring(0, 8000) : 'İçerik yok';
+      filesContext += `\n--- Belge ${i + 1}: ${f.name} (${f.type}) ---\n${safeContent}\n`;
+    });
+  }
 
   if (genAI && GEMINI_API_KEY) {
     try {
@@ -2037,11 +2047,13 @@ ${STRICT_LEGAL_GROUNDING_PROMPT}
 SİSTEM TALİMATI:
 Sen Şeytanın Avukatı (Devil's Advocate) Harp Odası Kıdemli Analizörüsün (Model: Gemini 3.1 Pro / 3.8 Flash).
 Görevin: Hem DAVACI hem DAVALI tezlerindeki en zayıf noktaları, usul tuzaklarını, senetle ispat engellerini (HMK m. 200), zamanaşımı açıklarını ve somut delil boşluklarını ortaya çıkarmaktır.
-Tüm tespitlerin doğrudan kanun maddelerine (HMK, TBK, TTK, İİK) ve somut delillere dayanmalıdır.
+Ayrıca sana sunulan toplu dava dosyalarını analiz ederek, dosyanın yapısını çıkaracak, bu yapı içindeki usuli ve esasa ilişkin EKSİKLİKLERİ tespit edecek ve diğer uzman ajanlardan (Usul Ajanı, Yargıtay Emsal Ajanı vb.) alınan kurgusal içgörüleri de ekleyerek "Dosya Yapısı ve Ajan İçgörülü Eksiklik Analizi" sunacaksın.
 
 DAVA ÖZETİ: ${caseSummary}
 İDDİALAR: ${clientClaims}
-DELİLLER: ${evidenceList}
+DELİLLER: ${evidenceList}${filesContext}
+
+Tüm tespitlerin doğrudan kanun maddelerine (HMK, TBK, TTK, İİK vb.) ve sunulan somut belgelere dayanmalıdır.
 
 Yanıtını şu JSON yapısında ver:
 {
@@ -2051,7 +2063,15 @@ Yanıtını şu JSON yapısında ver:
   "senetleIspatKurali": ["HMK m.200 senet sınırı ve kesin delil zorunluluğu"],
   "savunmaKalkaniOnerisi": "Müvekkili korumak için önerilen stratejik hamle",
   "gozdenKacanMikroAyrintilar": ["İnce ayrıntı 1: Tebliğ şerhi", "İnce ayrıntı 2: İhtirazi kayıt yokluğu"],
-  "mevzuatDayanaklari": ["HMK m. 200", "TBK m. 117", "TTK m. 23"]
+  "mevzuatDayanaklari": ["HMK m. 200", "TBK m. 117", "TTK m. 23"],
+  "dosyaYapisiVeEksiklikler": [
+    {
+      "yapiBolumu": "Örn: Dava Şartları / Delil Listesi / Harçlar",
+      "tespitEdilenDurum": "Mevcut evrakların veya yapının özeti",
+      "eksiklikler": ["Eksik 1", "Eksik 2"],
+      "ajanIcgorusleri": "Usul Ajanı: 'Arabuluculuk tutanağı eklenmemiş, dava şartı yokluğu tehlikesi var' vb. yapay zeka ajanlarından stratejik bildirim"
+    }
+  ]
 }
 `;
       const { text, modelUsed } = await callRoutedGemini('devils_advocate', prompt, sicil);

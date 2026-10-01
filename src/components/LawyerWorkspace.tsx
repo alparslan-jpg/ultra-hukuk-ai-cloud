@@ -236,6 +236,7 @@ export function LawyerWorkspace({ user, initialTab, onNavigateHome }: LawyerWork
   const [devilSummary, setDevilSummary] = useState<string>('');
   const [devilResult, setDevilResult] = useState<any>(null);
   const [isDevilLoading, setIsDevilLoading] = useState<boolean>(false);
+  const [devilPendingFiles, setDevilPendingFiles] = useState<{name: string; size: number; type: string; content: string}[]>([]);
 
   // 3. Hak Düşürücü Süre & Faiz Hesaplama State
   const [eventDate, setEventDate] = useState<string>('');
@@ -450,6 +451,7 @@ export function LawyerWorkspace({ user, initialTab, onNavigateHome }: LawyerWork
           clientClaims: 'Müvekkilin tazminat ve alacak talepleri',
           evidenceList: 'Tanık beyanları ve banka kayıtları',
           lawyerSicilNo: user.sicilNo,
+          files: devilPendingFiles,
         }),
       });
       const data = await res.json();
@@ -459,6 +461,21 @@ export function LawyerWorkspace({ user, initialTab, onNavigateHome }: LawyerWork
     } finally {
       setIsDevilLoading(false);
     }
+  };
+
+  const handleDevilFileSelect = (files: File[]) => {
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setDevilPendingFiles(prev => [...prev, {
+          name: file.name,
+          size: file.size,
+          type: 'Hukuki Belge',
+          content: e.target?.result as string
+        }]);
+      };
+      reader.readAsText(file);
+    });
   };
 
   const handleTemporalCalc = async () => {
@@ -1752,12 +1769,83 @@ export function LawyerWorkspace({ user, initialTab, onNavigateHome }: LawyerWork
                 rows={3}
                 value={devilSummary}
                 onChange={(e) => setDevilSummary(e.target.value)}
-                className="w-full bg-[#0b0f19] border border-slate-700 rounded-xl p-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-rose-500 transition"
+                placeholder="Vakıaları, iddiaları veya savunmanızı özetleyin..."
+                className="w-full bg-[#0b0f19] border border-slate-700 rounded-xl p-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-rose-500 transition mb-3"
               />
+              
+              <div className="space-y-3 mb-4">
+                <label className="font-semibold text-slate-300 block flex items-center justify-between">
+                  <span>Saldırıya Uğratılacak Dosyalar (Toplu Yükleme)</span>
+                  <span className="text-[10px] font-normal text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded">
+                    Örn: Bilirkişi Raporları, Cevap Dilekçeleri, İhtarnameler
+                  </span>
+                </label>
+                
+                <div 
+                  className="border-2 border-dashed border-slate-700 hover:border-rose-500/50 bg-[#0b0f19] rounded-xl p-4 flex flex-col items-center justify-center transition-colors relative cursor-pointer"
+                  onClick={() => document.getElementById('devil-file-upload')?.click()}
+                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-rose-500', 'bg-rose-950/10'); }}
+                  onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove('border-rose-500', 'bg-rose-950/10'); }}
+                  onDrop={(e) => { 
+                    e.preventDefault(); 
+                    e.currentTarget.classList.remove('border-rose-500', 'bg-rose-950/10');
+                    if (e.dataTransfer.files) handleDevilFileSelect(Array.from(e.dataTransfer.files));
+                  }}
+                >
+                  <input 
+                    type="file" 
+                    id="devil-file-upload" 
+                    multiple 
+                    className="hidden" 
+                    onChange={(e) => {
+                      if (e.target.files) handleDevilFileSelect(Array.from(e.target.files));
+                      e.target.value = '';
+                    }} 
+                  />
+                  <Upload className="w-6 h-6 text-slate-500 mb-2" />
+                  <p className="text-xs text-slate-400 font-medium">Dosyaları sürükleyin veya <span className="text-rose-400">tıklayarak seçin</span></p>
+                </div>
+
+                {devilPendingFiles.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] text-slate-400 font-semibold">{devilPendingFiles.length} dosya eklendi:</p>
+                      <button 
+                        onClick={() => setDevilPendingFiles([])}
+                        className="text-[10px] text-rose-400 hover:text-rose-300 transition"
+                      >
+                        Tümünü Temizle
+                      </button>
+                    </div>
+                    <div className="max-h-32 overflow-y-auto space-y-1.5 pr-1">
+                      {devilPendingFiles.map((pf, idx) => (
+                        <div key={idx} className="flex items-center justify-between bg-[#131d31] p-2 rounded-lg border border-slate-700/50">
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <FileText className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                            <span className="text-[11px] text-slate-300 truncate">{pf.name}</span>
+                            <span className="text-[9px] text-slate-500 shrink-0">({Math.round(pf.size / 1024)} KB)</span>
+                          </div>
+                          <button 
+                            type="button" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDevilPendingFiles(prev => prev.filter((_, i) => i !== idx));
+                            }} 
+                            className="text-slate-500 hover:text-rose-400 transition shrink-0 ml-2"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <button
                 disabled={isDevilLoading}
                 onClick={handleDevilsAdvocate}
-                className="bg-rose-700 hover:bg-rose-600 text-white font-bold px-6 py-2.5 rounded-xl transition flex items-center gap-2 disabled:opacity-50"
+                className="bg-rose-700 hover:bg-rose-600 text-white font-bold px-6 py-2.5 rounded-xl transition flex items-center gap-2 disabled:opacity-50 mt-4"
               >
                 {isDevilLoading ? <Sparkles className="w-4 h-4 animate-spin" /> : <ShieldAlert className="w-4 h-4" />}
                 <span>Tezi Test Et ve Saldırı Açıklarını Bul</span>
@@ -1841,6 +1929,52 @@ export function LawyerWorkspace({ user, initialTab, onNavigateHome }: LawyerWork
                   </div>
                 </div>
               </div>
+
+              {devilResult.dosyaYapisiVeEksiklikler && devilResult.dosyaYapisiVeEksiklikler.length > 0 && (
+                <div className="md:col-span-2 bg-[#131d31] border border-indigo-900/40 rounded-2xl p-5 space-y-4 mt-2">
+                  <h3 className="text-xs font-bold text-indigo-400 flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-indigo-400" /> Dava Dosyası Yapısı ve Ajan İçgörülü Eksiklik Analizi
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {devilResult.dosyaYapisiVeEksiklikler.map((item: any, i: number) => (
+                      <div key={i} className="bg-[#0b0f19] border border-slate-700 rounded-xl p-4 space-y-3 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-500/10 rounded-bl-full -z-0"></div>
+                        <h4 className="text-[11px] font-bold text-slate-200 border-b border-slate-700/50 pb-2 flex items-center gap-2 relative z-10">
+                          <FileText className="w-3.5 h-3.5 text-indigo-400" />
+                          {item.yapiBolumu}
+                        </h4>
+                        
+                        <div>
+                          <p className="text-[10px] font-semibold text-slate-400 mb-1 uppercase tracking-wider">Tespit Edilen Durum</p>
+                          <p className="text-xs text-slate-300 leading-relaxed">{item.tespitEdilenDurum}</p>
+                        </div>
+                        
+                        {item.eksiklikler && item.eksiklikler.length > 0 && (
+                          <div className="bg-rose-950/20 rounded-lg p-2.5 border border-rose-900/30">
+                            <p className="text-[10px] font-semibold text-rose-400 mb-1.5 flex items-center gap-1.5">
+                              <AlertTriangle className="w-3 h-3" /> Tespit Edilen Eksiklikler
+                            </p>
+                            <ul className="text-[11px] text-slate-300 space-y-1 pl-4 list-disc">
+                              {item.eksiklikler.map((e: string, idx: number) => (
+                                <li key={idx}>{e}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {item.ajanIcgorusleri && (
+                          <div className="bg-indigo-950/20 rounded-lg p-2.5 border border-indigo-900/30 mt-2">
+                            <p className="text-[10px] font-semibold text-indigo-400 mb-1.5 flex items-center gap-1.5">
+                              <Brain className="w-3 h-3" /> Ajan İçgörüsü & Strateji
+                            </p>
+                            <p className="text-[11px] text-slate-300 italic">"{item.ajanIcgorusleri}"</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
