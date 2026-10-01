@@ -229,11 +229,31 @@ export function MuvekkilYonetimi({ onCaseSelected }: MuvekkilYonetimiProps) {
         <div className="ml-auto flex items-center gap-1.5">
           <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-semibold">{muvekkiller.length} Müvekkil</span>
           {gorunum === 'liste' && (
-            <button type="button" onClick={() => setGorunum('muvekkil-ekle')}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold transition shadow-sm">
-              <UserPlus className="w-3.5 h-3.5" />
-              <span>Müvekkil Ekle</span>
-            </button>
+            <>
+              <button type="button" onClick={() => setGorunum('muvekkil-ekle')}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold transition shadow-sm">
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Müvekkil Ekle</span>
+              </button>
+              {muvekkiller.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm('Tüm müvekkil ve dava dosyalarını silmek/temizlemek istediğinize emin misiniz?')) {
+                      setMuvekkiller([]);
+                      saveMuvekkiller([]);
+                      setSecilenMuvekkil(null);
+                      setSecilenDava(null);
+                    }
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-[11px] font-semibold transition"
+                  title="Tüm Müvekkil ve Dava Dosyalarını Temizle"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Tümünü Temizle</span>
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

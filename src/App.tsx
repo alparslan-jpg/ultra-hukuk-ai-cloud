@@ -513,87 +513,15 @@ export default function App() {
       {/* Main Dynamic View Area */}
       <main className="flex-1 w-full overflow-hidden flex flex-col">
         {/* ========================================================
-            PAGE 1: ANA SAYFA (HOME HUB & BÜTÜNLÜKLÜ MODÜL MERKEZİ)
+            PAGE 1: ANA SAYFA (BAŞ HUKUK MÜŞAVİRİ & AJAN KONSEYİ - TAM SAYFA)
             ======================================================== */}
         {currentPage === 'home' && (
-          <div className="flex overflow-hidden" style={{height: 'calc(100vh - 76px)'}}>
-            <aside className="w-60 shrink-0 bg-white dark:bg-[#0e1524] border-r border-slate-200 dark:border-slate-800 flex flex-col overflow-y-auto">
-              <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white font-bold text-sm shrink-0">
-                    {currentLawyer.fullName.replace('Av. ', '').charAt(0)}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">{currentLawyer.fullName}</p>
-                    <p className="text-[10px] text-slate-500 font-mono truncate">{currentLawyer.baroAdi}</p>
-                    <p className="text-[10px] text-slate-500 font-mono">Sicil: {currentLawyer.sicilNo}</p>
-                  </div>
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <div className="bg-slate-50 dark:bg-[#141d30] rounded-xl p-2 text-center">
-                    <p className="text-lg font-bold text-sky-600 dark:text-sky-400 font-mono">{lawyerClients.length}</p>
-                    <p className="text-[9px] text-slate-500 uppercase font-semibold">Muvekkil</p>
-                  </div>
-                  <div className="bg-slate-50 dark:bg-[#141d30] rounded-xl p-2 text-center">
-                    <p className="text-lg font-bold text-amber-600 dark:text-amber-400 font-mono">{totalActiveCasesCount}</p>
-                    <p className="text-[9px] text-slate-500 uppercase font-semibold">Derdest</p>
-                  </div>
-                </div>
-              </div>
-              <nav className="flex-1 p-2 space-y-0.5">
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1.5">Ana Islemler</p>
-                <button type="button" onClick={() => setCurrentPage('petitions')} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141d30] text-xs font-semibold text-slate-700 dark:text-slate-300 transition">
-                  <FileText className="w-3.5 h-3.5 shrink-0 text-indigo-500" /><span>Dilekce Laboratuvari</span>
-                </button>
-                <button type="button" onClick={() => setCurrentPage('analyzer')} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141d30] text-xs font-semibold text-slate-700 dark:text-slate-300 transition">
-                  <Brain className="w-3.5 h-3.5 shrink-0 text-emerald-500" /><span>Evrak Analizoru</span>
-                </button>
-                <button type="button" onClick={() => setCurrentPage('forensic')} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141d30] text-xs font-semibold text-slate-700 dark:text-slate-300 transition">
-                  <Crosshair className="w-3.5 h-3.5 shrink-0 text-rose-500" /><span>Adli Cimbiz Ajani</span>
-                </button>
-                <button type="button" onClick={() => setCurrentPage('legislation')} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141d30] text-xs font-semibold text-slate-700 dark:text-slate-300 transition">
-                  <BookOpen className="w-3.5 h-3.5 shrink-0 text-amber-500" /><span>Mevzuat and Ictihat</span>
-                </button>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1.5 pt-3">Araclar</p>
-                <button type="button" onClick={() => setHesaplamaModalOpen(true)} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141d30] text-xs font-semibold text-slate-700 dark:text-slate-300 transition">
-                  <Calculator className="w-3.5 h-3.5 shrink-0 text-orange-500" /><span>Hukuki Hesaplama</span>
-                </button>
-                <button type="button" onClick={() => setCurrentPage('workspace_full')} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141d30] text-xs font-semibold text-slate-700 dark:text-slate-300 transition">
-                  <Layers className="w-3.5 h-3.5 shrink-0 text-violet-500" /><span>Calisma Masasi</span>
-                </button>
-                <button type="button" onClick={() => setCurrentPage('apk_download')} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141d30] text-xs font-semibold text-slate-700 dark:text-slate-300 transition">
-                  <Smartphone className="w-3.5 h-3.5 shrink-0 text-teal-500" /><span>Mobil APK Indir</span>
-                </button>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1.5 pt-3">Sistem</p>
-                <button type="button" onClick={() => setKvkkModalOpen(true)} className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition ${kvkkConsentRecord ? 'hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400' : 'bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 animate-pulse'}`}>
-                  <ShieldCheck className="w-3.5 h-3.5 shrink-0" /><span>{kvkkConsentRecord ? 'KVKK Onaylı' : 'KVKK Onayı !'}</span>
-                </button>
-                <button type="button" onClick={() => { window.location.hash = '#admin'; setCurrentMode('admin'); }} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/20 text-xs font-semibold text-rose-600 dark:text-rose-400 transition">
-                  <Shield className="w-3.5 h-3.5 shrink-0" /><span>Adminator Paneli</span>
-                </button>
-              </nav>
-              <div className="p-3 border-t border-slate-200 dark:border-slate-800 text-center">
-                <p className="text-[9px] text-slate-400 font-mono">Ultra Hukuk AI</p>
-              </div>
-            </aside>
-            <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-              <div className="px-5 py-3 bg-white dark:bg-[#0e1524] border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
-                <div>
-                  <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                    <Scale className="w-4 h-4 text-amber-500" />
-                    Bas Hukuk Musaviri and Ajan Konseyi Konsultasyon Odasi
-                  </h2>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Coklu Model Orkestrasyonu - Gemini Pro + Flash - 4 Uzman Ajan - UYAP Dilekce Mimari</p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400">Ajanlar Aktif</span>
-                </div>
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <AjanKonseyiOdasi lawyerName={currentLawyer.fullName} lawyerSicilNo={currentLawyer.sicilNo} onNavigateTo={(page) => setCurrentPage(page as any)} />
-              </div>
-            </div>
+          <div className="flex-1 w-full overflow-hidden" style={{ height: 'calc(100vh - 76px)' }}>
+            <AjanKonseyiOdasi
+              lawyerName={currentLawyer.fullName}
+              lawyerSicilNo={currentLawyer.sicilNo}
+              onNavigateTo={(page) => setCurrentPage(page as any)}
+            />
           </div>
         )}
 {/* ========================================================
