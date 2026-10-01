@@ -58,15 +58,15 @@ const DURUM_COLORS: Record<string, string> = {
   'Arşiv':    'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800',
 };
 
-// ── Props ────────────────────────────────────────────────────────────────────
 interface MuvekkilYonetimiProps {
   onCaseSelected?: (ctx: { clientName: string; caseNumber: string; subject: string; files: any[] }) => void;
+  onWritePetition?: (ctx: { clientName: string; caseNumber: string; subject: string; files: any[] }) => void;
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════╗
 // ║                       MuvekkilYonetimi Panel                            ║
 // ╚══════════════════════════════════════════════════════════════════════════╝
-export function MuvekkilYonetimi({ onCaseSelected }: MuvekkilYonetimiProps) {
+export function MuvekkilYonetimi({ onCaseSelected, onWritePetition }: MuvekkilYonetimiProps) {
   const [muvekkiller, setMuvekkiller] = useState<Muvekkil[]>(loadMuvekkiller);
   const [aramaMetni, setAramaMetni] = useState('');
   const [secilenMuvekkil, setSecilenMuvekkil] = useState<Muvekkil | null>(null);
@@ -505,37 +505,114 @@ export function MuvekkilYonetimi({ onCaseSelected }: MuvekkilYonetimiProps) {
                       ) : (
                         <>
                           {/* Dava Başlık */}
-                          <div className="shrink-0 px-3 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-[#0d1525]">
-                            <div className="flex items-center justify-between mb-1">
-                              <div className="flex items-center gap-2">
-                                <Folder className="w-4 h-4 text-emerald-500 shrink-0" />
-                                <span className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{secilenDava.konu}</span>
-                                <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded border ${DURUM_COLORS[secilenDava.durum]}`}>{secilenDava.durum}</span>
+                          <div className="shrink-0 px-3.5 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-[#0d1525]">
+                            <div className="flex items-center justify-between gap-3 mb-2">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <Folder className="w-5 h-5 text-emerald-500 shrink-0" />
+                                <span className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate" title={secilenDava.konu}>
+                                  {secilenDava.konu}
+                                </span>
+                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border shrink-0 ${DURUM_COLORS[secilenDava.durum]}`}>
+                                  {secilenDava.durum}
+                                </span>
                               </div>
-                              <label className="flex items-center gap-1 px-2 py-1 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-semibold cursor-pointer transition shadow-sm">
-                                <Upload className="w-3 h-3" />Evrak Yükle
-                                <input type="file" multiple ref={fileInputRef} onChange={evrakYukle} className="hidden"
-                                  accept=".txt,.pdf,.docx,.doc,.rtf,.jpg,.jpeg,.png,.xlsx,.xls,.csv,.html,.xml" />
-                              </label>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold cursor-pointer transition shadow-sm">
+                                  <Upload className="w-3.5 h-3.5" />
+                                  <span>Evrak Yükle</span>
+                                  <input type="file" multiple ref={fileInputRef} onChange={evrakYukle} className="hidden"
+                                    accept=".txt,.pdf,.docx,.doc,.rtf,.jpg,.jpeg,.png,.xlsx,.xls,.csv,.html,.xml" />
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (onWritePetition && secilenMuvekkil) {
+                                      onWritePetition({
+                                        clientName: `${secilenMuvekkil.ad} ${secilenMuvekkil.soyad}`,
+                                        caseNumber: secilenDava.davaNo,
+                                        subject: secilenDava.konu,
+                                        files: secilenDava.evraklar
+                                      });
+                                    } else if (onCaseSelected && secilenMuvekkil) {
+                                      onCaseSelected({
+                                        clientName: `${secilenMuvekkil.ad} ${secilenMuvekkil.soyad}`,
+                                        caseNumber: secilenDava.davaNo,
+                                        subject: secilenDava.konu,
+                                        files: secilenDava.evraklar
+                                      });
+                                    }
+                                  }}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition shadow-sm"
+                                  title="Bu dava dosyasına istinaden dilekçe hazırla"
+                                >
+                                  <FileText className="w-3.5 h-3.5" />
+                                  <span>Dilekçe Yaz</span>
+                                </button>
+                              </div>
                             </div>
-                            <div className="flex flex-wrap gap-3 text-[10px] text-slate-400">
-                              {secilenDava.davaNo && <span className="font-mono"><Hash className="w-2.5 h-2.5 inline" /> {secilenDava.davaNo}</span>}
-                              {secilenDava.mahkeme && <span><Gavel className="w-2.5 h-2.5 inline" /> {secilenDava.mahkeme}</span>}
+                            <div className="flex flex-wrap gap-3 text-xs text-slate-400">
+                              {secilenDava.davaNo && <span className="font-mono"><Hash className="w-3 h-3 inline text-slate-500" /> {secilenDava.davaNo}</span>}
+                              {secilenDava.mahkeme && <span><Gavel className="w-3 h-3 inline text-slate-500" /> {secilenDava.mahkeme}</span>}
                               {secilenDava.karsiTaraf && <span>vs. {secilenDava.karsiTaraf}</span>}
                             </div>
-                            {secilenDava.aciklama && <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">{secilenDava.aciklama}</p>}
+                            {secilenDava.aciklama && <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{secilenDava.aciklama}</p>}
                           </div>
 
                           {/* Evrak Listesi */}
-                          <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
-                            <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide px-1 mb-2">
-                              Dava Evrakları ({secilenDava.evraklar.length})
+                          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                            <div className="flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide px-1 mb-2">
+                              <span>Dava Evrakları ({secilenDava.evraklar.length})</span>
+                              <div className="flex items-center gap-2 normal-case font-normal">
+                                <button
+                                  type="button"
+                                  onClick={() => fileInputRef.current?.click()}
+                                  className="text-sky-500 hover:text-sky-400 text-xs font-semibold flex items-center gap-1"
+                                >
+                                  <Upload className="w-3 h-3" /> + Evrak Ekle
+                                </button>
+                              </div>
                             </div>
                             {secilenDava.evraklar.length === 0 && (
-                              <div className="py-8 text-center text-[11px] text-slate-400">
-                                <Paperclip className="w-7 h-7 mx-auto mb-2 opacity-20" />
-                                Henüz evrak yüklenmemiş.<br/>
-                                <span className="text-indigo-500">"Evrak Yükle"</span> butonuna tıklayın.
+                              <div className="py-12 text-center text-slate-400 space-y-3 bg-slate-50/50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 p-6 my-2">
+                                <Paperclip className="w-10 h-10 mx-auto text-slate-400/40 animate-pulse" />
+                                <div>
+                                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Henüz evrak yüklenmemiş</p>
+                                  <p className="text-xs text-slate-500 mt-0.5">Dava dilekçesi, delil listesi, tapu kaydı veya bilirkişi raporu ekleyin.</p>
+                                </div>
+                                <div className="flex items-center justify-center gap-3 pt-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs shadow-md shadow-sky-600/20 transition active:scale-95"
+                                  >
+                                    <Upload className="w-4 h-4" />
+                                    <span>Evrak Yükle</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (onWritePetition && secilenMuvekkil) {
+                                        onWritePetition({
+                                          clientName: `${secilenMuvekkil.ad} ${secilenMuvekkil.soyad}`,
+                                          caseNumber: secilenDava.davaNo,
+                                          subject: secilenDava.konu,
+                                          files: secilenDava.evraklar
+                                        });
+                                      } else if (onCaseSelected && secilenMuvekkil) {
+                                        onCaseSelected({
+                                          clientName: `${secilenMuvekkil.ad} ${secilenMuvekkil.soyad}`,
+                                          caseNumber: secilenDava.davaNo,
+                                          subject: secilenDava.konu,
+                                          files: secilenDava.evraklar
+                                        });
+                                      }
+                                    }}
+                                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-md shadow-emerald-600/20 transition active:scale-95"
+                                  >
+                                    <FileText className="w-4 h-4" />
+                                    <span>Dilekçe Yaz</span>
+                                  </button>
+                                </div>
                               </div>
                             )}
                             {secilenDava.evraklar.map(evrak => (

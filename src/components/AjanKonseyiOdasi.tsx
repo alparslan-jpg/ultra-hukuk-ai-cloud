@@ -555,6 +555,18 @@ export function AjanKonseyiOdasi({
               setShowMuvekkilPanel(false);
               setActiveModule('musavir');
             }}
+            onWritePetition={(ctx) => {
+              const summary = `Müvekkil: ${ctx.clientName}\nDava: ${ctx.caseNumber} - ${ctx.subject}\nEvrak Sayısı: ${ctx.files.length}`;
+              if (onApplyToPetition) {
+                onApplyToPetition(summary);
+              }
+              if (onNavigateTo) {
+                onNavigateTo('petitions');
+              } else {
+                setActiveModule('dilekce');
+                setShowMuvekkilPanel(false);
+              }
+            }}
           />
         ) : activeModule === 'arsiv' ? (
           <div className="flex-1 bg-white dark:bg-[#0e1524] flex flex-col overflow-hidden p-6 space-y-4">
