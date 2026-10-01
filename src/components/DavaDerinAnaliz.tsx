@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import {
+import { Ghost, Target, Brain, 
   Brain,
   Zap,
   UploadCloud,
@@ -166,7 +166,7 @@ export function DavaDerinAnaliz({
       if (data.success) {
         setAnalysisResult(data);
         setAnalysisHistory(prev => [data, ...prev].slice(0, 50)); // Keep last 50
-        setActiveViewTab('overview');
+        setActiveViewTab('basHukukMusaviri');
         try {
           const textForAudit = `${data.davaOzeti || ''} ${data.hukukiTeshis || ''} ${data.delilVeEvrakDenetimi?.senetleIspatKuraliHMK200 || ''} ${data.usuliTuzaklarVeRiskler?.zamanasimiRiski || ''} ${(data.kanunMaddeleriAtiflari || []).join(' ')} ${(data.kritikVakialar || []).join(' ')}`;
           const audit = crossReferenceAiWithStatutes(textForAudit);
@@ -321,7 +321,7 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
                 type="button"
                 onClick={() => {
                   setAnalysisResult(item);
-                  setActiveViewTab('overview');
+                  setActiveViewTab('basHukukMusaviri');
                 }}
                 className="w-full text-left p-3 rounded-xl bg-slate-950/50 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition space-y-1"
               >
@@ -805,351 +805,132 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
               </div>
 
               {/* Tab 1: Overview & Facts */}
-              {activeViewTab === 'overview' && (
-                <div className="space-y-4 text-xs">
-                  <div className="p-4 bg-slate-950/70 border border-slate-800 rounded-xl space-y-2">
-                    <h4 className="font-bold text-amber-300 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                      <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-                      Hukuki Teşhis & Vakıa Analizi
-                    </h4>
-                    <p className="text-slate-300 leading-relaxed">{analysisResult.hukukiTeshis}</p>
-                    <div className="pt-2 border-t border-slate-900 text-slate-400">
-                      <strong className="text-slate-200">Dava Özeti: </strong>
-                      {analysisResult.davaOzeti}
+              
+              {activeViewTab === 'basHukukMusaviri' && analysisResult.basHukukMusaviriSentezi && (
+                <div className="space-y-6 animate-fade-in">
+                  <div className="bg-indigo-950/30 border border-indigo-500/20 rounded-2xl p-5 space-y-4">
+                    <h4 className="text-indigo-400 font-bold flex items-center gap-2"><Target className="w-4 h-4"/> Yönetici Özeti ve Hukuki Teşhis</h4>
+                    <p className="text-slate-200 text-sm leading-relaxed">{analysisResult.basHukukMusaviriSentezi.davaOzetiVeTeshis}</p>
+                  </div>
+                  <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 space-y-4">
+                    <h4 className="text-emerald-400 font-bold flex items-center gap-2"><Brain className="w-4 h-4"/> Ajanların Verilerini Birleştiren Derin Analiz</h4>
+                    <div className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap bg-slate-950/50 p-4 rounded-xl border border-slate-800">
+                      {analysisResult.basHukukMusaviriSentezi.tumAjanlarinVerileriniBirlestirenDerinAnaliz}
                     </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-slate-300 text-xs flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      Tespit Edilen Kritik Vakıalar
-                    </h4>
-                    <div className="space-y-1.5">
-                      {analysisResult.kritikVakialar.map((v, i) => (
-                        <div
-                          key={i}
-                          className="flex items-start gap-2 p-2.5 rounded-lg bg-slate-950/50 border border-slate-800/80 text-slate-300"
-                        >
-                          <span className="w-5 h-5 rounded-md bg-slate-800 text-slate-400 flex items-center justify-center font-mono text-[10px] shrink-0">
-                            {i + 1}
-                          </span>
-                          <span>{v}</span>
-                        </div>
-                      ))}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-emerald-950/20 border border-emerald-900/40 rounded-xl p-4">
+                      <span className="text-xs text-emerald-500 font-bold block mb-1">Kazanma İhtimali</span>
+                      <span className="text-2xl font-black text-emerald-400">%{(analysisResult.basHukukMusaviriSentezi.kazanmaIhtimali || 0)}</span>
+                    </div>
+                    <div className="bg-sky-950/20 border border-sky-900/40 rounded-xl p-4">
+                      <span className="text-xs text-sky-500 font-bold block mb-1">Stratejik Yol Haritası</span>
+                      <span className="text-sm text-sky-200 block">{analysisResult.basHukukMusaviriSentezi.stratejikYolHaritasiVurgusu}</span>
                     </div>
                   </div>
-
-                  {/* Positive Law References */}
-                  {analysisResult.kanunMaddeleriAtiflari && analysisResult.kanunMaddeleriAtiflari.length > 0 && (
-                    <div className="p-3 rounded-xl bg-slate-950/50 border border-slate-800 space-y-2">
-                      <div className="text-[11px] font-semibold text-slate-400">İlgili Pozitif Norm Dayanakları:</div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {analysisResult.kanunMaddeleriAtiflari.map((norm, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            onClick={() => onNavigateToCrossref && onNavigateToCrossref(norm)}
-                            className="px-2.5 py-1 rounded-md bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-mono flex items-center gap-1 transition"
-                            title="Mevzuat Veri Tabanında İncele"
-                          >
-                            <span>{norm}</span>
-                            <ArrowRight className="w-2.5 h-2.5" />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Turkish Law Database Grounding Audit Report */}
-                  {auditReport && (
-                    <div className="p-4 rounded-xl bg-slate-950/70 border border-indigo-500/30 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                          <h5 className="font-bold text-slate-200 text-xs">
-                            Türk Pozitif Hukuku Veritabanı Doğrulama Denetimi
-                          </h5>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold font-mono">
-                            Skor: %{auditReport.groundingScore} Doğrulanmış
-                          </span>
-                        </div>
-                        <span className="text-[11px] text-slate-400 font-mono">
-                          {auditReport.totalClaimsChecked} Atıf Taranmıştır
-                        </span>
-                      </div>
-
-                      {auditReport.discrepancies.length > 0 && (
-                        <div className="space-y-2 pt-1">
-                          {auditReport.discrepancies.map((disc, idx) => (
-                            <div
-                              key={idx}
-                              className={`p-2.5 rounded-lg border text-[11px] ${
-                                disc.status === 'VERIFIED'
-                                  ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-200'
-                                  : disc.status === 'FLAGGED'
-                                  ? 'bg-rose-950/30 border-rose-500/40 text-rose-200'
-                                  : 'bg-amber-950/20 border-amber-500/30 text-amber-200'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between font-bold mb-1">
-                                <span className="font-mono text-amber-300">{disc.citation}</span>
-                                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-black/40">
-                                  {disc.statusLabel}
-                                </span>
-                              </div>
-                              <p className="text-slate-300">{disc.verdict}</p>
-                              {disc.actualQuotation && (
-                                <blockquote className="mt-1 pl-2 border-l-2 border-indigo-400/50 italic text-[10px] text-slate-400">
-                                  "{disc.actualQuotation}"
-                                </blockquote>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               )}
 
-              {/* Tab 2: Claims & Defenses */}
-              {activeViewTab === 'claims' && (
-                <div className="space-y-4 text-xs">
+              {activeViewTab === 'usulAjani' && analysisResult.usulSuresiAjaniRaporu && (
+                <div className="space-y-4 animate-fade-in">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Davacı İddiaları */}
-                    <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2.5">
-                      <h4 className="font-bold text-amber-300 text-xs flex items-center gap-1.5">
-                        <Scale className="w-3.5 h-3.5 text-amber-400" />
-                        Davacı Tarafın Temel İddiaları
-                      </h4>
-                      <ul className="space-y-2">
-                        {analysisResult.iddiaVeSavunmaKurgusu.davaciIddialari.map((item, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-slate-300">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
+                    <div className="bg-rose-950/20 border border-rose-900/40 rounded-xl p-4 space-y-2">
+                      <h4 className="text-rose-400 text-xs font-bold uppercase tracking-wider">Zamanaşımı ve Hak Düşürücü Süreler</h4>
+                      <ul className="list-disc list-inside text-slate-300 text-sm space-y-1">
+                        {(analysisResult.usulSuresiAjaniRaporu.zamanasimiVeHakDusurucuSureler || []).map((s, i) => <li key={i}>{s}</li>)}
                       </ul>
                     </div>
-
-                    {/* Davalı Savunmaları */}
-                    <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2.5">
-                      <h4 className="font-bold text-sky-300 text-xs flex items-center gap-1.5">
-                        <ShieldAlert className="w-3.5 h-3.5 text-sky-400" />
-                        Davalı Tarafın Savunma Hamleleri
-                      </h4>
-                      <ul className="space-y-2">
-                        {analysisResult.iddiaVeSavunmaKurgusu.davaliSavunmalari.map((item, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-slate-300">
-                            <span className="w-1.5 h-1.5 rounded-full bg-sky-400 mt-1.5 shrink-0" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
+                    <div className="bg-amber-950/20 border border-amber-900/40 rounded-xl p-4 space-y-2">
+                      <h4 className="text-amber-400 text-xs font-bold uppercase tracking-wider">HMK Uyarısı & Acil Adımlar</h4>
+                      <ul className="list-disc list-inside text-slate-300 text-sm space-y-1">
+                        {(analysisResult.usulSuresiAjaniRaporu.hmkUyarisiVeAcilAdimlar || []).map((s, i) => <li key={i}>{s}</li>)}
                       </ul>
                     </div>
                   </div>
-
-                  {/* Defiler ve İlk İtirazlar */}
-                  <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 space-y-2">
-                    <h4 className="font-bold text-rose-300 text-xs flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
-                      Beklenen Def'iler ve İlk İtirazlar (HMK m. 116 / TBK)
-                    </h4>
-                    <div className="space-y-1">
-                      {analysisResult.iddiaVeSavunmaKurgusu.defilerVeItirazlar.map((d, i) => (
-                        <p key={i} className="text-slate-300 flex items-center gap-2">
-                          <span className="w-1 h-1 rounded-full bg-rose-400" />
-                          <span>{d}</span>
-                        </p>
-                      ))}
-                    </div>
+                  <div className="bg-slate-800/50 rounded-xl p-4 text-sm flex justify-between items-center">
+                    <div><span className="text-slate-400 block text-xs">Görevli ve Yetkili Mahkeme</span><span className="text-sky-300 font-bold">{analysisResult.usulSuresiAjaniRaporu.gorevliYetkiliMahkeme}</span></div>
+                    <div className="text-right"><span className="text-slate-400 block text-xs">Arabuluculuk Şartı</span><span className="text-emerald-300 font-bold">{analysisResult.usulSuresiAjaniRaporu.arabuluculukDavaSarti}</span></div>
                   </div>
                 </div>
               )}
 
-              {/* Tab 3: Evidence & HMK 200 */}
-              {activeViewTab === 'evidence' && (
-                <div className="space-y-4 text-xs">
-                  {/* HMK 200 Banner */}
-                  <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/40 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-amber-300 flex items-center gap-1.5 text-xs">
-                        <Scale className="w-4 h-4 text-amber-400" />
-                        HMK m. 200 Senetle İspat Sınırı Denetimi
-                      </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">
-                        Usul Kuralı
-                      </span>
-                    </div>
-                    <p className="text-slate-200 leading-relaxed">
-                      {analysisResult.delilVeEvrakDenetimi.senetleIspatKuraliHMK200}
-                    </p>
+              {activeViewTab === 'emsalAjani' && analysisResult.yargitayEmsalAjaniRaporu && (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="bg-slate-900 border border-slate-700 rounded-xl p-5">
+                    <h4 className="text-sky-400 font-bold mb-2">Benzer Vakıalarda Yargıtay Yaklaşımı</h4>
+                    <p className="text-slate-300 text-sm">{analysisResult.yargitayEmsalAjaniRaporu.benzerVakialardaYargitayYaklasimi}</p>
                   </div>
+                  <div className="bg-indigo-950/20 border border-indigo-900/40 rounded-xl p-5">
+                    <h4 className="text-indigo-400 font-bold mb-3">HGK, Daire & BAM İlke Kararları</h4>
+                    <div className="space-y-2">
+                      {(analysisResult.yargitayEmsalAjaniRaporu.hgkDaiveBamIlkeKararlari || []).map((k, i) => (
+                        <div key={i} className="p-3 bg-slate-950/50 rounded-lg border border-slate-800 text-slate-300 text-sm border-l-2 border-l-indigo-500">
+                          {k}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="bg-slate-800/50 rounded-xl p-4 text-sm">
+                    <h4 className="text-emerald-400 font-bold mb-2">Lehe ve Aleyhe Emsal Karşılaştırması</h4>
+                    <p className="text-slate-300">{analysisResult.yargitayEmsalAjaniRaporu.leheVeAleyheEmsalKarsilastirmasi}</p>
+                  </div>
+                </div>
+              )}
 
+              {activeViewTab === 'seytaninAvukati' && analysisResult.seytaninAvukatiRaporu && (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="bg-rose-950/30 border border-rose-900/50 rounded-xl p-5">
+                    <h4 className="text-rose-400 font-bold flex items-center gap-2 mb-2"><Ghost className="w-4 h-4"/> Karşı Taraf Ne Yapar? (En Kötü Senaryo)</h4>
+                    <p className="text-rose-200 text-sm">{analysisResult.seytaninAvukatiRaporu.karsiTarafNeYapar}</p>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
-                      <h4 className="font-bold text-emerald-400 text-xs">Güçlü & Yazılı Deliller</h4>
-                      <ul className="space-y-1.5">
-                        {analysisResult.delilVeEvrakDenetimi.gucluDeliller.map((g, i) => (
-                          <li key={i} className="flex items-start gap-2 text-slate-300">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                            <span>{g}</span>
-                          </li>
-                        ))}
+                    <div className="bg-slate-900 border border-slate-700 rounded-xl p-4">
+                      <h4 className="text-amber-400 font-bold mb-2 text-sm">Dosyadaki Zayıf Halkalar & Açıklar</h4>
+                      <ul className="list-disc list-inside text-slate-300 text-xs space-y-1">
+                        {(analysisResult.seytaninAvukatiRaporu.dosyadakiZayifHalkalarVeAciklar || []).map((z, i) => <li key={i}>{z}</li>)}
                       </ul>
                     </div>
-
-                    <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
-                      <h4 className="font-bold text-amber-400 text-xs">Zayıf / Kuşkulu Deliller</h4>
-                      <ul className="space-y-1.5">
-                        {analysisResult.delilVeEvrakDenetimi.zayifVeyaKuskuluDeliller.map((z, i) => (
-                          <li key={i} className="flex items-start gap-2 text-slate-300">
-                            <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                            <span>{z}</span>
-                          </li>
-                        ))}
+                    <div className="bg-slate-900 border border-slate-700 rounded-xl p-4">
+                      <h4 className="text-amber-400 font-bold mb-2 text-sm">Delil Çelişki ve Riskleri</h4>
+                      <ul className="list-disc list-inside text-slate-300 text-xs space-y-1">
+                        {(analysisResult.seytaninAvukatiRaporu.delilCeliskiVeRiskleri || []).map((d, i) => <li key={i}>{d}</li>)}
                       </ul>
                     </div>
                   </div>
-
-                  {/* Mikro Ayrıntılar */}
-                  <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
-                    <h4 className="font-bold text-sky-300 text-xs flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-                      Gözden Kaçabilecek Mikro Ayrıntılar (İmza, Tebliğ Şerhi, İhtirazi Kayıt)
-                    </h4>
-                    <div className="space-y-1">
-                      {analysisResult.delilVeEvrakDenetimi.mikroAyrintilarVeEksikler.map((m, i) => (
-                        <p key={i} className="text-slate-300 flex items-start gap-2">
-                          <ChevronRight className="w-3.5 h-3.5 text-sky-400 shrink-0 mt-0.5" />
-                          <span>{m}</span>
-                        </p>
-                      ))}
-                    </div>
+                  <div className="bg-emerald-950/20 border border-emerald-900/40 rounded-xl p-4">
+                    <h4 className="text-emerald-400 font-bold mb-2">Karşı Savunma & Panzehir Stratejisi</h4>
+                    <p className="text-emerald-200 text-sm">{analysisResult.seytaninAvukatiRaporu.karsiSavunmaStratejisi}</p>
                   </div>
                 </div>
               )}
 
-              {/* Tab 4: Procedural Traps & Statutes */}
-              {activeViewTab === 'procedural' && (
-                <div className="space-y-4 text-xs">
-                  {/* Zamanaşımı */}
-                  <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
-                    <h4 className="font-bold text-rose-300 text-xs flex items-center gap-1.5">
-                      <Clock className="w-4 h-4 text-rose-400" />
-                      Zamanaşımı Değerlendirmesi
-                    </h4>
-                    <p className="text-slate-300 leading-relaxed">
-                      {analysisResult.usuliTuzaklarVeRiskler.zamanasimiRiski}
-                    </p>
+              {activeViewTab === 'dilekceMimari' && analysisResult.dilekceMimariRaporu && (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="bg-sky-950/20 border border-sky-900/40 rounded-xl p-5">
+                    <h4 className="text-sky-400 font-bold mb-2">UYAP Netice-i Talep Önerisi</h4>
+                    <p className="text-sky-100 text-sm font-mono p-3 bg-slate-950/50 rounded-lg border border-slate-800">{analysisResult.dilekceMimariRaporu.uyapNeticeiTalepOnerisi}</p>
                   </div>
-
-                  {/* Hak Düşürücü Süreler */}
-                  <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-amber-300 text-xs flex items-center gap-1.5">
-                        <AlertTriangle className="w-4 h-4 text-amber-400" />
-                        HMK ve Yasal Hak Düşürücü Süreler
-                      </h4>
-                      {onNavigateToTimeline && (
-                        <button
-                          type="button"
-                          onClick={onNavigateToTimeline}
-                          className="text-[11px] text-sky-400 hover:underline flex items-center gap-1"
-                        >
-                          <Calendar className="w-3 h-3" />
-                          <span>Dava Takviminde Gör</span>
-                        </button>
-                      )}
-                    </div>
-                    <ul className="space-y-1.5">
-                      {analysisResult.usuliTuzaklarVeRiskler.hakDusurucuSureler.map((s, i) => (
-                        <li key={i} className="flex items-start gap-2 text-slate-300">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0" />
-                          <span>{s}</span>
-                        </li>
+                  <div className="bg-slate-900 border border-slate-700 rounded-xl p-5">
+                    <h4 className="text-indigo-400 font-bold mb-3">Dilekçe Kurgusu Hiyerarşisi</h4>
+                    <div className="space-y-2">
+                      {(analysisResult.dilekceMimariRaporu.dilekceKurgusuHiyerarsisi || []).map((k, i) => (
+                        <div key={i} className="flex gap-3 items-start p-2 bg-slate-800/30 rounded-lg">
+                          <span className="text-indigo-500 font-black">{i+1}.</span>
+                          <span className="text-slate-300 text-sm">{k}</span>
+                        </div>
                       ))}
+                    </div>
+                  </div>
+                  <div className="bg-amber-950/20 border border-amber-900/40 rounded-xl p-4">
+                    <h4 className="text-amber-400 font-bold mb-2 text-sm">Tensip ve Müzekkere Talepleri</h4>
+                    <ul className="list-disc list-inside text-amber-200/80 text-xs space-y-1">
+                      {(analysisResult.dilekceMimariRaporu.tensipVeMuzekkereTalepleri || []).map((t, i) => <li key={i}>{t}</li>)}
                     </ul>
                   </div>
-
-                  {/* Dava Şartı Eksiklikleri & Arabuluculuk */}
-                  <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
-                    <h4 className="font-bold text-indigo-300 text-xs">
-                      Dava Şartları (HMK m. 114/115 & Arabuluculuk)
-                    </h4>
-                    <p className="text-slate-400">
-                      <strong>Görev/Yetki Durumu:</strong> {analysisResult.usuliTuzaklarVeRiskler.gorevYetkiSorunu}
-                    </p>
-                    <div className="space-y-1">
-                      {analysisResult.usuliTuzaklarVeRiskler.davaSartiEksiklikleri.map((e, i) => (
-                        <p key={i} className="text-slate-300 flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                          <span>{e}</span>
-                        </p>
-                      ))}
-                    </div>
-                  </div>
                 </div>
               )}
 
-              {/* Tab 5: Deep Legal Reasoning & War Room */}
-              {activeViewTab === 'deep_reasoning' && (
-                <div className="space-y-4 text-xs">
-                  {/* Doktrin & Emsal */}
-                  <div className="p-4 rounded-xl bg-sky-950/30 border border-sky-800/50 space-y-2">
-                    <h4 className="font-bold text-sky-300 text-xs flex items-center gap-1.5">
-                      <Brain className="w-4 h-4 text-sky-400" />
-                      Yargıtay ve Doktrin İçtihat Çerçevesi
-                    </h4>
-                    <p className="text-slate-200 leading-relaxed">
-                      {analysisResult.derinHukukiMuhakeme.doktrinVeYargitayIctihati}
-                    </p>
-                  </div>
-
-                  {/* Şeytanın Avukatı Karşı Taarruz */}
-                  <div className="p-4 rounded-xl bg-rose-950/30 border border-rose-800/50 space-y-2.5">
-                    <h4 className="font-bold text-rose-300 text-xs flex items-center gap-1.5">
-                      <ShieldAlert className="w-4 h-4 text-rose-400" />
-                      Harp Odası: Karşı Taarruz Hamlesi & Savunma Kalkanı
-                    </h4>
-                    <div className="space-y-2">
-                      {analysisResult.derinHukukiMuhakeme.seytaninAvukatiKarsiTaarruz.map((hamle, i) => (
-                        <div key={i} className="p-2.5 rounded-lg bg-slate-950/70 border border-rose-900/40 text-slate-300">
-                          {hamle}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Stratejik Eylem Planı */}
-                  <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2.5">
-                    <h4 className="font-bold text-emerald-300 text-xs flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                      Avukat İçin Adım Adım Stratejik Yol Haritası
-                    </h4>
-                    <div className="space-y-2">
-                      {analysisResult.derinHukukiMuhakeme.stratejikEylemPlani.map((adim, i) => (
-                        <div key={i} className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-200">
-                          <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono text-[11px] font-bold">
-                            Adım {i + 1}
-                          </span>
-                          <span>{adim}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Hakim Tahmini */}
-                  <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-slate-300">
-                    <strong className="text-amber-300 block mb-1 text-xs">
-                      Hakim Nazarında Olası Sonuç Değerlendirmesi:
-                    </strong>
-                    {analysisResult.derinHukukiMuhakeme.hakimNazarindaSonucTahmini}
-                  </div>
-                </div>
-              )}
-
-              {/* Bottom Action Bar */}
+{/* Bottom Action Bar */}
               <div className="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
                 <div className="text-[11px] text-slate-400">
                   Model: <strong className="text-slate-200">{analysisResult.modelUsed}</strong>
