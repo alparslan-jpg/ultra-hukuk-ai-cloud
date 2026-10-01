@@ -231,7 +231,7 @@ export function AjanKonseyiOdasi({
   return (
     <div className="space-y-6">
       {/* Top Banner & Multi-Agent Matrix Bar */}
-      <div className="bg-white dark:bg-[#0e1524] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-5 sm:p-6 shadow-sm relative overflow-hidden backdrop-blur-md">
+      <div className="bg-white dark:bg-[#0e1524] border-b border-slate-200 dark:border-slate-800/80 px-5 py-4 shadow-sm relative overflow-hidden backdrop-blur-md shrink-0">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
           <div className="space-y-1">
             <div className="flex items-center gap-2.5">
@@ -332,9 +332,9 @@ export function AjanKonseyiOdasi({
       </div>
 
       {/* Main Conversation & Roadmap Display */}
-      <div className="bg-white dark:bg-[#0e1524] border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-[640px]">
+      <div className="flex-1 bg-white dark:bg-[#0e1524] flex flex-col overflow-hidden" style={{minHeight: 0}}>
         {/* Messages Stream */}
-        <div className="flex-1 p-5 overflow-y-auto space-y-6 max-h-[580px]">
+        <div className="flex-1 p-5 overflow-y-auto space-y-6">
           {consultationHistory.map((msg) => {
             const isLawyer = msg.sender === 'lawyer';
 

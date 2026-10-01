@@ -273,7 +273,6 @@ export default function App() {
                 <span className="hidden sm:inline text-xs text-slate-400 dark:text-slate-500" aria-hidden="true">/</span>
                 <span className="hidden sm:inline text-xs font-medium text-slate-600 dark:text-slate-400 truncate max-w-[140px] md:max-w-[200px]">
                   {currentPage === 'home' && 'Çalışma Portalı'}
-                  {currentPage === 'clients' && 'Müvekkil & Davalar'}
                   {currentPage === 'forensic' && 'Adli Hakikat (Cımbız)'}
                   {currentPage === 'analyzer' && 'Dava Evrak Analizörü'}
                   {currentPage === 'petitions' && 'Dilekçe & Ajanlar'}
@@ -297,17 +296,6 @@ export default function App() {
               }`}
             >
               Ana Sayfa
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrentPage('clients')}
-              className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors ${
-                currentPage === 'clients'
-                  ? 'bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-300 shadow-sm font-bold'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-              }`}
-            >
-              Müvekkil & Davalar
             </button>
             <button
               type="button"
@@ -523,7 +511,7 @@ export default function App() {
       )}
 
       {/* Main Dynamic View Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+      <main className="flex-1 w-full overflow-hidden flex flex-col">
         {/* ========================================================
             PAGE 1: ANA SAYFA (HOME HUB & BÜTÜNLÜKLÜ MODÜL MERKEZİ)
             ======================================================== */}
@@ -554,12 +542,6 @@ export default function App() {
               </div>
               <nav className="flex-1 p-2 space-y-0.5">
                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1.5">Ana Islemler</p>
-                <button type="button" onClick={() => setCurrentPage('clients')} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-white text-xs font-bold transition shadow-sm active:scale-95 mb-1">
-                  <UserPlus className="w-4 h-4 shrink-0" /><span>Muvekkil / Dava Ekle</span>
-                </button>
-                <button type="button" onClick={() => setCurrentPage('clients')} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141d30] text-xs font-semibold text-slate-700 dark:text-slate-300 transition">
-                  <Users className="w-3.5 h-3.5 shrink-0 text-sky-500" /><span>Muvekkil and Davalar</span>
-                </button>
                 <button type="button" onClick={() => setCurrentPage('petitions')} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141d30] text-xs font-semibold text-slate-700 dark:text-slate-300 transition">
                   <FileText className="w-3.5 h-3.5 shrink-0 text-indigo-500" /><span>Dilekce Laboratuvari</span>
                 </button>
@@ -614,35 +596,7 @@ export default function App() {
             </div>
           </div>
         )}
-
-        {/* ========================================================
-            PAGE 2: MÜVEKKİL & DAVA DOSYALARI ALT SAYFASI
-            ======================================================== */}
-        {currentPage === 'clients' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between bg-white dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => setCurrentPage('home')}
-                className="text-xs px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 font-bold transition flex items-center gap-1.5 shadow-sm"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Ana Sayfa'ya Dön</span>
-              </button>
-              <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                Alt Sayfa: <strong className="text-sky-600 dark:text-sky-400">Müvekkil ve Dava Dosyaları</strong>
-              </div>
-            </div>
-
-            <LawyerWorkspace
-              user={currentLawyer}
-              initialTab="portal"
-              onNavigateHome={() => setCurrentPage('home')}
-            />
-          </div>
-        )}
-
-        {/* ========================================================
+{/* ========================================================
             PAGE 3: ADLİ HAKİKAT & ŞAHİT ÇELİŞKİSİ (CIMBIZ AJANI) ALT SAYFASI
             ======================================================== */}
         {currentPage === 'forensic' && (
