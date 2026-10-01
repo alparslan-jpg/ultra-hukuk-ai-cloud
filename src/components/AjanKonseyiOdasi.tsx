@@ -41,6 +41,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { CaseFileItem } from './MuvekkilDavaPortali';
+import { MuvekkilYonetimi } from './MuvekkilYonetimi';
 
 interface AjanKonseyiOdasiProps {
   lawyerName?: string;
@@ -75,6 +76,7 @@ export function AjanKonseyiOdasi({
 }: AjanKonseyiOdasiProps) {
   // Model router selection: Gemini 3.1 Pro (Deep Legal Reasoning) vs Gemini 3.8 Flash (High Speed)
   const [orchestratorModel, setOrchestratorModel] = useState<'pro' | 'flash'>('pro');
+  const [showMuvekkilPanel, setShowMuvekkilPanel] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeModule, setActiveModule] = useState<string>('musavir');
   const [archivedCases, setArchivedCases] = useState<any[]>(() => {
