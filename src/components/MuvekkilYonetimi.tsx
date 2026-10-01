@@ -440,7 +440,7 @@ export function MuvekkilYonetimi({ onCaseSelected }: MuvekkilYonetimiProps) {
                       {secilenMuvekkil.davalar.map(d => (
                         <div key={d.id}
                           className={`border-b border-slate-100 dark:border-slate-800/80 ${secilenDava?.id === d.id ? 'bg-emerald-50 dark:bg-emerald-950/30' : ''}`}>
-                          <button type="button" onClick={() => davaSeçVeAktar(d)}
+                          <button type="button" onClick={() => setSecilenDava(d)}
                             className="w-full text-left px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition group">
                             <div className="flex items-start gap-1.5">
                               <Folder className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${secilenDava?.id === d.id ? 'text-emerald-500' : 'text-slate-400'}`} />
