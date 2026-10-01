@@ -248,13 +248,13 @@ export function MuvekkilYonetimi({ onCaseSelected }: MuvekkilYonetimiProps) {
                 <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Ad *</label>
                 <input type="text" value={muvForm.ad} onChange={e => setMuvForm(p => ({...p, ad: e.target.value}))}
                   className="w-full bg-white dark:bg-[#141d30] border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
-                  placeholder="Avukat adı" />
+                  placeholder="Müvekkil adı" />
               </div>
               <div>
                 <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Soyad *</label>
                 <input type="text" value={muvForm.soyad} onChange={e => setMuvForm(p => ({...p, soyad: e.target.value}))}
                   className="w-full bg-white dark:bg-[#141d30] border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
-                  placeholder="Avukat soyadı" />
+                  placeholder="Müvekkil soyadı" />
               </div>
             </div>
             <div>
