@@ -591,7 +591,7 @@ export default function App() {
                 </div>
               </div>
               <div className="flex-1 overflow-hidden">
-                <AjanKonseyiOdasi lawyerName={currentLawyer.fullName} lawyerSicilNo={currentLawyer.sicilNo} />
+                <AjanKonseyiOdasi lawyerName={currentLawyer.fullName} lawyerSicilNo={currentLawyer.sicilNo} onNavigateTo={(page) => setCurrentPage(page as any)} />
               </div>
             </div>
           </div>

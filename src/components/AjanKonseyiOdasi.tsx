@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Brain,
   Mic,
@@ -39,6 +39,7 @@ interface AjanKonseyiOdasiProps {
   } | null;
   onApplyToPetition?: (text: string) => void;
   onSyncGit?: () => void;
+  onNavigateTo?: (page: string) => void;
 }
 
 interface MessageItem {
@@ -55,10 +56,19 @@ export function AjanKonseyiOdasi({
   lawyerSicilNo,
   initialCaseContext,
   onApplyToPetition,
-  onSyncGit
+  onSyncGit,
+  onNavigateTo
 }: AjanKonseyiOdasiProps) {
   // Model router selection: Gemini 3.1 Pro (Deep Legal Reasoning) vs Gemini 3.8 Flash (High Speed)
   const [orchestratorModel, setOrchestratorModel] = useState<'pro' | 'flash'>('pro');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activeModule, setActiveModule] = useState<string>('musavir');
+  const [archivedCases, setArchivedCases] = useState<any[]>(() => {
+    try { return JSON.parse(localStorage.getItem('ultra_archived_cases') || '[]'); } catch { return []; }
+  });
+  const [isSavingCase, setIsSavingCase] = useState(false);
+  const [savedCaseSuccess, setSavedCaseSuccess] = useState(false);
+  const [fileActions, setFileActions] = useState<Record<number, string | null>>({});
 
   // Input states
   const [inputText, setInputText] = useState('');
@@ -265,7 +275,7 @@ export function AjanKonseyiOdasi({
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Gemini 3.1 Pro (Derin Akıl)</span>
+                <span>Derin Akıl</span>
               </button>
               <button
                 type="button"
@@ -277,7 +287,7 @@ export function AjanKonseyiOdasi({
                 }`}
               >
                 <Cpu className="w-3.5 h-3.5" />
-                <span>Gemini 3.8 Flash (Hızlı)</span>
+                <span>Hızlı</span>
               </button>
             </div>
 
