@@ -140,7 +140,8 @@ export function MuvekkilYonetimi({ onCaseSelected }: MuvekkilYonetimiProps) {
     Array.from(files).forEach(file => {
       const reader = new FileReader();
       reader.onload = (ev) => {
-        const icerik = ev.target?.result as string;
+        const rawIcerik = (ev.target?.result as string) || '';
+        const icerik = rawIcerik.length > 30000 ? rawIcerik.slice(0, 30000) + '\n... (içerik kısaltıldı)' : rawIcerik;
         const yeniEvrak: MuvekkilEvrak = {
           id: uid(), ad: file.name,
           tur: file.type || 'Bilinmeyen',

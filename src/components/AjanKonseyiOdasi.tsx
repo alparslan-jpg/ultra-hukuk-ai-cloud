@@ -168,6 +168,15 @@ export function AjanKonseyiOdasi({
   };
 
   // Attach a local text/document file
+  // Sınırlandırılmış, optimize edilmiş evrak verisi (413 Payload Too Large engelleme)
+  const sanitizeFilesForPayload = (files: Array<{ name: string; content?: string; type?: string }>) => {
+    return (files || []).slice(0, 10).map((f) => ({
+      name: f.name || 'Belge',
+      type: f.type || 'Evrak',
+      content: typeof f.content === 'string' ? f.content.slice(0, 8000) : ''
+    }));
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -175,7 +184,8 @@ export function AjanKonseyiOdasi({
     Array.from(files).forEach((file) => {
       const reader = new FileReader();
       reader.onload = (event) => {
-        const content = event.target?.result as string;
+        const raw = (event.target?.result as string) || '';
+        const content = raw.length > 30000 ? raw.slice(0, 30000) + '\n... (önizleme kısaltıldı)' : raw;
         setAttachedFiles((prev) => [
           ...prev,
           {
@@ -225,7 +235,7 @@ export function AjanKonseyiOdasi({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query,
-          contextFiles: attachedFiles,
+          contextFiles: sanitizeFilesForPayload(attachedFiles),
           activeCaseContext: selectedCaseNote,
           lehine: lehineText || undefined,
           orchestratorModel,
@@ -266,6 +276,7 @@ export function AjanKonseyiOdasi({
 
 
   // ── Evrak analiz ──────────────────────────────────────────────────────────
+  // ── Evrak analiz ──────────────────────────────────────────────────────────
   const handleFileAction = async (idx: number, action: 'analiz' | 'detayli' | 'cimbiz') => {
     const f = attachedFiles[idx];
     if (!f) return;
@@ -282,7 +293,7 @@ export function AjanKonseyiOdasi({
       const r = await fetch('/api/ai/agent-council-consultation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: prompts[action], contextFiles: [f], activeCaseContext: selectedCaseNote, orchestratorModel, inputMode: 'text' })
+        body: JSON.stringify({ query: prompts[action], contextFiles: sanitizeFilesForPayload([f]), activeCaseContext: selectedCaseNote, orchestratorModel, inputMode: 'text' })
       });
       if (!r.ok) {
         const errText = await r.text();
@@ -293,16 +304,6 @@ export function AjanKonseyiOdasi({
       const cTypeF = r.headers.get('content-type') || '';
       if (!cTypeF.includes('application/json')) {
         throw new Error('Sunucu yanıtı alınamadı (Ağ/Proxy zaman aşımı). Lütfen tekrar deneyin.');
-      }
-      if (!r.ok) {
-        const errText = await r.text();
-        let errMsg = `Sunucu hatası (${r.status})`;
-        try { const errJson = JSON.parse(errText); if (errJson.message) errMsg = errJson.message; } catch {}
-        throw new Error(errMsg);
-      }
-      const cTypeC = r.headers.get('content-type') || '';
-      if (!cTypeC.includes('application/json')) {
-        throw new Error('Dava dosyası oluşturulurken zaman aşımı oluştu. Lütfen tekrar deneyin.');
       }
       const d = await r.json();
       if (d.success) {
@@ -317,7 +318,7 @@ export function AjanKonseyiOdasi({
     const hasContent = inputText.trim() || attachedFiles.length > 0 || selectedCaseNote || consultationHistory.length > 1;
     if (!hasContent) { alert('Dava dosyası oluşturmak için önce dava bilgisi girin, evrak yükleyin veya danışma yapın.'); return; }
     setIsSavingCase(true);
-    const history = consultationHistory.map(m => `[${m.sender === 'lawyer' ? 'Avukat' : 'Müşavir'}] ${m.text}`).join('\n\n');
+    const history = consultationHistory.map(m => `[${m.sender === 'lawyer' ? 'Avukat' : 'Müşavir'}] ${m.text}`).slice(-6).join('\n\n');
     const fileNames = attachedFiles.map(f2 => f2.name).join(', ');
     try {
       const r = await fetch('/api/ai/agent-council-consultation', {
@@ -325,13 +326,23 @@ export function AjanKonseyiOdasi({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: `DAVA DOSYASI OLUŞTUR:\n1. Müvekkil kaydı bilgilerini özetle\n2. Dava dosyası özeti (mahkeme, taraflar, konu, talep, deliller)\n3. Kapsamlı dilekçe taslağı (kanun maddeleriyle)\n4. Önerilen dava stratejisi\n\nDanışma geçmişi:\n${history}\n\nEvraklar: ${fileNames || 'Yok'}\nBağlam: ${selectedCaseNote || 'Belirtilmemiş'}\nLehine: ${lehineText || 'Belirtilmemiş'}`,
-          contextFiles: attachedFiles,
+          contextFiles: sanitizeFilesForPayload(attachedFiles),
           activeCaseContext: selectedCaseNote,
           lehine: lehineText,
-          orchestratorModel,
+          orchestratorModel: 'flash',
           inputMode: 'text'
         })
       });
+      if (!r.ok) {
+        const errText = await r.text();
+        let errMsg = `Sunucu hatası (${r.status})`;
+        try { const errJson = JSON.parse(errText); if (errJson.message) errMsg = errJson.message; } catch {}
+        throw new Error(errMsg);
+      }
+      const cTypeC = r.headers.get('content-type') || '';
+      if (!cTypeC.includes('application/json')) {
+        throw new Error('Dava dosyası oluşturulurken zaman aşımı oluştu. Lütfen tekrar deneyin.');
+      }
       const d = await r.json();
       const summary = d.answerToUserQuestion || d.orchestratorSummary || 'Dava dosyası oluşturuldu.';
       const newCase = { id: `case-${Date.now()}`, date: new Date().toISOString(), lawyerName: lawyerName || '', lawyerSicilNo: lawyerSicilNo || '', caseContext: selectedCaseNote || 'Dava Dosyası', lehine: lehineText, files: attachedFiles.map(f2 => f2.name), summary, consultationCount: consultationHistory.length };
