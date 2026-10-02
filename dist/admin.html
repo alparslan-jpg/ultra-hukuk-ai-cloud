@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ULTRA HUKUK AI - Yönetici ve Lisans Paneli</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .card-bg { background-color: #131d31; border-color: #1e293b; }
+  </style>
+</head>
+<body class="text-slate-200 min-h-screen p-6 space-y-6">
+
+  <!-- Üst Başlık & Gezinme -->
+  <header class="flex items-center justify-between bg-[#0e1626] p-4 rounded-2xl border border-slate-800">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl">
+        <i class="fa-solid fa-user-shield"></i>
+      </div>
+      <div>
+        <h1 class="text-base font-bold text-slate-100 flex items-center gap-2">
+          ULTRA HUKUK AI <span class="text-xs bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full font-semibold border border-rose-500/30">Yönetici Paneli</span>
+        </h1>
+        <p class="text-xs text-slate-400">Avukat Lisanslama, Donanım Kilidi ve Sistem Telemetrisi</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="/" class="px-4 py-2 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/30 text-xs font-semibold rounded-xl transition flex items-center gap-2">
+        <i class="fa-solid fa-scale-balanced"></i> Avukat Masası
+      </a>
+      <span id="loggedInAs" class="text-xs text-slate-400"></span>
+      <a href="/change-password.html" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl text-slate-300 border border-slate-700 transition flex items-center gap-2">
+        <i class="fa-solid fa-key"></i> Şifre Değiştir
+      </a>
+      <button onclick="loadData()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-xs font-semibold rounded-xl text-white transition flex items-center gap-2 shadow-lg shadow-amber-600/20">
+        <i class="fa-solid fa-rotate"></i> Yenile
+      </button>
+      <button onclick="adminLogout()" class="px-4 py-2 bg-slate-800 hover:bg-rose-900/50 text-xs font-semibold rounded-xl text-slate-300 border border-slate-700 transition flex items-center gap-2">
+        <i class="fa-solid fa-right-from-bracket"></i> Çıkış
+      </button>
+    </div>
+  </header>
+
+  <!-- Sistem Telemetri Kartları -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="card-bg p-4 rounded-2xl border">
+      <p class="text-xs text-slate-400">Toplam Kayıtlı Avukat</p>
+      <h3 id="statTotalUsers" class="text-2xl font-bold mt-1 text-slate-100">...</h3>
+    </div>
+
+    <div class="card-bg p-4 rounded-2xl border">
+      <p class="text-xs text-slate-400">Sunucu & Veritabanı</p>
+      <h3 id="statServerStatus" class="text-2xl font-bold mt-1 text-emerald-400 flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span> Aktif
+      </h3>
+    </div>
+    <div class="card-bg p-4 rounded-2xl border">
+      <p class="text-xs text-slate-400">Lisanslı Cihazlar</p>
+      <h3 id="statLockedDevices" class="text-2xl font-bold mt-1 text-sky-400">...</h3>
+    </div>
+    <div class="card-bg p-4 rounded-2xl border">
+      <p class="text-xs text-slate-400">Güvenlik Standardı</p>
+      <h3 class="text-2xl font-bold mt-1 text-amber-400 text-sm flex items-center gap-1.5 pt-1">
+        <i class="fa-solid fa-shield-halved"></i> AES-256 / KVKK
+      </h3>
+    </div>
+  </div>
+
+  <!-- Gemini kullanım ve faturalama görünümü -->
+  <div class="card-bg rounded-2xl border p-5 space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-sm font-bold flex items-center gap-2 text-slate-100">
+          <i class="fa-solid fa-chart-line text-amber-400"></i> Gemini Kullanımı ve Faturalama
+        </h2>
+        <p id="geminiBillingSource" class="text-[11px] text-amber-300 mt-1">Yükleniyor...</p>
+      </div>
+      <button onclick="loadGeminiUsage()" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700">↻ Yenile</button>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div class="bg-slate-900/60 rounded-xl p-3"><p class="text-[11px] text-slate-400">Bu ay sorgu</p><b id="geminiTotalQueries" class="text-xl">-</b></div>
+      <div class="bg-slate-900/60 rounded-xl p-3"><p class="text-[11px] text-slate-400">Tahmini maliyet</p><b id="geminiTotalCost" class="text-xl text-amber-300">-</b></div>
+      <div class="bg-slate-900/60 rounded-xl p-3"><p class="text-[11px] text-slate-400">Aylık bütçe</p><b id="geminiBudget" class="text-xl text-sky-300">-</b></div>
+      <div class="bg-slate-900/60 rounded-xl p-3"><p class="text-[11px] text-slate-400">Tahmini kalan</p><b id="geminiRemaining" class="text-xl text-emerald-300">-</b></div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs"><thead><tr class="text-left text-slate-400 border-b border-slate-700">
+        <th class="p-2">Sicil No</th><th class="p-2">Sorgu</th><th class="p-2">Girdi token</th><th class="p-2">Çıktı token</th><th class="p-2">Tahmini maliyet</th><th class="p-2">Son kullanım</th>
+      </tr></thead><tbody id="geminiUsageBody"><tr><td colspan="6" class="p-3 text-slate-500">Yükleniyor...</td></tr></tbody></table>
+    </div>
+  </div>
+
+  <!-- Tüm Ajan ve Yapay Zekâların Aktiflik Durumu -->
+  <div class="card-bg rounded-2xl border p-5 space-y-3">
+    <div class="flex items-center justify-between">
+      <h2 class="text-sm font-bold flex items-center gap-2 text-slate-100">
+        <i class="fa-solid fa-robot text-amber-400"></i> Tüm Ajan ve Yapay Zekâların Aktiflik Durumu
+      </h2>
+      <button onclick="loadAgentStatus()" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700">↻ Yenile</button>
+    </div>
+    <div id="agentStatusList" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs"></div>
+  </div>
+
+  <!-- Uygulamanın Tüm Özelliklerinin Aktif/İnaktif Matrisi -->
+  <div class="card-bg rounded-2xl border p-5 space-y-3">
+    <div class="flex items-center justify-between">
+      <h2 class="text-sm font-bold flex items-center gap-2 text-slate-100">
+        <i class="fa-solid fa-toggle-on text-amber-400"></i> Uygulama Özellikleri — Aktif / İnaktif Matrisi
+      </h2>
+      <button onclick="loadFeatureFlags()" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700">↻ Yenile</button>
+    </div>
+    <div id="featureFlagList" class="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs"></div>
+  </div>
+
+  <!-- Beyaz Liste Yönetimi -->
+  <div class="card-bg rounded-2xl border p-5 space-y-4">
+    <h2 class="text-sm font-bold flex items-center gap-2 text-slate-100">
+      <i class="fa-solid fa-list-check text-amber-400"></i> Beyaz Liste Yönetimi (Kayıt Olabilecek Avukatlar)
+    </h2>
+    <p class="text-[11px] text-slate-400">Beyaz liste boşsa herkes Baro doğrulaması ile kayıt olabilir. Liste doldurulduğu andan itibaren sadece burada T.C./Sicil No ile tanımlı avukatlar kayıt olabilir.</p>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="space-y-2.5">
+        <h3 class="text-xs font-bold text-slate-300 uppercase">Tek Tek Avukat Ekle</h3>
+        <input id="wlTc" placeholder="T.C. Kimlik No" class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-xs text-slate-200">
+        <input id="wlSicil" placeholder="Sicil No" class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-xs text-slate-200">
+        <input id="wlBaro" placeholder="Baro Adı" class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-xs text-slate-200">
+        <input id="wlFullName" placeholder="Ad Soyad" class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-xs text-slate-200">
+        <input id="wlEmail" placeholder="E-posta" class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-xs text-slate-200">
+        <button onclick="addWhitelistEntry()" class="w-full bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold py-2.5 rounded-xl">➕ Beyaz Listeye Ekle</button>
+      </div>
+
+      <div class="space-y-2.5">
+        <h3 class="text-xs font-bold text-slate-300 uppercase">Hızlı Avukat Tanımla</h3>
+        <p class="text-[11px] text-slate-400">Aşağıdaki alanları kullanarak sisteme anında yeni avukat izin kaydı açabilirsiniz.</p>
+        <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-700/60 text-xs space-y-2 text-slate-300">
+          <p class="font-semibold text-amber-300">💡 Baro ve Lisans Doğrulaması</p>
+          <p>Beyaz listedeki avukatlar oturum açtığında otomatik olarak 30 günlük başlangıç lisansına sahip olur. Lisans süreleri bu panelden tek tıkla uzatılabilir.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="border-t border-slate-800 pt-4">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-xs font-bold text-slate-300 uppercase">Beyaz Liste Kayıtları</h3>
+        <button onclick="loadWhitelist()" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg">↻ Yenile</button>
+      </div>
+      <div id="whitelistTable" class="text-xs overflow-x-auto"></div>
+    </div>
+  </div>
+
+  <!-- Kullanıcı Yönetim Tablosu -->
+  <div class="card-bg rounded-2xl border p-5 space-y-4">
+    <div class="flex items-center justify-between">
+      <h2 class="text-sm font-bold flex items-center gap-2 text-slate-100">
+        <i class="fa-solid fa-users text-amber-400"></i> Kayıtlı Avukatlar ve Abonelik Durumları
+      </h2>
+      <span class="text-xs text-slate-400">Canlı Veritabanı: <code class="text-amber-300">/api/admin/users</code></span>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-900/80 text-slate-400 border-b border-slate-800">
+          <tr>
+            <th class="p-3">Ad Soyad</th>
+            <th class="p-3">Baro & Sicil No</th>
+            <th class="p-3">T.C. Kimlik</th>
+            <th class="p-3">E-posta</th>
+            <th class="p-3">Donanım Kilidi</th>
+            <th class="p-3">Kalan Gün</th>
+            <th class="p-3 text-right">İşlemler</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody" class="divide-y divide-slate-800/60 text-slate-300">
+          <tr>
+            <td colspan="7" class="p-4 text-center text-slate-500">Kullanıcılar yükleniyor...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- KVKK Veri İhlali Bildirimi Takibi (72 Saat Kuralı) -->
+  <div class="card-bg rounded-2xl border border-rose-900/50 p-5 space-y-3">
+    <div class="flex items-center justify-between">
+      <h2 class="text-sm font-bold flex items-center gap-2 text-slate-100">
+        <i class="fa-solid fa-triangle-exclamation text-rose-400"></i> KVKK Veri İhlali Bildirimi (72 Saat Kuralı — Kurul 2019/10)
+      </h2>
+      <button onclick="loadDataBreachIncidents()" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700">↻ Yenile</button>
+    </div>
+    <p class="text-[10px] text-slate-500">Bir veri ihlali şüphesi/tespiti öğrenildiği anda buradan kaydedin; sistem otomatik olarak 72 saatlik bildirim süresini izler ve süresi dolan/dolmak üzere olan olayları vurgular.</p>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+      <input id="breachDescription" placeholder="Olay açıklaması (zorunlu)" class="md:col-span-2 bg-[#0c1220] border border-slate-700 p-2 rounded-lg text-xs text-slate-200">
+      <select id="breachSeverity" class="bg-[#0c1220] border border-slate-700 p-2 rounded-lg text-xs text-slate-200">
+        <option value="Düşük">Düşük</option>
+        <option value="Orta" selected>Orta</option>
+        <option value="Yüksek">Yüksek</option>
+        <option value="Kritik">Kritik</option>
+      </select>
+    </div>
+    <button onclick="createDataBreachIncident()" class="bg-rose-700 hover:bg-rose-600 text-white text-xs font-bold px-4 py-2 rounded-lg transition">➕ Yeni Veri İhlali Kaydı Oluştur</button>
+    <div id="dataBreachTable" class="text-xs overflow-x-auto max-h-64 overflow-y-auto"></div>
+  </div>
+
+  <!-- Denetim Kaydı (Audit Log) -->
+  <div class="card-bg rounded-2xl border p-5 space-y-3">
+    <div class="flex items-center justify-between">
+      <h2 class="text-sm font-bold flex items-center gap-2 text-slate-100">
+        <i class="fa-solid fa-clipboard-list text-amber-400"></i> Denetim Kaydı (Kim, Ne Zaman, Ne Yaptı)
+      </h2>
+      <button onclick="loadAuditLog()" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700">↻ Yenile</button>
+    </div>
+    <div id="auditLogTable" class="text-xs overflow-x-auto max-h-64 overflow-y-auto"></div>
+  </div>
+
+  <!-- Javascript -->
+  <script>
+    function adminValue(key) { return localStorage.getItem(key) || sessionStorage.getItem(key); }
+    function adminToken() { return adminValue('adminToken'); }
+
+    function adminLogout() {
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUsername');
+      sessionStorage.removeItem('adminToken');
+      sessionStorage.removeItem('adminUsername');
+      window.location.href = '/login.html';
+    }
+
+    async function authFetch(url, options = {}) {
+      const token = adminToken();
+      if (!token) { window.location.href = '/login.html'; throw new Error('Oturum yok'); }
+      options.headers = { ...(options.headers || {}), 'Authorization': `Bearer ${token}` };
+      const res = await fetch(url, options);
+      if (res.status === 401) {
+        adminLogout();
+        throw new Error('Oturum süresi doldu, tekrar giriş yapın.');
+      }
+      return res;
+    }
+
+    (function initAuthGuard() {
+      if (!adminToken()) { window.location.href = '/login.html'; return; }
+      const uname = adminValue('adminUsername');
+      document.getElementById('loggedInAs').innerText = uname ? `👤 ${uname}` : '';
+    })();
+
+    async function loadDataBreachIncidents() {
+      const box = document.getElementById('dataBreachTable');
+      box.innerHTML = '<p class="text-slate-500 italic">Yükleniyor...</p>';
+      try {
+        const res = await authFetch('/api/admin/data-breach-incidents');
+        const data = await res.json();
+        const incidents = data.data || data.Data || [];
+        if (!incidents.length) { box.innerHTML = '<p class="text-slate-500 italic">Kayıtlı veri ihlali olayı yok.</p>'; return; }
+        const now = new Date();
+        box.innerHTML = `<table class="w-full text-left"><thead><tr class="text-slate-400 border-b border-slate-800">
+          <th class="py-1.5 pr-3">Tespit</th><th class="py-1.5 pr-3">Açıklama</th><th class="py-1.5 pr-3">Önem</th><th class="py-1.5 pr-3">72s Bildirim Süresi</th><th class="py-1.5 pr-3">Durum</th><th class="py-1.5 pr-3"></th>
+          </tr></thead><tbody>` +
+          incidents.map(i => {
+            const detectedAt = new Date(i.detectedAt || i.DetectedAt);
+            const deadline = new Date(detectedAt.getTime() + 72 * 60 * 60 * 1000);
+            const reportedAt = i.kvkkReportedAt || i.KvkkReportedAt;
+            const isResolved = !!reportedAt;
+            const isOverdue = !isResolved && now > deadline;
+            const hoursLeft = Math.round((deadline - now) / (1000 * 60 * 60));
+            const id = i.id || i.Id;
+            return `<tr class="border-b border-slate-900 ${isOverdue ? 'bg-rose-950/30' : ''}">
+              <td class="py-1.5 pr-3 text-slate-500">${detectedAt.toLocaleString('tr-TR')}</td>
+              <td class="py-1.5 pr-3">${i.description || i.Description}</td>
+              <td class="py-1.5 pr-3">${i.severity || i.Severity}</td>
+              <td class="py-1.5 pr-3 ${isOverdue ? 'text-rose-400 font-bold' : 'text-amber-400'}">${isResolved ? '—' : (isOverdue ? 'SÜRE GEÇTİ!' : hoursLeft + ' saat kaldı')}</td>
+              <td class="py-1.5 pr-3">${isResolved ? '✅ KVKK\'ya Bildirildi' : '⏳ Bekliyor'}</td>
+              <td class="py-1.5 pr-3">${isResolved ? '' : `<button onclick="markIncidentReported('${id}')" class="text-[10px] bg-emerald-700 hover:bg-emerald-600 px-2 py-1 rounded">Bildirildi Olarak İşaretle</button>`}</td>
+            </tr>`;
+          }).join('') + `</tbody></table>`;
+      } catch (e) { box.innerHTML = `<p class="text-rose-400">Alınamadı: ${e}</p>`; }
+    }
+
+    async function createDataBreachIncident() {
+      const description = document.getElementById('breachDescription').value.trim();
+      if (!description) { alert('Olay açıklaması zorunludur.'); return; }
+      const severity = document.getElementById('breachSeverity').value;
+      try {
+        const res = await authFetch('/api/admin/data-breach-incidents', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ description, severity })
+        });
+        const data = await res.json();
+        alert(data.message || data.Message);
+        document.getElementById('breachDescription').value = '';
+        loadDataBreachIncidents();
+      } catch (e) { alert('Hata: ' + e); }
+    }
+
+    async function markIncidentReported(id) {
+      const notes = prompt('KVKK bildirim notları (opsiyonel):', '');
+      try {
+        const res = await authFetch(`/api/admin/data-breach-incidents/${id}/mark-reported`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notes })
+        });
+        const data = await res.json();
+        alert(data.message || data.Message);
+        loadDataBreachIncidents();
+      } catch (e) { alert('Hata: ' + e); }
+    }
+
+    async function loadAuditLog() {
+      const box = document.getElementById('auditLogTable');
+      box.innerHTML = '<p class="text-slate-500 italic">Yükleniyor...</p>';
+      try {
+        const res = await authFetch('/api/admin/audit-log');
+        const logs = await res.json();
+        if (!logs.length) { box.innerHTML = '<p class="text-slate-500 italic">Henüz kayıt yok.</p>'; return; }
+        box.innerHTML = `<table class="w-full text-left"><thead><tr class="text-slate-400 border-b border-slate-800">
+          <th class="py-1.5 pr-3">Zaman</th><th class="py-1.5 pr-3">Yönetici</th><th class="py-1.5 pr-3">İşlem</th><th class="py-1.5 pr-3">Detay</th><th class="py-1.5 pr-3">IP</th>
+          </tr></thead><tbody>` +
+          logs.map(l => `<tr class="border-b border-slate-900">
+            <td class="py-1.5 pr-3 text-slate-500">${new Date(l.timestamp || l.Timestamp).toLocaleString('tr-TR')}</td>
+            <td class="py-1.5 pr-3 font-semibold">${l.adminUsername || l.AdminUsername}</td>
+            <td class="py-1.5 pr-3">${l.action || l.Action}</td>
+            <td class="py-1.5 pr-3 text-slate-400">${l.details || l.Details || '—'}</td>
+            <td class="py-1.5 pr-3 font-mono text-slate-500">${l.ipAddress || l.IpAddress || '—'}</td>
+          </tr>`).join('') + `</tbody></table>`;
+      } catch (e) { box.innerHTML = `<p class="text-rose-400">Alınamadı: ${e}</p>`; }
+    }
+
+    async function loadAgentStatus() {
+      const box = document.getElementById('agentStatusList');
+      box.innerHTML = '<p class="text-slate-500 italic">Yükleniyor...</p>';
+      try {
+        let payload;
+        // First try the high-speed unthrottled health endpoint
+        const hRes = await fetch('/api/admin-health');
+        if (hRes.ok) {
+          payload = await hRes.json();
+        } else {
+          const res = await authFetch('/api/admin/agent-status');
+          payload = await res.json();
+        }
+        const agents = Array.isArray(payload) ? payload : (payload.agents || payload.Agents || []);
+        box.innerHTML = agents.map(a => {
+          const name = a.name || a.Name;
+          const isActive = a.isActive ?? a.IsActive ?? true;
+          const detail = a.detail || a.Detail || '';
+          return `
+          <div class="p-3 rounded-xl border ${isActive ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-rose-500/40 bg-rose-500/10'}">
+            <div class="font-bold flex items-center justify-between text-slate-200">
+              <span>${name}</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded ${isActive ? 'bg-emerald-900/50 text-emerald-300' : 'bg-rose-900/50 text-rose-300'}">${isActive ? 'AKTİF' : 'PASİF'}</span>
+            </div>
+            <div class="text-[11px] mt-1 text-slate-400">${detail}</div>
+          </div>
+        `;
+        }).join('');
+      } catch (e) {
+        box.innerHTML = `<div class="p-3 bg-rose-950/30 border border-rose-800/50 rounded-xl text-xs text-rose-300">
+          ⚠️ Sağlık durumu alınırken geçici bağlantı hatası: ${e.message}. Otomatik yeniden denenecektir.
+        </div>`;
+      }
+    }
+
+    async function loadFeatureFlags() {
+      const box = document.getElementById('featureFlagList');
+      box.innerHTML = '<p class="text-slate-500 italic">Yükleniyor...</p>';
+      try {
+        const res = await authFetch('/api/admin/feature-flags');
+        const payload = await res.json();
+        const features = Array.isArray(payload) ? payload : (payload.features || []);
+        box.innerHTML = features.map(f => `
+          <div class="p-2.5 rounded-lg border ${f.isActive ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' : 'border-rose-500/40 bg-rose-500/10 text-rose-300'} flex items-center justify-between">
+            <span>${f.feature}</span>
+            <span class="text-[10px] font-mono">${f.isActive ? '● AKTİF' : '○ İNAKTİF'}</span>
+          </div>
+        `).join('');
+      } catch (e) { box.innerHTML = `<p class="text-rose-400">Alınamadı: ${e}</p>`; }
+    }
+
+    async function addWhitelistEntry() {
+      const body = {
+        tcKimlikNo: document.getElementById('wlTc').value.trim(),
+        sicilNo: document.getElementById('wlSicil').value.trim(),
+        baroAdi: document.getElementById('wlBaro').value.trim(),
+        fullName: document.getElementById('wlFullName').value.trim(),
+        email: document.getElementById('wlEmail').value.trim()
+      };
+      try {
+        const res = await authFetch('/api/admin/whitelist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const data = await res.json();
+        alert(data.message);
+        if (data.success) {
+          ['wlTc','wlSicil','wlBaro','wlFullName','wlEmail'].forEach(id => document.getElementById(id).value = '');
+          loadWhitelist();
+        }
+      } catch (e) { alert("Hata: " + e); }
+    }
+
+    async function loadWhitelist() {
+      const box = document.getElementById('whitelistTable');
+      try {
+        const res = await authFetch('/api/admin/whitelist');
+        const list = await res.json();
+        if (!list.length) { box.innerHTML = '<p class="text-slate-500 italic">Beyaz liste boş — herkes Baro doğrulamasıyla kayıt olabilir.</p>'; return; }
+        box.innerHTML = `<table class="w-full text-left"><thead><tr class="text-slate-400 border-b border-slate-800">
+          <th class="py-1.5 pr-3">Ad Soyad</th><th class="py-1.5 pr-3">Sicil No</th><th class="py-1.5 pr-3">Baro</th><th class="py-1.5 pr-3">Durum</th><th class="py-1.5 pr-3">Eklenme</th><th></th>
+          </tr></thead><tbody>` +
+          list.map(w => `<tr class="border-b border-slate-900">
+            <td class="py-1.5 pr-3">${w.fullName || '—'}</td>
+            <td class="py-1.5 pr-3 font-mono">${w.sicilNo || '—'}</td>
+            <td class="py-1.5 pr-3">${w.baroAdi || '—'}</td>
+            <td class="py-1.5 pr-3">${w.isUsed ? '<span class="text-emerald-400">Kayıt Tamamlandı</span>' : '<span class="text-amber-400">Bekliyor</span>'}</td>
+            <td class="py-1.5 pr-3 text-slate-500">${new Date(w.addedAt).toLocaleDateString('tr-TR')} (${w.addedVia})</td>
+            <td class="py-1.5"><button onclick="deleteWhitelistEntry('${w.id}')" class="text-rose-400 hover:text-rose-300 text-[10px]">Sil</button></td>
+          </tr>`).join('') + `</tbody></table>`;
+      } catch (e) { box.innerHTML = `<p class="text-rose-400">Alınamadı: ${e}</p>`; }
+    }
+
+    async function deleteWhitelistEntry(id) {
+      if (!confirm("Bu beyaz liste kaydını silmek istediğinize emin misiniz?")) return;
+      await authFetch(`/api/admin/whitelist/${id}`, { method: 'DELETE' });
+      loadWhitelist();
+    }
+
+    async function loadGeminiUsage() {
+      const body = document.getElementById('geminiUsageBody');
+      try {
+        const res = await authFetch('/api/admin/gemini-usage');
+        if (!res.ok) throw new Error('Rapor alınamadı');
+        const data = await res.json();
+        document.getElementById('geminiBillingSource').innerText = data.billingSource || data.BillingSource || '';
+        const users = data.users || data.Users || [];
+        const totalQueries = users.reduce((n, x) => n + (x.queryCount ?? x.QueryCount ?? 0), 0);
+        const totalCost = data.estimatedTotalCostUsd ?? data.EstimatedTotalCostUsd ?? 0;
+        const budget = data.monthlyBudgetUsd ?? data.MonthlyBudgetUsd;
+        const remaining = data.estimatedRemainingBudgetUsd ?? data.EstimatedRemainingBudgetUsd;
+        document.getElementById('geminiTotalQueries').innerText = totalQueries;
+        document.getElementById('geminiTotalCost').innerText = '$' + Number(totalCost).toFixed(6);
+        document.getElementById('geminiBudget').innerText = budget == null ? 'Ayarlanmadı' : '$' + Number(budget).toFixed(2);
+        document.getElementById('geminiRemaining').innerText = remaining == null ? 'Bilinmiyor' : '$' + Number(remaining).toFixed(2);
+        body.innerHTML = users.length ? users.map(x => `
+          <tr class="border-b border-slate-800">
+            <td class="p-2 font-mono">${x.sicilNo || x.SicilNo}</td>
+            <td class="p-2">${x.queryCount ?? x.QueryCount}</td>
+            <td class="p-2">${x.inputTokens ?? x.InputTokens}</td>
+            <td class="p-2">${x.outputTokens ?? x.OutputTokens}</td>
+            <td class="p-2 text-amber-300">$${Number(x.estimatedCostUsd ?? x.EstimatedCostUsd ?? 0).toFixed(6)}</td>
+            <td class="p-2 text-slate-400">${new Date(x.lastUsedAt || x.LastUsedAt).toLocaleString('tr-TR')}</td>
+          </tr>`).join('') : '<tr><td colspan="6" class="p-3 text-slate-500">Bu ay kullanım kaydı yok.</td></tr>';
+      } catch (err) {
+        body.innerHTML = `<tr><td colspan="6" class="p-3 text-rose-400">${err.message}</td></tr>`;
+      }
+    }
+
+    async function loadData() {
+      try {
+        const telRes = await authFetch('/api/admin/system-telemetry');
+        if (telRes.ok) {
+          const tel = await telRes.json();
+          document.getElementById('statTotalUsers').innerText = tel.totalUsers || tel.TotalUsers || tel.activeLawyerLicenses || '0';
+          document.getElementById('statLockedDevices').innerText = tel.activeSessions || tel.ActiveSessions || 'Korumalı';
+        }
+        await loadGeminiUsage();
+      } catch(e) {}
+
+      try {
+        const res = await authFetch('/api/admin/users');
+        const users = await res.json();
+        const tbody = document.getElementById('userTableBody');
+
+        if (!Array.isArray(users) || users.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">Henüz kayıtlı avukat bulunmamaktadır.</td></tr>';
+          document.getElementById('statTotalUsers').innerText = '0';
+          return;
+        }
+
+        document.getElementById('statTotalUsers').innerText = users.length;
+        document.getElementById('statLockedDevices').innerText = users.filter(u => u.hardwareId || u.HardwareId || u.boundHardwareId || u.BoundHardwareId).length;
+
+        tbody.innerHTML = users.map(u => {
+          const id = u.id || u.Id || u.userId || u.UserId;
+          const name = u.fullName || u.FullName || 'Avukat';
+          const baro = (u.baroAdi || u.BaroAdi || '') + ' - ' + (u.sicilNo || u.SicilNo || '');
+          const tc = u.tcKimlik || u.TcKimlik || '***';
+          const email = u.email || u.Email || '-';
+          const hw = (u.hardwareId || u.HardwareId || u.boundHardwareId || u.BoundHardwareId) ? '<span class="text-emerald-400 font-mono text-[10px]">Kilitli</span>' : '<span class="text-slate-500">Boşta</span>';
+          const days = u.daysRemaining ?? u.DaysRemaining ?? u.remainingDays ?? u.RemainingDays ?? 30;
+
+          return `
+            <tr class="hover:bg-slate-900/40">
+              <td class="p-3 font-semibold text-slate-100 flex items-center gap-2">
+                <i class="fa-solid fa-user text-amber-500/80"></i> ${name}
+              </td>
+              <td class="p-3 text-slate-300">${baro}</td>
+              <td class="p-3 font-mono text-slate-400">${tc}</td>
+              <td class="p-3 text-slate-400">${email}</td>
+              <td class="p-3">${hw}</td>
+              <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">${days} Gün</span></td>
+              <td class="p-3 text-right space-x-1">
+                <button onclick="extendSubscription('${id}')" class="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 rounded-lg border border-amber-500/30 font-medium">
+                  +30 Gün
+                </button>
+                <button onclick="resetHardware('${id}')" class="px-2.5 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded-lg border border-rose-500/30 font-medium">
+                  Donanım Sıfırla
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+      } catch (err) {
+        document.getElementById('userTableBody').innerHTML = `<tr><td colspan="7" class="p-4 text-center text-rose-400">Veri yüklenirken hata: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function extendSubscription(userId) {
+      if (!confirm('Bu kullanıcının aboneliğini 30 gün uzatmak istiyor musunuz?')) return;
+      try {
+        const res = await authFetch('/api/admin/extend-subscription', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: userId, extraDays: 30 })
+        });
+        if (res.ok) {
+          alert('[✓] Lisans 30 gün uzatıldı.');
+          loadData();
+        } else {
+          alert('Hata oluştu.');
+        }
+      } catch(e) { alert(e.message); }
+    }
+
+    async function resetHardware(userId) {
+      if (!confirm('Kullanıcının donanım kilidi sıfırlansın mı?')) return;
+      try {
+        const res = await authFetch('/api/admin/reset-hardware', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userId)
+        });
+        if (res.ok) {
+          alert('[✓] Donanım kilidi sıfırlandı.');
+          loadData();
+        } else {
+          alert('Hata oluştu.');
+        }
+      } catch(e) { alert(e.message); }
+    }
+
+    loadData();
+    loadAgentStatus();
+    loadFeatureFlags();
+    loadWhitelist();
+    loadAuditLog();
+    loadDataBreachIncidents();
+  </script>
+</body>
+</html>

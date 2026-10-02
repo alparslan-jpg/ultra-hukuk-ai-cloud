@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ULTRA HUKUK AI - Adminatör Girişi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  </style>
+</head>
+<body class="text-slate-200 min-h-screen flex items-center justify-center p-6">
+  <div class="w-full max-w-sm bg-[#131d31] border border-slate-800 rounded-2xl p-8 space-y-5">
+    <div class="text-center space-y-1">
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-2xl">
+        <i class="fa-solid fa-user-shield"></i>
+      </div>
+      <h1 class="text-lg font-bold text-slate-100">ULTRA HUKUK AI</h1>
+      <p class="text-xs text-slate-400">Adminatör Paneli — Yetkili Giriş</p>
+    </div>
+
+    <div class="space-y-3">
+      <input id="loginUsername" placeholder="Kullanıcı Adı" autocomplete="username"
+        class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-sm text-slate-200">
+      <input id="loginPassword" type="password" placeholder="Şifre" autocomplete="current-password"
+        class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-sm text-slate-200"
+        onkeydown="if(event.key==='Enter') doLogin()">
+      <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+        <input id="rememberAdmin" type="checkbox" class="accent-amber-500">
+        Beni hatırla (30 gün)
+      </label>
+      <button onclick="doLogin()" class="w-full bg-amber-600 hover:bg-amber-500 text-white text-sm font-bold py-3 rounded-xl transition">
+        <i class="fa-solid fa-right-to-bracket"></i> Giriş Yap
+      </button>
+      <div id="loginError" class="text-xs text-rose-400 text-center"></div>
+    </div>
+
+    <div class="text-center pt-2">
+      <a href="/" class="text-xs text-amber-400 hover:underline">← Avukat Çalışma Masasına Dön</a>
+    </div>
+
+    <p class="text-[10px] text-slate-600 text-center">
+      Bu panel yalnızca sistem yöneticileri içindir. Tüm giriş denemeleri denetim kaydına (audit log) yazılır.
+    </p>
+  </div>
+
+  <script>
+    document.getElementById('loginUsername').value = localStorage.getItem('rememberedAdminUsername') || 'Alparslan';
+    if (localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken')) { window.location.href = '/admin.html'; }
+
+    function getOrCreateDeviceId() {
+      let id = localStorage.getItem('adminDeviceId');
+      if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem('adminDeviceId', id);
+      }
+      return id;
+    }
+
+    async function doLogin() {
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const rememberMe = document.getElementById('rememberAdmin').checked;
+      const errBox = document.getElementById('loginError');
+      errBox.innerText = '';
+
+      if (!username || !password) { errBox.innerText = 'Kullanıcı adı ve şifre zorunludur.'; return; }
+
+      try {
+        const res = await fetch('/api/adminauth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password, deviceId: getOrCreateDeviceId(), rememberMe })
+        });
+        const data = await res.json();
+
+        if (!res.ok || !(data.success || data.Success)) {
+          errBox.innerText = data.message || data.Message || 'Giriş başarısız.';
+          return;
+        }
+
+        const storage = rememberMe ? localStorage : sessionStorage;
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUsername');
+        sessionStorage.removeItem('adminToken');
+        sessionStorage.removeItem('adminUsername');
+        storage.setItem('adminToken', data.token || data.Token);
+        storage.setItem('adminUsername', data.username || data.Username || username);
+        if (rememberMe) localStorage.setItem('rememberedAdminUsername', username);
+        else localStorage.removeItem('rememberedAdminUsername');
+
+        const mustChange = data.mustChangePassword ?? data.MustChangePassword;
+        window.location.href = mustChange ? '/change-password.html' : '/admin.html';
+      } catch (e) {
+        errBox.innerText = 'Sunucuya ulaşılamadı: ' + e.message;
+      }
+    }
+  </script>
+</body>
+</html>

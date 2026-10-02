@@ -5,7 +5,6 @@ bun.lock
 .pnp
 
 # Production build artifacts
-dist/
 build/
 
 # .NET / Binary artifacts that cause 403 Forbidden on GitHub
