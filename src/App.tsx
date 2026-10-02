@@ -13,6 +13,7 @@ import { DailyTaskReminders } from './components/DailyTaskReminders';
 import { LoginScreen } from './components/LoginScreen';
 import { HukukiHesaplamaAraclariModal } from './components/HukukiHesaplamaAraclariModal';
 import { AjanKonseyiOdasi } from './components/AjanKonseyiOdasi';
+import { AgentCapabilitiesDrawer } from './components/AgentCapabilitiesDrawer';
 import {
   getClientList,
   setActiveLawyerSicil,
@@ -251,7 +252,7 @@ export default function App() {
   // ANA UYGULAMA: BÜTÜNLÜKLÜ ÇOK SAYFALI AVUKAT ÇALIŞMA ALANI
   // ==========================================
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200 pb-14">
       {/* Top Application Global Header - 3-Zone Dashboard Contract */}
       <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#0e1524]/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800/80 px-4 sm:px-6 py-2.5 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
@@ -748,6 +749,19 @@ export default function App() {
       <HukukiHesaplamaAraclariModal
         isOpen={hesaplamaModalOpen}
         onClose={() => setHesaplamaModalOpen(false)}
+      />
+
+      {/* 5 Grup ve 17 Uzman Ajan Beceri & Bağlantı Matrisi Açılır Penceresi */}
+      <AgentCapabilitiesDrawer
+        onNavigateToPage={(page) => {
+          setCurrentPage(page);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onNavigateToTab={(tab) => {
+          setWorkspaceInitialTab(tab);
+          setCurrentPage('workspace_full');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
       />
     </div>
   );
