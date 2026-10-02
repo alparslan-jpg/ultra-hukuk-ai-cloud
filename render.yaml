@@ -4,7 +4,7 @@ services:
     runtime: node
     region: frankfurt
     plan: free
-    buildCommand: npm install && npx vite build
+    buildCommand: npm install && npm run build
     startCommand: npx tsx server.ts
     envVars:
       - key: NODE_ENV
@@ -12,6 +12,8 @@ services:
       - key: PORT
         value: 10000
       - key: GEMINI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
         sync: false
       - key: JWT_SECRET
         generateValue: true

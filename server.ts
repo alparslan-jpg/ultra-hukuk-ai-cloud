@@ -17,6 +17,11 @@ import { db } from './src/services/persistentDatabaseService.ts';
 import { generateUdfXml } from './src/services/udfGeneratorService.ts';
 import { searchPrecedentRag } from './src/services/precedentRagService.ts';
 import Anthropic from '@anthropic-ai/sdk';
+import { casesRouter } from './routes/v1/cases.ts';
+import { financeRouter } from './routes/v1/finance.ts';
+import { integrationsRouter } from './routes/v1/integrations.ts';
+import { queueRouter } from './routes/v1/queue.ts';
+import { aiRouter } from './routes/v1/ai.ts';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -4801,6 +4806,14 @@ ${userContent}
 });
 
 // 3. RAG İçtihat ve Mevzuat Arama Uzmanı
+
+// ── Faz 2: Modüler API v1 Router'ları (Kurumsal Hibrit Mimari) ─────────────
+app.use('/api/v1/cases', casesRouter);
+app.use('/api/v1/finance', financeRouter);
+app.use('/api/v1/integrations', integrationsRouter);
+app.use('/api/v1/queue', queueRouter);
+app.use('/api/v1/ai', aiRouter);
+
 app.post('/api/ai/rag-precedent-search', async (req: Request, res: Response) => {
   const { query, category } = req.body;
   if (!query || typeof query !== 'string' || !query.trim()) {

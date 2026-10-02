@@ -14,6 +14,7 @@ import { LoginScreen } from './components/LoginScreen';
 import { HukukiHesaplamaAraclariModal } from './components/HukukiHesaplamaAraclariModal';
 import { AjanKonseyiOdasi } from './components/AjanKonseyiOdasi';
 import { AgentCapabilitiesDrawer } from './components/AgentCapabilitiesDrawer';
+import { UniversalAiAssistantDrawer } from './components/UniversalAiAssistantDrawer';
 import { KurumsalBuroYonetimi } from './components/KurumsalBuroYonetimi';
 import { MultiAgentDavaSimulasyonu } from './components/MultiAgentDavaSimulasyonu';
 import {
@@ -46,7 +47,9 @@ import {
   Calendar,
   AlertTriangle,
   Camera,
-  Calculator
+  Calculator,
+  Building2,
+  Swords
 } from 'lucide-react';
 
 export type AppPage =
@@ -292,29 +295,77 @@ export default function App() {
           </div>
 
           {/* Zone 2: Navigation Links (Segmented interactive tabs with clear active state) */}
-          <nav className="hidden lg:flex items-center gap-1 bg-slate-100/90 dark:bg-[#141d30]/90 p-1 rounded-xl border border-slate-200/90 dark:border-slate-800 text-xs font-semibold">
+          <nav className="hidden xl:flex items-center gap-1 bg-slate-100/90 dark:bg-[#141d30]/90 p-1 rounded-xl border border-slate-200/90 dark:border-slate-800 text-xs font-semibold">
+            {/* 1. Ana Sayfa */}
             <button
               type="button"
               onClick={() => setCurrentPage('home')}
-              className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors ${
+              className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
                 currentPage === 'home'
                   ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-300 shadow-sm font-bold'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
               }`}
             >
-              Ana Sayfa
+              <span>Ana Sayfa</span>
             </button>
+
+            {/* 2. Dosyalarım & Dava Takip */}
             <button
               type="button"
-              onClick={() => setCurrentPage('forensic')}
-              className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors ${
-                currentPage === 'forensic'
-                  ? 'bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-300 shadow-sm font-bold'
+              onClick={() => setCurrentPage('workspace_full')}
+              className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                currentPage === 'workspace_full'
+                  ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-300 shadow-sm font-bold'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
               }`}
             >
-              Cımbız Ajanı
+              <FolderOpen className="w-3.5 h-3.5" />
+              <span>Dosyalarım & Dava Takip</span>
             </button>
+
+            {/* 3. AI İçtihat & Dilekçe Asistanı */}
+            <button
+              type="button"
+              onClick={() => setCurrentPage('petitions')}
+              className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                currentPage === 'petitions'
+                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 shadow-sm font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>AI İçtihat & Dilekçe</span>
+            </button>
+
+            {/* 4. Multi-Agent Dava Simülasyonu */}
+            <button
+              type="button"
+              onClick={() => setCurrentPage('dava_simulasyonu')}
+              className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                currentPage === 'dava_simulasyonu'
+                  ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-300 shadow-sm font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+              }`}
+            >
+              <Swords className="w-3.5 h-3.5" />
+              <span>Dava Simülasyonu</span>
+            </button>
+
+            {/* 5. Finans & Muhasebe (Apilex) */}
+            <button
+              type="button"
+              onClick={() => setCurrentPage('buro_yonetimi')}
+              className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                currentPage === 'buro_yonetimi'
+                  ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-300 shadow-sm font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+              }`}
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              <span>Finans & Muhasebe</span>
+            </button>
+
+            {/* 6. Evrak Analizörü & Cımbız */}
             <button
               type="button"
               onClick={() => setCurrentPage('analyzer')}
@@ -326,17 +377,19 @@ export default function App() {
             >
               Evrak Analizörü
             </button>
+
             <button
               type="button"
-              onClick={() => setCurrentPage('petitions')}
+              onClick={() => setCurrentPage('forensic')}
               className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors ${
-                currentPage === 'petitions'
-                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 shadow-sm font-bold'
+                currentPage === 'forensic'
+                  ? 'bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-300 shadow-sm font-bold'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
               }`}
             >
-              Dilekçe & Ajanlar
+              Cımbız Ajanı
             </button>
+
             <button
               type="button"
               onClick={() => setCurrentPage('legislation')}
@@ -348,26 +401,15 @@ export default function App() {
             >
               Mevzuat
             </button>
-            <button
-              type="button"
-              onClick={() => setCurrentPage('apk_download')}
-              className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors ${
-                currentPage === 'apk_download'
-                  ? 'bg-white dark:bg-slate-800 text-teal-600 dark:text-teal-300 shadow-sm font-bold'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-              }`}
-            >
-              Mobil APK
-            </button>
+
             <button
               type="button"
               onClick={() => setHesaplamaModalOpen(true)}
-              className="px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors text-slate-600 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors text-slate-600 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-300 flex items-center gap-1.5"
             >
               <Calculator className="w-3.5 h-3.5" />
-              Hesaplama
-            </button>
-          </nav>
+              <span>Hesaplama</span>
+            </button></nav>
 
           {/* Zone 3: Primary Utility & Profile Controls */}
           <div className="flex items-center gap-2 shrink-0">
