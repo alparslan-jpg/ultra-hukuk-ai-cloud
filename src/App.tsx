@@ -455,19 +455,7 @@ export default function App() {
               )}
             </button>
 
-            {/* Independent Adminator switch */}
-            <button
-              type="button"
-              onClick={() => {
-                window.location.hash = '#admin';
-                setCurrentMode('admin');
-              }}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-rose-500/30 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 text-xs font-semibold transition shadow-sm"
-              title="Bağımsız Adminatör Yönetici Paneline Geç"
-            >
-              <Shield className="w-3.5 h-3.5 text-rose-500" />
-              <span>Adminatör</span>
-            </button>
+            
           </div>
         </div>
       </header>
