@@ -644,7 +644,7 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
         {/* Right Column: AI-Generated Insights Display (7 Cols) */}
         <div className="lg:col-span-7">
           {analysisResult ? (
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+            <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
               {/* Result Header & Model Badge */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
                 <div className="space-y-1.5">
@@ -672,7 +672,7 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
                       {analysisResult.analyzedAt}
                     </span>
                   </div>
-                  <h3 className="text-base font-bold text-slate-100">{analysisResult.davaTuru}</h3>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{analysisResult.davaTuru}</h3>
                   <p className="text-xs text-slate-400 flex items-center gap-1.5">
                     <Gavel className="w-3.5 h-3.5 text-amber-400" />
                     <span>{analysisResult.gorevliYetkiliMahkeme}</span>
@@ -809,11 +809,11 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
                 <div className="space-y-6 animate-fade-in">
                   <div className="bg-indigo-950/30 border border-indigo-500/20 rounded-2xl p-5 space-y-4">
                     <h4 className="text-indigo-400 font-bold flex items-center gap-2"><Target className="w-4 h-4"/> Yönetici Özeti ve Hukuki Teşhis</h4>
-                    <p className="text-slate-200 text-sm leading-relaxed">{analysisResult.basHukukMusaviriSentezi.davaOzetiVeTeshis}</p>
+                    <p className="text-slate-800 dark:text-slate-200 text-sm leading-relaxed">{analysisResult.basHukukMusaviriSentezi.davaOzetiVeTeshis}</p>
                   </div>
-                  <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 space-y-4">
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 space-y-4">
                     <h4 className="text-emerald-400 font-bold flex items-center gap-2"><Brain className="w-4 h-4"/> Ajanların Verilerini Birleştiren Derin Analiz</h4>
-                    <div className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap bg-slate-950/50 p-4 rounded-xl border border-slate-800">
+                    <div className="text-slate-800 dark:text-slate-200 text-sm leading-relaxed whitespace-pre-wrap bg-slate-50 dark:bg-slate-950/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
                       {analysisResult.basHukukMusaviriSentezi.tumAjanlarinVerileriniBirlestirenDerinAnaliz}
                     </div>
                   </div>
@@ -835,18 +835,18 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-rose-950/20 border border-rose-900/40 rounded-xl p-4 space-y-2">
                       <h4 className="text-rose-400 text-xs font-bold uppercase tracking-wider">Zamanaşımı ve Hak Düşürücü Süreler</h4>
-                      <ul className="list-disc list-inside text-slate-300 text-sm space-y-1">
+                      <ul className="list-disc list-inside text-slate-800 dark:text-slate-200 text-sm space-y-1">
                         {(analysisResult.usulSuresiAjaniRaporu.zamanasimiVeHakDusurucuSureler || []).map((s, i) => <li key={i}>{s}</li>)}
                       </ul>
                     </div>
                     <div className="bg-amber-950/20 border border-amber-900/40 rounded-xl p-4 space-y-2">
                       <h4 className="text-amber-400 text-xs font-bold uppercase tracking-wider">HMK Uyarısı & Acil Adımlar</h4>
-                      <ul className="list-disc list-inside text-slate-300 text-sm space-y-1">
+                      <ul className="list-disc list-inside text-slate-800 dark:text-slate-200 text-sm space-y-1">
                         {(analysisResult.usulSuresiAjaniRaporu.hmkUyarisiVeAcilAdimlar || []).map((s, i) => <li key={i}>{s}</li>)}
                       </ul>
                     </div>
                   </div>
-                  <div className="bg-slate-800/50 rounded-xl p-4 text-sm flex justify-between items-center">
+                  <div className="bg-slate-100 dark:bg-slate-800/50 rounded-xl p-4 text-sm flex justify-between items-center text-slate-800 dark:text-slate-200">
                     <div><span className="text-slate-400 block text-xs">Görevli ve Yetkili Mahkeme</span><span className="text-sky-300 font-bold">{analysisResult.usulSuresiAjaniRaporu.gorevliYetkiliMahkeme}</span></div>
                     <div className="text-right"><span className="text-slate-400 block text-xs">Arabuluculuk Şartı</span><span className="text-emerald-300 font-bold">{analysisResult.usulSuresiAjaniRaporu.arabuluculukDavaSarti}</span></div>
                   </div>
@@ -855,23 +855,23 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
 
               {activeViewTab === 'emsalAjani' && analysisResult.yargitayEmsalAjaniRaporu && (
                 <div className="space-y-4 animate-fade-in">
-                  <div className="bg-slate-900 border border-slate-700 rounded-xl p-5">
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
                     <h4 className="text-sky-400 font-bold mb-2">Benzer Vakıalarda Yargıtay Yaklaşımı</h4>
-                    <p className="text-slate-300 text-sm">{analysisResult.yargitayEmsalAjaniRaporu.benzerVakialardaYargitayYaklasimi}</p>
+                    <p className="text-slate-800 dark:text-slate-200 text-sm">{analysisResult.yargitayEmsalAjaniRaporu.benzerVakialardaYargitayYaklasimi}</p>
                   </div>
                   <div className="bg-indigo-950/20 border border-indigo-900/40 rounded-xl p-5">
                     <h4 className="text-indigo-400 font-bold mb-3">HGK, Daire & BAM İlke Kararları</h4>
                     <div className="space-y-2">
                       {(analysisResult.yargitayEmsalAjaniRaporu.hgkDaiveBamIlkeKararlari || []).map((k, i) => (
-                        <div key={i} className="p-3 bg-slate-950/50 rounded-lg border border-slate-800 text-slate-300 text-sm border-l-2 border-l-indigo-500">
+                        <div key={i} className="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-sm border-l-2 border-l-indigo-500">
                           {k}
                         </div>
                       ))}
                     </div>
                   </div>
-                  <div className="bg-slate-800/50 rounded-xl p-4 text-sm">
+                  <div className="bg-slate-100 dark:bg-slate-800/50 rounded-xl p-4 text-sm text-slate-800 dark:text-slate-200">
                     <h4 className="text-emerald-400 font-bold mb-2">Lehe ve Aleyhe Emsal Karşılaştırması</h4>
-                    <p className="text-slate-300">{analysisResult.yargitayEmsalAjaniRaporu.leheVeAleyheEmsalKarsilastirmasi}</p>
+                    <p className="text-slate-800 dark:text-slate-200">{analysisResult.yargitayEmsalAjaniRaporu.leheVeAleyheEmsalKarsilastirmasi}</p>
                   </div>
                 </div>
               )}
@@ -880,25 +880,25 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
                 <div className="space-y-4 animate-fade-in">
                   <div className="bg-rose-950/30 border border-rose-900/50 rounded-xl p-5">
                     <h4 className="text-rose-400 font-bold flex items-center gap-2 mb-2"><Ghost className="w-4 h-4"/> Karşı Taraf Ne Yapar? (En Kötü Senaryo)</h4>
-                    <p className="text-rose-200 text-sm">{analysisResult.seytaninAvukatiRaporu.karsiTarafNeYapar}</p>
+                    <p className="text-rose-950 dark:text-rose-200 text-sm font-medium">{analysisResult.seytaninAvukatiRaporu.karsiTarafNeYapar}</p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-slate-900 border border-slate-700 rounded-xl p-4">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
                       <h4 className="text-amber-400 font-bold mb-2 text-sm">Dosyadaki Zayıf Halkalar & Açıklar</h4>
-                      <ul className="list-disc list-inside text-slate-300 text-xs space-y-1">
+                      <ul className="list-disc list-inside text-slate-800 dark:text-slate-200 text-xs space-y-1">
                         {(analysisResult.seytaninAvukatiRaporu.dosyadakiZayifHalkalarVeAciklar || []).map((z, i) => <li key={i}>{z}</li>)}
                       </ul>
                     </div>
-                    <div className="bg-slate-900 border border-slate-700 rounded-xl p-4">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
                       <h4 className="text-amber-400 font-bold mb-2 text-sm">Delil Çelişki ve Riskleri</h4>
-                      <ul className="list-disc list-inside text-slate-300 text-xs space-y-1">
+                      <ul className="list-disc list-inside text-slate-800 dark:text-slate-200 text-xs space-y-1">
                         {(analysisResult.seytaninAvukatiRaporu.delilCeliskiVeRiskleri || []).map((d, i) => <li key={i}>{d}</li>)}
                       </ul>
                     </div>
                   </div>
                   <div className="bg-emerald-950/20 border border-emerald-900/40 rounded-xl p-4">
                     <h4 className="text-emerald-400 font-bold mb-2">Karşı Savunma & Panzehir Stratejisi</h4>
-                    <p className="text-emerald-200 text-sm">{analysisResult.seytaninAvukatiRaporu.karsiSavunmaStratejisi}</p>
+                    <p className="text-emerald-950 dark:text-emerald-200 text-sm font-medium">{analysisResult.seytaninAvukatiRaporu.karsiSavunmaStratejisi}</p>
                   </div>
                 </div>
               )}
@@ -907,15 +907,15 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
                 <div className="space-y-4 animate-fade-in">
                   <div className="bg-sky-950/20 border border-sky-900/40 rounded-xl p-5">
                     <h4 className="text-sky-400 font-bold mb-2">UYAP Netice-i Talep Önerisi</h4>
-                    <p className="text-sky-100 text-sm font-mono p-3 bg-slate-950/50 rounded-lg border border-slate-800">{analysisResult.dilekceMimariRaporu.uyapNeticeiTalepOnerisi}</p>
+                    <p className="text-sky-900 dark:text-sky-100 text-sm font-mono p-3 bg-sky-50/50 dark:bg-slate-950/50 rounded-lg border border-sky-200 dark:border-slate-800">{analysisResult.dilekceMimariRaporu.uyapNeticeiTalepOnerisi}</p>
                   </div>
-                  <div className="bg-slate-900 border border-slate-700 rounded-xl p-5">
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
                     <h4 className="text-indigo-400 font-bold mb-3">Dilekçe Kurgusu Hiyerarşisi</h4>
                     <div className="space-y-2">
                       {(analysisResult.dilekceMimariRaporu.dilekceKurgusuHiyerarsisi || []).map((k, i) => (
-                        <div key={i} className="flex gap-3 items-start p-2 bg-slate-800/30 rounded-lg">
+                        <div key={i} className="flex gap-3 items-start p-2 bg-slate-100/70 dark:bg-slate-800/30 rounded-lg">
                           <span className="text-indigo-500 font-black">{i+1}.</span>
-                          <span className="text-slate-300 text-sm">{k}</span>
+                          <span className="text-slate-800 dark:text-slate-200 text-sm">{k}</span>
                         </div>
                       ))}
                     </div>

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --bg-app: #090d16;
   --bg-surface: #0e1524;
@@ -7,11 +9,24 @@
   --border-subtle: #1e293b;
   --border-strong: #334155;
   --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-legal: 'Cinzel', serif;
   --font-mono: 'JetBrains Mono', monospace;
+  color-scheme: dark;
+}
+
+html.dark {
+  --bg-app: #090d16;
+  --bg-surface: #0e1524;
+  --bg-subtle: #141d30;
+  --border-subtle: #1e293b;
+  --border-strong: #334155;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  color-scheme: dark;
 }
 
 html.light {
@@ -21,8 +36,9 @@ html.light {
   --border-subtle: #e2e8f0;
   --border-strong: #cbd5e1;
   --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
+  --text-secondary: #334155;
+  --text-muted: #475569;
+  color-scheme: light;
 }
 
 @layer base {
@@ -45,6 +61,140 @@ html.light {
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   GÜNDÜZ & GECE MODU KONTRAST VE OKUNABİLİRLİK SİSTEMİ
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── GÜNDÜZ (LIGHT) MODU KURALLARI ── */
+html.light {
+  /* Arka planlar ve yüzeyler */
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+/* Gündüz modunda soluk kalan metinleri okunaklı hale getir */
+html.light .text-slate-400 {
+  color: #475569 !important;
+}
+
+html.light .text-slate-500 {
+  color: #334155 !important;
+}
+
+html.light .text-slate-300:not([class*="dark:text-"]) {
+  color: #1e293b !important;
+}
+
+html.light .text-slate-200:not([class*="dark:text-"]) {
+  color: #0f172a !important;
+}
+
+html.light .text-slate-100:not([class*="dark:text-"]) {
+  color: #0f172a !important;
+}
+
+/* Form elemanları gündüz modunda tertemiz ve net olsun */
+html.light input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+html.light textarea,
+html.light select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Gündüz modunda koyu kalan kart yüzeylerini aydınlat */
+html.light .bg-slate-900:not([class*="dark:"]),
+html.light .bg-slate-950:not([class*="dark:"]) {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* Gündüz modunda renkli panellerin zeminini ve yazılarını uyumlu hale getir */
+html.light .bg-indigo-950\/30,
+html.light .bg-indigo-950\/20 {
+  background-color: rgba(238, 242, 255, 0.85) !important;
+  border-color: rgba(199, 210, 254, 0.8) !important;
+  color: #1e1b4b !important;
+}
+
+html.light .bg-emerald-950\/30,
+html.light .bg-emerald-950\/20 {
+  background-color: rgba(236, 253, 245, 0.85) !important;
+  border-color: rgba(167, 243, 208, 0.8) !important;
+  color: #064e3b !important;
+}
+
+html.light .bg-rose-950\/30,
+html.light .bg-rose-950\/20 {
+  background-color: rgba(255, 241, 242, 0.85) !important;
+  border-color: rgba(254, 205, 211, 0.8) !important;
+  color: #881337 !important;
+}
+
+html.light .bg-amber-950\/30,
+html.light .bg-amber-950\/20 {
+  background-color: rgba(254, 243, 199, 0.85) !important;
+  border-color: rgba(253, 230, 138, 0.8) !important;
+  color: #78350f !important;
+}
+
+html.light .bg-sky-950\/30,
+html.light .bg-sky-950\/20 {
+  background-color: rgba(240, 249, 255, 0.85) !important;
+  border-color: rgba(186, 230, 253, 0.8) !important;
+  color: #0c4a6e !important;
+}
+
+/* Gündüz modunda açık renkli badge yazıları */
+html.light .text-indigo-200 { color: #3730a3 !important; }
+html.light .text-emerald-200 { color: #065f46 !important; }
+html.light .text-rose-200 { color: #9f1239 !important; }
+html.light .text-amber-200 { color: #92400e !important; }
+html.light .text-sky-200 { color: #075985 !important; }
+
+/* ── GECE (DARK) MODU KURALLARI ── */
+html.dark {
+  background-color: #090d16;
+  color: #f8fafc;
+}
+
+/* Gece modunda koyu kalan metinleri otomatik aydınlat */
+html.dark .text-slate-900:not([class*="dark:text-"]) {
+  color: #f8fafc !important;
+}
+
+html.dark .text-slate-800:not([class*="dark:text-"]) {
+  color: #f1f5f9 !important;
+}
+
+html.dark .text-slate-700:not([class*="dark:text-"]) {
+  color: #e2e8f0 !important;
+}
+
+html.dark .text-slate-600:not([class*="dark:text-"]) {
+  color: #cbd5e1 !important;
+}
+
+/* Gece modunda form elemanları */
+html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+html.dark textarea,
+html.dark select {
+  background-color: #141d30 !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #94a3b8 !important;
 }
 
 /* Custom scrollbars */

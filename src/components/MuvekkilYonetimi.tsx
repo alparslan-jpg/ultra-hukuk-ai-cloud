@@ -54,7 +54,7 @@ const dateNow = () => new Date().toLocaleDateString('tr-TR');
 const DURUM_COLORS: Record<string, string> = {
   'Aktif':     'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
   'Beklemede': 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
-  'Kapalı':   'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700',
+  'Kapalı':   'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700',
   'Arşiv':    'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800',
 };
 
@@ -266,40 +266,40 @@ export function MuvekkilYonetimi({ onCaseSelected, onWritePetition }: MuvekkilYo
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Ad *</label>
+                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-600 dark:text-slate-400 mb-1">Ad *</label>
                 <input type="text" value={muvForm.ad} onChange={e => setMuvForm(p => ({...p, ad: e.target.value}))}
                   className="w-full bg-white dark:bg-[#141d30] border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
                   placeholder="Müvekkil adı" />
               </div>
               <div>
-                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Soyad *</label>
+                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-600 dark:text-slate-400 mb-1">Soyad *</label>
                 <input type="text" value={muvForm.soyad} onChange={e => setMuvForm(p => ({...p, soyad: e.target.value}))}
                   className="w-full bg-white dark:bg-[#141d30] border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
                   placeholder="Müvekkil soyadı" />
               </div>
             </div>
             <div>
-              <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">TC Kimlik No</label>
+              <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-600 dark:text-slate-400 mb-1">TC Kimlik No</label>
               <input type="text" maxLength={11} value={muvForm.tcKimlik} onChange={e => setMuvForm(p => ({...p, tcKimlik: e.target.value}))}
                 className="w-full bg-white dark:bg-[#141d30] border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
                 placeholder="11 haneli TC Kimlik" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Telefon</label>
+                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-600 dark:text-slate-400 mb-1">Telefon</label>
                 <input type="text" value={muvForm.telefon} onChange={e => setMuvForm(p => ({...p, telefon: e.target.value}))}
                   className="w-full bg-white dark:bg-[#141d30] border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
                   placeholder="0555 000 00 00" />
               </div>
               <div>
-                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">E-posta</label>
+                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-600 dark:text-slate-400 mb-1">E-posta</label>
                 <input type="email" value={muvForm.email} onChange={e => setMuvForm(p => ({...p, email: e.target.value}))}
                   className="w-full bg-white dark:bg-[#141d30] border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
                   placeholder="ornek@mail.com" />
               </div>
             </div>
             <div>
-              <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Adres</label>
+              <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-600 dark:text-slate-400 mb-1">Adres</label>
               <textarea rows={2} value={muvForm.adres} onChange={e => setMuvForm(p => ({...p, adres: e.target.value}))}
                 className="w-full bg-white dark:bg-[#141d30] border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 resize-none"
                 placeholder="İkamet adresi" />
@@ -317,13 +317,13 @@ export function MuvekkilYonetimi({ onCaseSelected, onWritePetition }: MuvekkilYo
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Dava No (otomatik)</label>
+                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-600 dark:text-slate-400 mb-1">Dava No (otomatik)</label>
                 <input type="text" value={davaForm.davaNo} onChange={e => setDavaForm(p => ({...p, davaNo: e.target.value}))}
                   className="w-full bg-white dark:bg-[#141d30] border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
                   placeholder="2024/1234 (boş bırakılabilir)" />
               </div>
               <div>
-                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Durum</label>
+                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-600 dark:text-slate-400 mb-1">Durum</label>
                 <select value={davaForm.durum} onChange={e => setDavaForm(p => ({...p, durum: e.target.value as any}))}
                   className="w-full bg-white dark:bg-[#141d30] border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500">
                   <option>Aktif</option><option>Beklemede</option><option>Kapalı</option><option>Arşiv</option>
@@ -331,27 +331,27 @@ export function MuvekkilYonetimi({ onCaseSelected, onWritePetition }: MuvekkilYo
               </div>
             </div>
             <div>
-              <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Dava Konusu *</label>
+              <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-600 dark:text-slate-400 mb-1">Dava Konusu *</label>
               <input type="text" value={davaForm.konu} onChange={e => setDavaForm(p => ({...p, konu: e.target.value}))}
                 className="w-full bg-white dark:bg-[#141d30] border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
                 placeholder="Alacak davası, İş hukuku, Ceza v.s." />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Mahkeme</label>
+                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-600 dark:text-slate-400 mb-1">Mahkeme</label>
                 <input type="text" value={davaForm.mahkeme} onChange={e => setDavaForm(p => ({...p, mahkeme: e.target.value}))}
                   className="w-full bg-white dark:bg-[#141d30] border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
                   placeholder="İstanbul 3. Asliye Hukuk" />
               </div>
               <div>
-                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Karşı Taraf</label>
+                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-600 dark:text-slate-400 mb-1">Karşı Taraf</label>
                 <input type="text" value={davaForm.karsiTaraf} onChange={e => setDavaForm(p => ({...p, karsiTaraf: e.target.value}))}
                   className="w-full bg-white dark:bg-[#141d30] border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
                   placeholder="Ad Soyad / Şirket Adı" />
               </div>
             </div>
             <div>
-              <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Açıklama / Notlar</label>
+              <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-600 dark:text-slate-400 mb-1">Açıklama / Notlar</label>
               <textarea rows={3} value={davaForm.aciklama} onChange={e => setDavaForm(p => ({...p, aciklama: e.target.value}))}
                 className="w-full bg-white dark:bg-[#141d30] border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 resize-none"
                 placeholder="Dava hakkında ek bilgiler..." />
@@ -372,7 +372,7 @@ export function MuvekkilYonetimi({ onCaseSelected, onWritePetition }: MuvekkilYo
             <div className="w-48 shrink-0 border-r border-slate-200 dark:border-slate-800 flex flex-col">
               <div className="p-2 border-b border-slate-200 dark:border-slate-800">
                 <div className="relative">
-                  <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-slate-600 dark:text-slate-400" />
                   <input type="text" value={aramaMetni} onChange={e => setAramaMetni(e.target.value)}
                     className="w-full pl-6 pr-2 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-[11px] text-slate-700 dark:text-slate-300 placeholder-slate-400 focus:outline-none border border-transparent focus:border-indigo-400"
                     placeholder="Müvekkil ara..." />
@@ -380,7 +380,7 @@ export function MuvekkilYonetimi({ onCaseSelected, onWritePetition }: MuvekkilYo
               </div>
               <div className="flex-1 overflow-y-auto">
                 {filtrelenmis.length === 0 && (
-                  <div className="p-4 text-center text-[11px] text-slate-400">
+                  <div className="p-4 text-center text-[11px] text-slate-600 dark:text-slate-400">
                     <Users className="w-6 h-6 mx-auto mb-2 opacity-30" />
                     Müvekkil yok
                   </div>
@@ -398,8 +398,8 @@ export function MuvekkilYonetimi({ onCaseSelected, onWritePetition }: MuvekkilYo
                         {m.ad[0]}{m.soyad[0]}
                       </div>
                       <div className="min-w-0">
-                        <div className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate">{m.ad} {m.soyad}</div>
-                        <div className="text-[9px] text-slate-400 truncate">{m.davalar.length} dava · {m.eklenmeTarihi}</div>
+                        <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">{m.ad} {m.soyad}</div>
+                        <div className="text-[10px] text-slate-600 dark:text-slate-600 dark:text-slate-400 font-medium truncate">{m.davalar.length} dava · {m.eklenmeTarihi}</div>
                       </div>
                     </div>
                   </button>
@@ -410,7 +410,7 @@ export function MuvekkilYonetimi({ onCaseSelected, onWritePetition }: MuvekkilYo
             {/* Sağ: Dava & Evrak Detayı */}
             <div className="flex-1 overflow-hidden flex flex-col">
               {!secilenMuvekkil ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-slate-400">
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-slate-600 dark:text-slate-400">
                   <Users className="w-10 h-10 mx-auto mb-3 opacity-20" />
                   <p className="text-sm font-semibold">Müvekkil Seçin</p>
                   <p className="text-xs mt-1">Sol listeden bir müvekkil seçin veya yeni müvekkil ekleyin.</p>
@@ -425,7 +425,7 @@ export function MuvekkilYonetimi({ onCaseSelected, onWritePetition }: MuvekkilYo
                       </div>
                       <div>
                         <div className="font-bold text-sm text-slate-900 dark:text-slate-100">{secilenMuvekkil.ad} {secilenMuvekkil.soyad}</div>
-                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-slate-400 mt-0.5">
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-slate-600 dark:text-slate-600 dark:text-slate-400 font-medium mt-0.5">
                           {secilenMuvekkil.tcKimlik && <span><Hash className="w-2.5 h-2.5 inline" /> {secilenMuvekkil.tcKimlik}</span>}
                           {secilenMuvekkil.telefon && <span><Phone className="w-2.5 h-2.5 inline" /> {secilenMuvekkil.telefon}</span>}
                           {secilenMuvekkil.email && <span><Mail className="w-2.5 h-2.5 inline" /> {secilenMuvekkil.email}</span>}
@@ -438,7 +438,7 @@ export function MuvekkilYonetimi({ onCaseSelected, onWritePetition }: MuvekkilYo
                         <FolderPlus className="w-3 h-3" />Dava Ekle
                       </button>
                       <button type="button" onClick={() => muvekkilSil(secilenMuvekkil.id)}
-                        className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30 text-slate-400 hover:text-rose-500 transition" title="Müvekkil sil">
+                        className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30 text-slate-600 dark:text-slate-400 hover:text-rose-500 transition" title="Müvekkil sil">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -449,11 +449,11 @@ export function MuvekkilYonetimi({ onCaseSelected, onWritePetition }: MuvekkilYo
 
                     {/* Dava listesi */}
                     <div className="w-48 shrink-0 border-r border-slate-200 dark:border-slate-800 overflow-y-auto">
-                      <div className="p-2 border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                      <div className="p-2 border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-500 dark:text-slate-600 dark:text-slate-400 uppercase tracking-wide">
                         Davalar ({secilenMuvekkil.davalar.length})
                       </div>
                       {secilenMuvekkil.davalar.length === 0 && (
-                        <div className="p-3 text-center text-[11px] text-slate-400">
+                        <div className="p-3 text-center text-[11px] text-slate-600 dark:text-slate-400">
                           <Folder className="w-5 h-5 mx-auto mb-1 opacity-30" />
                           Dava yok
                         </div>
@@ -464,14 +464,14 @@ export function MuvekkilYonetimi({ onCaseSelected, onWritePetition }: MuvekkilYo
                           <button type="button" onClick={() => setSecilenDava(d)}
                             className="w-full text-left px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition group">
                             <div className="flex items-start gap-1.5">
-                              <Folder className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${secilenDava?.id === d.id ? 'text-emerald-500' : 'text-slate-400'}`} />
+                              <Folder className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${secilenDava?.id === d.id ? 'text-emerald-500' : 'text-slate-600 dark:text-slate-400'}`} />
                               <div className="min-w-0 flex-1">
-                                <div className="text-[10px] font-bold text-slate-700 dark:text-slate-200 truncate">{d.konu}</div>
-                                <div className="text-[9px] font-mono text-slate-400">{d.davaNo}</div>
+                                <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">{d.konu}</div>
+                                <div className="text-[10px] font-mono text-slate-600 dark:text-slate-600 dark:text-slate-400 font-medium">{d.davaNo}</div>
                                 <span className={`inline-block mt-0.5 text-[8px] font-semibold px-1 py-0 rounded border ${DURUM_COLORS[d.durum]}`}>{d.durum}</span>
                               </div>
                             </div>
-                            <div className="flex items-center justify-between mt-1 text-[9px] text-slate-400">
+                            <div className="flex items-center justify-between mt-1 text-[10px] text-slate-600 dark:text-slate-600 dark:text-slate-400 font-medium">
                               <span><Paperclip className="w-2.5 h-2.5 inline" /> {d.evraklar.length} evrak</span>
                               <span><Calendar className="w-2.5 h-2.5 inline" /> {d.davaAcilisTarihi}</span>
                             </div>
@@ -493,7 +493,7 @@ export function MuvekkilYonetimi({ onCaseSelected, onWritePetition }: MuvekkilYo
                     {/* Evrak Listesi / Görüntüleyici */}
                     <div className="flex-1 overflow-hidden flex flex-col">
                       {!secilenDava ? (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-400">
+                        <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-600 dark:text-slate-400">
                           <Folder className="w-8 h-8 mx-auto mb-2 opacity-20" />
                           <p className="text-xs font-semibold">Dava Seçin</p>
                           <p className="text-[11px] mt-1">Sol listeden bir davaya tıklayın.</p>
@@ -550,17 +550,17 @@ export function MuvekkilYonetimi({ onCaseSelected, onWritePetition }: MuvekkilYo
                                 </button>
                               </div>
                             </div>
-                            <div className="flex flex-wrap gap-3 text-xs text-slate-400">
+                            <div className="flex flex-wrap gap-3 text-xs text-slate-600 dark:text-slate-400">
                               {secilenDava.davaNo && <span className="font-mono"><Hash className="w-3 h-3 inline text-slate-500" /> {secilenDava.davaNo}</span>}
                               {secilenDava.mahkeme && <span><Gavel className="w-3 h-3 inline text-slate-500" /> {secilenDava.mahkeme}</span>}
                               {secilenDava.karsiTaraf && <span>vs. {secilenDava.karsiTaraf}</span>}
                             </div>
-                            {secilenDava.aciklama && <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{secilenDava.aciklama}</p>}
+                            {secilenDava.aciklama && <p className="text-xs text-slate-500 dark:text-slate-600 dark:text-slate-400 mt-1">{secilenDava.aciklama}</p>}
                           </div>
 
                           {/* Evrak Listesi */}
                           <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                            <div className="flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide px-1 mb-2">
+                            <div className="flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-600 dark:text-slate-400 uppercase tracking-wide px-1 mb-2">
                               <span>Dava Evrakları ({secilenDava.evraklar.length})</span>
                               <div className="flex items-center gap-2 normal-case font-normal">
                                 <button
@@ -573,8 +573,8 @@ export function MuvekkilYonetimi({ onCaseSelected, onWritePetition }: MuvekkilYo
                               </div>
                             </div>
                             {secilenDava.evraklar.length === 0 && (
-                              <div className="py-12 text-center text-slate-400 space-y-3 bg-slate-50/50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 p-6 my-2">
-                                <Paperclip className="w-10 h-10 mx-auto text-slate-400/40 animate-pulse" />
+                              <div className="py-12 text-center text-slate-600 dark:text-slate-400 space-y-3 bg-slate-50/50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 p-6 my-2">
+                                <Paperclip className="w-10 h-10 mx-auto text-slate-600 dark:text-slate-400/40 animate-pulse" />
                                 <div>
                                   <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Henüz evrak yüklenmemiş</p>
                                   <p className="text-xs text-slate-500 mt-0.5">Dava dilekçesi, delil listesi, tapu kaydı veya bilirkişi raporu ekleyin.</p>
@@ -648,12 +648,12 @@ function EvrakKart({ evrak, onSil }: { evrak: MuvekkilEvrak; onSil: () => void }
       <div className="flex items-center gap-2 px-3 py-2">
         <span className="text-base shrink-0">{icon}</span>
         <div className="min-w-0 flex-1">
-          <div className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate">{evrak.ad}</div>
-          <div className="text-[9px] text-slate-400">{evrak.tur} · {evrak.boyut || '–'} · {evrak.eklenmeTarihi}</div>
+          <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">{evrak.ad}</div>
+          <div className="text-[10px] text-slate-600 dark:text-slate-600 dark:text-slate-400 font-medium">{evrak.tur} · {evrak.boyut || '–'} · {evrak.eklenmeTarihi}</div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <button type="button" onClick={() => setAcik(p => !p)}
-            className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-indigo-500 transition" title="İçeriği görüntüle">
+            className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-indigo-500 transition" title="İçeriği görüntüle">
             {acik ? <ChevronDown className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
           </button>
           <button type="button" onClick={onSil}
@@ -669,7 +669,7 @@ function EvrakKart({ evrak, onSil }: { evrak: MuvekkilEvrak; onSil: () => void }
               {evrak.icerik.substring(0, 3000)}{evrak.icerik.length > 3000 ? '\n\n... (içerik kısaltıldı)' : ''}
             </pre>
           ) : (
-            <p className="text-[11px] text-slate-400 italic">İçerik önizlemesi için metin tabanlı dosya yükleyin.</p>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 italic">İçerik önizlemesi için metin tabanlı dosya yükleyin.</p>
           )}
         </div>
       )}
