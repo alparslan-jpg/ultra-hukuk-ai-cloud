@@ -69,7 +69,7 @@ runTest('Faz 5: Render.yaml Zero-Downtime Yapılandırması', () => {
   const renderPath = path.join(__dirname, '..', 'render.yaml');
   assert(fs.existsSync(renderPath), 'render.yaml eksik');
   const content = fs.readFileSync(renderPath, 'utf8');
-  assert(content.includes('ANTHROPIC_API_KEY'), 'render.yaml ANTHROPIC_API_KEY eksik');
+  assert(content.includes('GEMINI_API_KEY'), 'render.yaml GEMINI_API_KEY eksik');
   assert(content.includes('npm run build'), 'render.yaml derleme komutu optimize değil');
 });
 
