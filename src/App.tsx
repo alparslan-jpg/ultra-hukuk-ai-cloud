@@ -266,6 +266,21 @@ export default function App() {
           
           {/* Zone 1: Clean Brand Wordmark & Context Breadcrumb */}
           <div className="flex items-center gap-3 shrink-0">
+            {/* Yetkili Avukat Bilgisi (Sol üst, logo ve uygulama adının solunda) */}
+            <div className="flex items-center gap-2 bg-slate-100/90 dark:bg-[#141d30] border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl text-xs shadow-sm">
+              <UserCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <div className="text-left hidden sm:block max-w-[160px] truncate">
+                <span className="font-bold text-slate-800 dark:text-slate-100 block leading-tight truncate">
+                  {currentLawyer.fullName}
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 tabular-nums font-mono">
+                  {currentLawyer.baroAdi} • Sicil: {currentLawyer.sicilNo}
+                </span>
+              </div>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 font-mono tabular-nums">
+                {currentLawyer.daysRemaining}G
+              </span>
+            </div>
             <button
               onClick={() => setCurrentPage('home')}
               className="flex items-center gap-2.5 text-left group"
@@ -414,48 +429,6 @@ export default function App() {
           {/* Zone 3: Primary Utility & Profile Controls */}
           <div className="flex items-center gap-2 shrink-0">
             <ThemeToggle />
-
-            {/* Yetkili Avukat Bilgisi (Av. Osman Turgut - Sicil: 8109) */}
-            <div className="flex items-center gap-2 bg-white dark:bg-[#141d30] border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl text-xs shadow-sm">
-              <UserCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-              <div className="text-left hidden sm:block max-w-[160px] truncate">
-                <span className="font-bold text-slate-800 dark:text-slate-100 block leading-tight truncate">
-                  {currentLawyer.fullName}
-                </span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 tabular-nums font-mono">
-                  {currentLawyer.baroAdi} • Sicil: {currentLawyer.sicilNo}
-                </span>
-              </div>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 font-mono tabular-nums">
-                {currentLawyer.daysRemaining}G
-              </span>
-            </div>
-
-            {/* KVKK ve Açık Rıza Durum Butonu */}
-            <button
-              type="button"
-              onClick={() => setKvkkModalOpen(true)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition shadow-sm ${
-                kvkkConsentRecord
-                  ? 'border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
-                  : 'border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 animate-pulse'
-              }`}
-              title="KVKK Aydınlatma Metni ve Açık Rıza Onay Belgesi"
-            >
-              {kvkkConsentRecord ? (
-                <>
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                  <span className="hidden md:inline font-mono">KVKK Onaylı</span>
-                </>
-              ) : (
-                <>
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                  <span className="hidden md:inline font-mono font-bold">KVKK Onayı Bekliyor</span>
-                </>
-              )}
-            </button>
-
-            
           </div>
         </div>
       </header>
