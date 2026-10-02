@@ -17,7 +17,7 @@ export interface AgentInfo {
   legalBasis: string[];
   inputSource: string;
   outputTarget: string;
-  pageTarget: 'home' | 'forensic' | 'analyzer' | 'petitions' | 'legislation' | 'workspace_full';
+  pageTarget: 'home' | 'forensic' | 'analyzer' | 'petitions' | 'legislation' | 'workspace_full' | 'buro_yonetimi' | 'dava_simulasyonu';
   tabTarget?: string;
   color: string;
 }
@@ -396,11 +396,95 @@ export const AGENT_GROUPS: AgentGroup[] = [
         color: 'indigo'
       }
     ]
+  },
+  {
+    id: 'grup-6',
+    title: '6. Claude Destekli Hibrit & Çoklu Ajan Grubu (İş Emri Standartları)',
+    subtitle: 'Anthropic Claude 3.5 Sonnet / Opus, RAG Arama ve Kurumsal Büro Yönetimi',
+    icon: Sparkles,
+    color: 'from-amber-600 via-orange-600 to-purple-700',
+    badgeColor: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
+    summary: 'Milyonlarca Yargıtay/Danıştay içtihadı üzerinde semantik RAG arama, Claude 3.5 motoru ile UYAP uyumlu dilekçe sentezi, 3 rollü (Hâkim, Karşı Taraf, Bilirkişi) dava risk simülasyonu ve Apilex tarzı kurumsal büro & finans yönetimi.',
+    workflowChain: 'RAG İçtihat Taraması ➔ Claude Derin Muhakeme & Dilekçe ➔ 3 Rol Simülasyonu (Hâkim/Bilirkişi) ➔ Kurumsal Büro & SMM',
+    agents: [
+      {
+        id: 'rag-ictihat-uzmani',
+        name: 'Ajan 1: RAG İçtihat ve Mevzuat Arama Uzmanı',
+        badge: 'Semantik RAG & Chunking',
+        model: 'Embedding + Vektör DB + RAG Engine',
+        description: 'Milyonlarca Yargıtay/Danıştay kararı ve güncel mevzuat havuzunda anlamsal (semantik) tarama yaparak en uygun emsal kararları bulur.',
+        skills: [
+          'Vektörizasyon (embeddings) ve yüksek boyutlu vektör uzayında tarama',
+          'Chunking optimizasyonu ile en kritik karar paragraflarını ayıklama',
+          'Uyum yüzdesi (relevance score) hesaplayarak en yakın emsalleri sıralama'
+        ],
+        legalBasis: ['2797 Sayılı Yargıtay Kanunu', 'HMK m. 353 & 369', 'Danıştay Kanunu'],
+        inputSource: 'Dava vakıaları, hukuki kavramlar ve uyuşmazlık özeti',
+        outputTarget: 'Alakalı Emsal Karar Listesi, İlgili Karar Numaraları ve Uyum Puanları',
+        pageTarget: 'legislation',
+        tabTarget: 'precedent',
+        color: 'yellow'
+      },
+      {
+        id: 'claude-dilekce-asistani',
+        name: 'Ajan 2: Claude-Powered Hukuki Muhakeme ve Dilekçe Sentezleme Asistanı',
+        badge: 'Claude 3.5 Sonnet / Opus',
+        model: 'Anthropic Claude 3.5 Sonnet & Claude 3 Opus',
+        description: 'Toplanan emsal kararları, dava dosyalarını ve delilleri harmanlayarak UYAP/UDF formatına tam uyumlu, ikna edici ve hatasız dilekçe taslakları üretir.',
+        skills: [
+          'Geniş bağlam penceresiyle yüzlerce sayfalık bilirkişi raporlarını analiz etme',
+          'Ton ve üslup yönetimi (savunma, itiraz, temyiz, istinaf layihası)',
+          'Atıf doğrulama ve uydurma (hallucination) önleme filtresi',
+          'UYAP/UDF standartlarına tam uyumlu dava ve cevap dilekçesi kurgulama'
+        ],
+        legalBasis: ['HMK m. 119 (Dava Dilekçesi)', 'HMK m. 126-130 (Cevap Dilekçesi)', '1136 S.K. m. 34'],
+        inputSource: 'Emsal kararlar, dava vakıaları, delil listesi ve mahkeme bilgisi',
+        outputTarget: 'Kusursuz UYAP/UDF Dilekçe Taslağı ve Hukuki Gerekçeler',
+        pageTarget: 'petitions',
+        color: 'purple'
+      },
+      {
+        id: 'multi-agent-simulasyon',
+        name: 'Ajan 3: Multi-Agent Dava Simülasyon Grubu (Rol Tabanlı Danışmanlık)',
+        badge: '3-Perspektif Risk Testi',
+        model: 'Claude 3.5 Sonnet (Hâkim, Karşı Taraf, Bilirkişi)',
+        description: 'Bir davanın zayıf ve güçlü yönlerini farklı yargı perspektiflerinden test eder: Taraf Avukatı, Hâkim/Savcı ve Bilirkişi.',
+        skills: [
+          'Taraf Avukatı Ajanı: Agresif savunma ve lehte argüman üretimi',
+          'Hâkim / Savcı Ajanı: Karşı tarafın argümanlarını çürütme ve risk analizi',
+          'Bilirkişi Ajanı: Teknik ve finansal hesaplama tutarlılığını denetleme',
+          'Stratejik Tavsiye: Avukatın kazanma şansını artıracak somut aksiyonlar'
+        ],
+        legalBasis: ['HMK m. 27 (Hukuki Dinlenilme Hakkı)', 'HMK m. 266-287 (Bilirkişi İncelemesi)', 'HMK m. 114-115'],
+        inputSource: 'Dava konusu, taraflar, vakıalar ve deliller',
+        outputTarget: 'Risk Raporu, Zayıf Noktalar, Muhtemel Hamleler ve Kazanma Oranı',
+        pageTarget: 'dava_simulasyonu',
+        color: 'rose'
+      },
+      {
+        id: 'kurumsal-buro-finans',
+        name: 'Ajan 4: Apilex Kurumsal Büro Yönetimi & Finans Ajanı',
+        badge: 'Finans, CRM & RBAC',
+        model: 'Kural Tabanlı Muhakeme & Hesaplama Motoru',
+        description: 'Büronun finansal akışını, müvekkil portföyünü, celse ve safahat ajandasını yönetir; serbest meslek makbuzu ve stopaj/tevkifat hesaplamalarını yürütür.',
+        skills: [
+          'Gelir, gider, dosya masrafı ve müvekkil avans hesaplarını yönetme',
+          'Müvekkil CRM havuzunda sözleşme ve bakiye takibi yapma',
+          'UYAP duruşma ve hak düşürücü süre ajandasını izleme',
+          'SMM, KDV tevkifatı (5/10, 9/10) ve stopaj hesaplama',
+          'RBAC ile yönetici ve bağlı avukat yetkilendirmesi sağlama'
+        ],
+        legalBasis: ['1136 Sayılı Avukatlık Kanunu', '193 Sayılı GVK m. 65-68', '3065 Sayılı KDVK m. 9'],
+        inputSource: 'Vekalet sözleşmeleri, serbest meslek makbuzları, dava safahatları',
+        outputTarget: 'Kasa Raporu, Müvekkil Cari Bakiye, Celse Ajandası ve SMM Taslağı',
+        pageTarget: 'buro_yonetimi',
+        color: 'emerald'
+      }
+    ]
   }
 ];
-
 interface AgentCapabilitiesDrawerProps {
-  onNavigateToPage?: (page: 'home' | 'forensic' | 'analyzer' | 'petitions' | 'legislation' | 'apk_download' | 'workspace_full') => void;
+  onNavigateToPage?: (page: 'home' | 'forensic' | 'analyzer' | 'petitions' | 'legislation' | 'apk_download' | 'workspace_full' | 'buro_yonetimi' | 'dava_simulasyonu') => void;
   onNavigateToTab?: (tab: string) => void;
 }
 

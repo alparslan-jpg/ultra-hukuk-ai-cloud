@@ -39,7 +39,9 @@ import {
   FolderOpen,
   Crosshair,
   Smartphone,
-  Archive
+  Archive,
+  Upload,
+  X
 } from 'lucide-react';
 
 import { DenetlemePaneli, HukukiDenetimBadge, AiAssistedBadge } from './DenetlemePaneli';

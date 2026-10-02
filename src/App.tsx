@@ -14,6 +14,8 @@ import { LoginScreen } from './components/LoginScreen';
 import { HukukiHesaplamaAraclariModal } from './components/HukukiHesaplamaAraclariModal';
 import { AjanKonseyiOdasi } from './components/AjanKonseyiOdasi';
 import { AgentCapabilitiesDrawer } from './components/AgentCapabilitiesDrawer';
+import { KurumsalBuroYonetimi } from './components/KurumsalBuroYonetimi';
+import { MultiAgentDavaSimulasyonu } from './components/MultiAgentDavaSimulasyonu';
 import {
   getClientList,
   setActiveLawyerSicil,
@@ -55,7 +57,9 @@ export type AppPage =
   | 'petitions'
   | 'legislation'
   | 'apk_download'
-  | 'workspace_full';
+  | 'workspace_full'
+  | 'buro_yonetimi'
+  | 'dava_simulasyonu';
 
 const initialLawyers: LawyerUser[] = [
   {
@@ -280,6 +284,8 @@ export default function App() {
                   {currentPage === 'legislation' && 'Mevzuat & İçtihat'}
                   {currentPage === 'apk_download' && 'Mobil APK'}
                   {currentPage === 'workspace_full' && 'Tümleşik Çalışma Masası'}
+                  {currentPage === 'buro_yonetimi' && 'Kurumsal Büro & Finans (Apilex)'}
+                  {currentPage === 'dava_simulasyonu' && 'Multi-Agent Dava Simülasyonu'}
                 </span>
               </div>
             </button>
@@ -528,6 +534,58 @@ export default function App() {
 {/* ========================================================
             PAGE 3: ADLİ HAKİKAT & ŞAHİT ÇELİŞKİSİ (CIMBIZ AJANI) ALT SAYFASI
             ======================================================== */}
+        {/* ========================================================
+            PAGE: KURUMSAL BÜRO YÖNETİMİ & FİNANS (APİLEX HİBRİT)
+            ======================================================== */}
+        {currentPage === 'buro_yonetimi' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between bg-white dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setCurrentPage('home')}
+                className="text-xs px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 font-bold transition flex items-center gap-1.5 shadow-sm"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Ana Sayfa'ya Dön</span>
+              </button>
+              <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                Alt Sayfa: <strong className="text-amber-600 dark:text-amber-400">Kurumsal Büro & Finans Yönetimi (Apilex Hibrit)</strong>
+              </div>
+            </div>
+
+            <KurumsalBuroYonetimi
+              lawyerName={currentLawyer.fullName}
+              lawyerSicilNo={currentLawyer.sicilNo}
+              onNavigateToPetitions={() => setCurrentPage('petitions')}
+            />
+          </div>
+        )}
+
+        {/* ========================================================
+            PAGE: MULTI-AGENT DAVA SİMÜLASYONU (CLAUDE 3.5 & OPUS)
+            ======================================================== */}
+        {currentPage === 'dava_simulasyonu' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between bg-white dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setCurrentPage('home')}
+                className="text-xs px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 font-bold transition flex items-center gap-1.5 shadow-sm"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Ana Sayfa'ya Dön</span>
+              </button>
+              <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                Alt Sayfa: <strong className="text-purple-600 dark:text-purple-400">Claude Destekli Multi-Agent Dava Risk Simülasyonu</strong>
+              </div>
+            </div>
+
+            <MultiAgentDavaSimulasyonu
+              onApplyToPetition={() => setCurrentPage('petitions')}
+            />
+          </div>
+        )}
+
         {currentPage === 'forensic' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between bg-white dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
@@ -758,7 +816,7 @@ export default function App() {
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
         onNavigateToTab={(tab) => {
-          setWorkspaceInitialTab(tab);
+          setWorkspaceInitialTab(tab as LawyerWorkspaceTab);
           setCurrentPage('workspace_full');
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}

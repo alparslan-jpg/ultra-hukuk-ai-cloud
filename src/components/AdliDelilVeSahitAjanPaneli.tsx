@@ -26,7 +26,7 @@ import {
   RefreshCw,
   FolderOpen
 } from 'lucide-react';
-import { getClientList } from '../services/clientCaseStore';
+import { getClientList, getActiveLawyerSicil } from '../services/clientCaseStore';
 
 export interface WitnessItem {
   id: string;
@@ -414,8 +414,8 @@ export function AdliDelilVeSahitAjanPaneli({
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       analysisData: analysisResult,
-                      lawyerSicilNo: user.sicilNo,
-                      lawyerName: user.fullName
+                      lawyerSicilNo: getActiveLawyerSicil(),
+                      lawyerName: `Av. ${getActiveLawyerSicil()}`
                     }),
                   });
                   const data = await res.json();
