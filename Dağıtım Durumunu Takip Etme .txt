@@ -1,0 +1,4 @@
+# Dağıtım ID'si ile durumu sorgula
+$DeployId = "dep-db04k5favr4c73e4o0q0"
+$StatusUri = "https://api.render.com/v1/services/$ServiceId/deploys/$DeployId"
+(Invoke-RestMethod -Uri $StatusUri -Method Get -Headers $Headers) | Select-Object id, status, updatedAt

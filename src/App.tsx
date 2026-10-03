@@ -197,41 +197,170 @@ export default function App() {
   if (currentMode === 'admin') {
     return (
       <div className="min-h-screen bg-slate-100 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
-        <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#0e1626]/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-6 py-3 shadow-sm">
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 to-rose-700 flex items-center justify-center text-white shadow-md shadow-rose-500/20">
-                <Shield className="w-5 h-5" />
+        <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#0e1524]/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800/80 px-3 sm:px-6 py-2 shadow-sm w-full">
+        <div className="w-full flex items-center justify-between gap-3">
+          
+          {/* Sol Bölüm: Avukat Bilgisi + Ultra Hukuk Logo + Sola Kaydırılmış Navigasyon Butonları */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-1 overflow-x-auto no-scrollbar">
+            
+            {/* Yetkili Avukat Bilgisi */}
+            <div className="flex items-center gap-2 bg-slate-100/90 dark:bg-[#141d30] border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl text-xs shadow-sm shrink-0">
+              <UserCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <div className="text-left hidden md:block max-w-[150px] truncate">
+                <span className="font-bold text-slate-800 dark:text-slate-100 block leading-tight truncate">
+                  {currentLawyer.fullName}
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 tabular-nums font-mono">
+                  {currentLawyer.baroAdi} • Sicil: {currentLawyer.sicilNo}
+                </span>
               </div>
-              <div>
-                <h1 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  Adminatör Yönetici Portalı
-                  <span className="text-[10px] font-mono bg-rose-500/10 text-rose-600 dark:text-rose-400 px-2 py-0.5 rounded-full border border-rose-500/20 font-semibold">
-                    Bağımsız Sistem
-                  </span>
-                </h1>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Merkezi Lisans, Güvenlik Kütüğü ve Baro Yetkilendirme Konsolu
-                </p>
-              </div>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 font-mono tabular-nums">
+                {currentLawyer.daysRemaining}G
+              </span>
             </div>
 
-            <div className="flex items-center gap-2.5">
-              <ThemeToggle />
+            {/* Ultra Hukuk Marka & Logo (Çalışma Portalı yazısı kaldırıldı) */}
+            <button
+              onClick={() => setCurrentPage('home')}
+              className="flex items-center gap-2 text-left group shrink-0"
+              title="Ana Sayfaya Dön"
+            >
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-sm text-slate-950 font-black group-hover:scale-105 transition-transform shrink-0">
+                <Scale className="w-4 h-4 text-slate-950" />
+              </div>
+              <span className="text-sm font-extrabold tracking-tight text-slate-900 dark:text-slate-100 uppercase" style={{ fontFamily: 'var(--font-legal)' }}>
+                Ultra Hukuk
+              </span>
+            </button>
+
+            {/* Sola Kaydırılmış Navigasyon Butonları */}
+            <nav className="flex items-center gap-1 bg-slate-100/90 dark:bg-[#141d30]/90 p-1 rounded-xl border border-slate-200/90 dark:border-slate-800 text-xs font-semibold shrink-0">
+              {/* 1. Ana Sayfa */}
               <button
                 type="button"
-                onClick={() => {
-                  window.location.hash = '';
-                  setCurrentMode('workspace');
-                }}
-                className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 transition flex items-center gap-1.5 shadow-sm"
+                onClick={() => setCurrentPage('home')}
+                className={`px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                  currentPage === 'home'
+                    ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-300 shadow-sm font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
               >
-                <ArrowLeft className="w-3.5 h-3.5 text-amber-500" />
-                <span>Avukat Portalına Dön</span>
+                <span>Ana Sayfa</span>
               </button>
-            </div>
+
+              {/* 2. Dosyalarım & Dava Takip */}
+              <button
+                type="button"
+                onClick={() => setCurrentPage('workspace_full')}
+                className={`px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                  currentPage === 'workspace_full'
+                    ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-300 shadow-sm font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
+              >
+                <FolderOpen className="w-3.5 h-3.5" />
+                <span>Dosyalarım & Dava Takip</span>
+              </button>
+
+              {/* 3. AI Dilekçe */}
+              <button
+                type="button"
+                onClick={() => setCurrentPage('petitions')}
+                className={`px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                  currentPage === 'petitions'
+                    ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 shadow-sm font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>AI Dilekçe</span>
+              </button>
+
+              {/* 4. Multi-Agent Dava Simülasyonu */}
+              <button
+                type="button"
+                onClick={() => setCurrentPage('dava_simulasyonu')}
+                className={`px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                  currentPage === 'dava_simulasyonu'
+                    ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-300 shadow-sm font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
+              >
+                <Swords className="w-3.5 h-3.5" />
+                <span>Dava Simülasyonu</span>
+              </button>
+
+              {/* 5. Finans & Muhasebe (Apilex) */}
+              <button
+                type="button"
+                onClick={() => setCurrentPage('buro_yonetimi')}
+                className={`px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                  currentPage === 'buro_yonetimi'
+                    ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-300 shadow-sm font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                <span>Finans & Muhasebe</span>
+              </button>
+
+              {/* 6. Evrak Analizörü */}
+              <button
+                type="button"
+                onClick={() => setCurrentPage('analyzer')}
+                className={`px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors ${
+                  currentPage === 'analyzer'
+                    ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-300 shadow-sm font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
+              >
+                Evrak Analizörü
+              </button>
+
+              {/* 7. Cımbız Ajanı */}
+              <button
+                type="button"
+                onClick={() => setCurrentPage('forensic')}
+                className={`px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors ${
+                  currentPage === 'forensic'
+                    ? 'bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-300 shadow-sm font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
+              >
+                Cımbız Ajanı
+              </button>
+
+              {/* 8. Mevzuat */}
+              <button
+                type="button"
+                onClick={() => setCurrentPage('legislation')}
+                className={`px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors ${
+                  currentPage === 'legislation'
+                    ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-300 shadow-sm font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
+              >
+                Mevzuat
+              </button>
+
+              {/* 9. Hesaplama */}
+              <button
+                type="button"
+                onClick={() => setHesaplamaModalOpen(true)}
+                className="px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors text-slate-600 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-300 flex items-center gap-1.5"
+              >
+                <Calculator className="w-3.5 h-3.5" />
+                <span>Hesaplama</span>
+              </button>
+            </nav>
           </div>
-        </header>
+
+          {/* Sağ Kenar: ThemeToggle */}
+          <div className="flex items-center gap-2 shrink-0 ml-auto">
+            <ThemeToggle />
+          </div>
+        </div>
+      </header>
 
         <main className="flex-1 max-w-7xl w-full mx-auto p-6">
           <AdminatorPanel
@@ -541,7 +670,7 @@ export default function App() {
             PAGE: KURUMSAL BÜRO YÖNETİMİ & FİNANS (APİLEX HİBRİT)
             ======================================================== */}
         {currentPage === 'buro_yonetimi' && (
-          <div className="space-y-4">
+          <div className="w-full px-3 sm:px-6 py-3 space-y-4">
             <div className="flex items-center justify-between bg-white dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
               <button
                 type="button"
@@ -568,7 +697,7 @@ export default function App() {
             PAGE: MULTI-AGENT DAVA SİMÜLASYONU (CLAUDE 3.5 & OPUS)
             ======================================================== */}
         {currentPage === 'dava_simulasyonu' && (
-          <div className="space-y-4">
+          <div className="w-full px-3 sm:px-6 py-3 space-y-4">
             <div className="flex items-center justify-between bg-white dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
               <button
                 type="button"
@@ -590,7 +719,7 @@ export default function App() {
         )}
 
         {currentPage === 'forensic' && (
-          <div className="space-y-4">
+          <div className="w-full px-3 sm:px-6 py-3 space-y-4">
             <div className="flex items-center justify-between bg-white dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
               <button
                 type="button"
@@ -621,7 +750,7 @@ export default function App() {
             PAGE 4: DAVA EVRAK ANALİZÖRÜ (FLASH & PRO) ALT SAYFASI
             ======================================================== */}
         {currentPage === 'analyzer' && (
-          <div className="space-y-4">
+          <div className="w-full px-3 sm:px-6 py-3 space-y-4">
             <div className="flex items-center justify-between bg-white dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
               <button
                 type="button"
@@ -655,7 +784,7 @@ export default function App() {
             PAGE 5: UYAP DİLEKÇE & HARP ODASI ALT SAYFASI
             ======================================================== */}
         {currentPage === 'petitions' && (
-          <div className="space-y-4">
+          <div className="w-full px-3 sm:px-6 py-3 space-y-4">
             <div className="flex items-center justify-between bg-white dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
               <button
                 type="button"
@@ -682,7 +811,7 @@ export default function App() {
             PAGE 6: MEVZUAT & İÇTİHAT SORGULAMA ALT SAYFASI
             ======================================================== */}
         {currentPage === 'legislation' && (
-          <div className="space-y-4">
+          <div className="w-full px-3 sm:px-6 py-3 space-y-4">
             <div className="flex items-center justify-between bg-white dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
               <button
                 type="button"
@@ -719,7 +848,7 @@ export default function App() {
             PAGE 7: KİŞİYE ÖZEL MOBİL APK İNDİRME ALT SAYFASI
             ======================================================== */}
         {currentPage === 'apk_download' && (
-          <div className="space-y-4">
+          <div className="w-full px-3 sm:px-6 py-3 space-y-4">
             <div className="flex items-center justify-between bg-white dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
               <button
                 type="button"
@@ -745,7 +874,7 @@ export default function App() {
             PAGE 8: TÜMLEŞİK ÇALIŞMA MASASI ALT SAYFASI
             ======================================================== */}
         {currentPage === 'workspace_full' && (
-          <div className="space-y-4">
+          <div className="w-full px-3 sm:px-6 py-3 space-y-4">
             <div className="flex items-center justify-between bg-white dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
               <button
                 type="button"
@@ -774,7 +903,7 @@ export default function App() {
 
       {/* Global Footer */}
       <footer className="border-t border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-[#0e1626]/70 backdrop-blur-md py-4 px-6 text-xs text-slate-600 dark:text-slate-400 mt-10">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px]">
+        <div className="w-full px-3 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px]">
           <div className="flex items-center gap-2">
             <Scale className="w-3.5 h-3.5 text-amber-500" />
             <span>Ultra Hukuk AI • 1136 Sayılı Kanun ve KVKK Kapsamında Uçtan Uca İzole</span>
