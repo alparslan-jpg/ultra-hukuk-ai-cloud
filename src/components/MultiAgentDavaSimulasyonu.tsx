@@ -38,24 +38,35 @@ export interface MultiAgentDavaSimulasyonuProps {
 
 const ORNEK_DAVALAR = [
   {
-    baslik: 'Ticari İtirazın İptali (Fatura & İrsaliye)',
+    id: 'preset-ticari',
+    baslik: 'Ticari İtirazın İptali (Fatura & Cari Hesap)',
     konu: 'Ticari Faturaya Dayalı İlamsız İcra Takibine Haksız İtirazın İptali ve %20 İcra İnkar Tazminatı',
-    detay: `Davacı müvekkil Atlas Tekstil San. Tic. A.Ş., davalı Bosphorus Lojistik Ltd. Şti.'ye 2024 yılı Ağustos ve Eylül aylarında 850.000 TL bedelli kumaş ve tekstil ürünü teslim etmiştir. İrsaliyeler davalı şirket yetkilisinin kaşesi ve imzası ile teslim alınmıştır. Ancak fatura bedeli süresinde ödenmemiş, başlatılan icra takibine davalı 'borcum yoktur' diyerek kötü niyetle itiraz etmiştir. TTK m. 18/3 uyarınca basiretli tacir gibi davranma yükümlülüğü ihlal edilmiştir.`,
-    deliller: 'Sevk irsaliyeleri, ticari defter ve kayıtlar, banka dekontları, cari hesap ekstresi, arabuluculuk son tutanağı',
+    detay: `Davacı müvekkil şirket, davalı borçluya ticari sözleşme ve cari hesap ilişkisi kapsamında malları eksiksiz teslim etmiştir. Sevk irsaliyeleri kaşeli ve imzalıdır. Ancak fatura bedeli süresinde ödenmemiş, takibe 'borcum yoktur' şeklinde kötüniyetli itiraz edilmiştir. TTK m. 18/3 gereğince basiretli tacir yükümlülüğü ihlal edilmiştir.`,
+    deliller: 'Sevk irsaliyeleri, ticari defter kayıtları, cari hesap mutabakatı, banka dekontları, zorunlu arabuluculuk son tutanağı',
     taraf: 'Davacı' as const
   },
   {
-    baslik: 'İşçilik Alacağı & Haksız Fesih',
-    konu: 'Kıdem, İhbar Tazminatı ve Fazla Mesai Alacağı Talebi (İş Kanunu m. 17, 24, 41)',
-    detay: `Müvekkil işçi 5 yıl süreyle davalı şirkette depo sorumlusu olarak haftada ortalama 55 saat çalışmış, resmi ve dini bayramlarda izin kullandırılmamıştır. Maaşın asgari ücret kadarlık kısmı bankadan, kalanı elden ödenmiştir. İş akdi müvekkil tarafından SGK primlerinin gerçek ücretten yatırılmaması sebebiyle haklı nedenle feshedilmiştir. İşveren haksız istifa iddiasında bulunmaktadır.`,
-    deliller: 'Banka hesap dökümleri, emsal ücret araştırması talebi, işyeri giriş-çıkış kart kayıtları, tanık beyanları',
+    id: 'preset-iscilik',
+    baslik: 'İşçilik Alacakları & Kıdem/İhbar',
+    konu: 'Kıdem, İhbar Tazminatı, Fazla Mesai ve UBGT Alacağı Talebi (4857 Sayılı İş Kanunu m. 17, 24, 41)',
+    detay: `Müvekkil işçi, davalı işyerinde 5 yıl süreyle kesintisiz çalışmış, haftalık 55 saati aşan fazla mesai ve bayram çalışmalarının karşılığı ödenmemiştir. Maaşın bir kısmı elden verilmiş, SGK primleri eksik yatırılmıştır. İş akdi haklı nedenle feshedilmiş olup işveren kötüniyetli olarak alacakları ödemekten imtina etmektedir.`,
+    deliller: 'Banka hesap ekstreleri, emsal ücret araştırması, işyeri giriş-çıkış kart kayıtları, tanık beyanları, SGK hizmet dökümü',
     taraf: 'Davacı' as const
   },
   {
-    baslik: 'Tapu İptali ve Tescil (TMK m. 713 Zilyetlik)',
+    id: 'preset-tapu',
+    baslik: 'Tapu İptali ve Tescil (TMK m. 713)',
     konu: 'Olağanüstü Zamanaşımı ile Taşınmaz Mülkiyetinin İktisabı (TMK m. 713/1, 2)',
-    detay: `Müvekkil ve miras bırakanları, söz konusu taşınmazı 1985 yılından bu yana aralıksız, nizasız ve malik sıfatıyla zilyetliğinde bulundurmuştur. Taşınmaz üzerinde ev, bahçe ve fındıklık oluşturulmuş, imar-ihya tamamlanmıştır. Tapuda kayıtlı malik 40 yıl önce gaipliğe uğramış ve terekesi sahipsiz kalmıştır.`,
-    deliller: 'Hava fotoğrafları, vergi kayıtları, yaşlı yerel tanık beyanları, kadastro tespit tutanakları, keşif talebi',
+    detay: `Müvekkil ve miras bırakanları, söz konusu taşınmazı 35 yılı aşkın süredir nizasız, fasılasız ve malik sıfatıyla zilyetliğinde bulundurmuştur. İmar ve ihya tamamlanmış olup tapu kütüğündeki malik gaiptir ve terekesi sahipsiz kalmıştır.`,
+    deliller: 'Hava fotoğrafları, mahalli bilirkişi ve yaşlı yerel tanık beyanları, vergi makbuzları, kadastro tespit tutanağı, keşif',
+    taraf: 'Davacı' as const
+  },
+  {
+    id: 'preset-kira',
+    baslik: 'Kira Tahliye ve Kira Alacağı (TBK m. 315 / m. 352)',
+    konu: 'İki Haklı İhtar ve Temerrüt Nedeniyle Kiralananın Tahliyesi ve Birikmiş Kira Alacağının Tahsili',
+    detay: `Davalı kiracı, kira sözleşmesiyle kiralanan taşınmazın kira bedellerini vadesinde ödememiş, keşide edilen haklı ihtarlara rağmen temerrüde düşmüştür. Kira akdinin feshi ile taşınmazın tahliyesi ve ödenmeyen kira bedellerinin faiziyle tahsili talep edilmektedir.`,
+    deliller: 'Kira sözleşmesi, banka hesap hareketleri, noter ihtarnameleri ve tebliğ şerhleri, arabuluculuk tutanağı',
     taraf: 'Davacı' as const
   }
 ];
@@ -65,7 +76,12 @@ export function MultiAgentDavaSimulasyonu({
   initialCaseSubject = '',
   initialCaseDetails = ''
 }: MultiAgentDavaSimulasyonuProps) {
-  // Input states
+  // Template Mode & Selection State (Exclusive Radio: Hazır Şablonlar vs Özel Şablon)
+  const [templateMode, setTemplateMode] = useState<'hazir' | 'ozel'>('hazir');
+  const [selectedPresetIndex, setSelectedPresetIndex] = useState<number>(0);
+  const [customTemplateText, setCustomTemplateText] = useState<string>('');
+
+  // Input states (Editable fields auto-populated by templates or active case files)
   const [caseSubject, setCaseSubject] = useState<string>(
     initialCaseSubject || ORNEK_DAVALAR[0].konu
   );
@@ -78,6 +94,33 @@ export function MultiAgentDavaSimulasyonu({
   const [clientPosition, setClientPosition] = useState<'Davacı' | 'Davalı' | 'Müşteki' | 'Sanık'>('Davacı');
   const [preferredModel, setPreferredModel] = useState<'claude-3-5-sonnet' | 'claude-3-opus' | 'gemini-3.1-pro'>('claude-3-5-sonnet');
   const [partyContext, setPartyContext] = useState<SelectedPartyContext>(() => PartyContextService.get());
+
+  // Exclusive Radio Template Selection Handlers
+  const handleSelectPreset = (index: number) => {
+    setTemplateMode('hazir');
+    setSelectedPresetIndex(index);
+    const orn = ORNEK_DAVALAR[index];
+    if (orn) {
+      setCaseSubject(orn.konu);
+      setCaseDetails(orn.detay);
+      setEvidenceSummary(orn.deliller);
+      setClientPosition(orn.taraf);
+    }
+  };
+
+  const handleSelectCustom = () => {
+    setTemplateMode('ozel');
+    if (customTemplateText.trim()) {
+      setCaseDetails(customTemplateText);
+    }
+  };
+
+  const handleCustomTextChange = (val: string) => {
+    setCustomTemplateText(val);
+    if (templateMode === 'ozel') {
+      setCaseDetails(val);
+    }
+  };
 
   // Global Taraf Seçimi (Davacı/Davalı) ile Anında Senkronizasyon
   React.useEffect(() => {
@@ -244,21 +287,82 @@ ${simulationResult.stratejikTavsiye}
           </div>
         </div>
 
-        {/* Template Presets */}
-        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-white/10 overflow-x-auto text-xs pb-1">
-          <span className="text-[11px] text-slate-400 font-semibold whitespace-nowrap">
-            Hızlı Şablon Yükle:
-          </span>
-          {ORNEK_DAVALAR.map((orn, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => handleSelectTemplate(orn)}
-              className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-slate-200 text-[11px] font-medium transition whitespace-nowrap"
+        {/* DİNAMİK VE HAZIR ŞABLON YÖNETİMİ (EXCLUSIVE RADIO SEÇİMİ) */}
+        <div className="mt-4 pt-3 border-t border-white/10 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-xs text-amber-400 font-bold flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Hızlı Şablon Yükle (Dinamik & AI Hazır Şablonlar):</span>
+            </span>
+            <span className="text-[10px] text-slate-400">
+              Seçilen şablona göre aşağıdaki dava alanları otomatik doldurulur ve serbestçe düzenlenebilir.
+            </span>
+          </div>
+
+          {/* Hazır Şablonlar Radio Listesi */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+            {ORNEK_DAVALAR.map((orn, i) => {
+              const isSelected = templateMode === 'hazir' && selectedPresetIndex === i;
+              return (
+                <div
+                  key={orn.id}
+                  onClick={() => handleSelectPreset(i)}
+                  className={`p-2.5 rounded-xl border cursor-pointer transition flex items-start gap-2.5 ${
+                    isSelected
+                      ? 'bg-amber-500/20 border-amber-400 ring-1 ring-amber-400/40 text-white shadow-sm'
+                      : 'bg-white/5 border-white/10 hover:bg-white/10 text-slate-300'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="davaSablonSecimi"
+                    checked={isSelected}
+                    onChange={() => handleSelectPreset(i)}
+                    className="mt-0.5 text-amber-500 focus:ring-amber-400 w-3.5 h-3.5 shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <span className="font-bold text-xs block leading-snug truncate">{orn.baslik}</span>
+                    <span className="text-[10px] text-slate-400 block truncate mt-0.5">{orn.konu}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Özel Şablon Alanı (Boş Metin Girilebilir & Radio Seçimli) */}
+          <div className={`p-3 rounded-xl border transition space-y-2 ${
+            templateMode === 'ozel'
+              ? 'bg-purple-950/40 border-purple-400 ring-1 ring-purple-400/40 text-white'
+              : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+          }`}>
+            <div
+              onClick={handleSelectCustom}
+              className="flex items-center gap-2 cursor-pointer select-none"
             >
-              {orn.baslik}
-            </button>
-          ))}
+              <input
+                type="radio"
+                name="davaSablonSecimi"
+                checked={templateMode === 'ozel'}
+                onChange={handleSelectCustom}
+                className="text-purple-500 focus:ring-purple-400 w-3.5 h-3.5 shrink-0"
+              />
+              <span className="font-bold text-xs text-purple-300">
+                Özel Şablon (Avukat Tanımlı Serbest Şablon)
+              </span>
+              <span className="text-[10px] text-slate-400">
+                — Kendi özel vaka şablonunuzu girin, radio seçildiğinde otomatik uygulanır.
+              </span>
+            </div>
+
+            <textarea
+              rows={2}
+              value={customTemplateText}
+              onFocus={() => setTemplateMode('ozel')}
+              onChange={(e) => handleCustomTextChange(e.target.value)}
+              placeholder="Kendi özel dava kurgunuzu veya şablon metninizi buraya yazabilirsiniz..."
+              className="w-full bg-slate-900/80 border border-slate-700 rounded-lg p-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-purple-400 leading-relaxed font-sans"
+            />
+          </div>
         </div>
       </div>
 
@@ -297,8 +401,11 @@ ${simulationResult.stratejikTavsiye}
 
             {/* Case Subject */}
             <div>
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                Dava Konusu ve Talep:
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between mb-1">
+                <span>Dava Konusu ve Talep:</span>
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-normal bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded">
+                  Otomatik Dolduruldu (Düzenlenebilir)
+                </span>
               </label>
               <input
                 type="text"
@@ -311,8 +418,11 @@ ${simulationResult.stratejikTavsiye}
 
             {/* Facts / Details */}
             <div>
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                Maddi Olaylar ve Vakıalar:
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between mb-1">
+                <span>Maddi Olaylar ve Vakıalar:</span>
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-normal bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded">
+                  Otomatik Dolduruldu (Düzenlenebilir)
+                </span>
               </label>
               <textarea
                 rows={5}
@@ -325,8 +435,11 @@ ${simulationResult.stratejikTavsiye}
 
             {/* Evidence Summary */}
             <div>
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                Dayanılan Deliller & Raporlar:
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between mb-1">
+                <span>Dayanılan Deliller & Raporlar:</span>
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-normal bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded">
+                  Otomatik Dolduruldu (Düzenlenebilir)
+                </span>
               </label>
               <textarea
                 rows={3}
