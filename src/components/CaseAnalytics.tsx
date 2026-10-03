@@ -29,7 +29,7 @@ import {
   ClientItem
 } from '../services/clientCaseStore';
 
-export type CaseStatus = 'Open' | 'Pending' | 'Closed';
+export type CaseStatus = 'Open' | 'Pending' | 'Closed' | 'Açık' | 'Kapalı' | 'Üst Mahkemede' | 'Beklemede';
 
 export interface CaseRecord {
   id: string;

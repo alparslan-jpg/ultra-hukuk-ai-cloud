@@ -15,7 +15,7 @@ export interface ClientCase {
   caseNumber: string;
   court: string;
   subject: string;
-  status: 'Open' | 'Pending' | 'Closed';
+  status: 'Açık' | 'Kapalı' | 'Üst Mahkemede' | 'Beklemede' | 'Open' | 'Pending' | 'Closed';
   openedDate: string;
   updatedAt?: string;
   nextHearingDate?: string;
@@ -59,19 +59,37 @@ export function getActiveLawyerSicil(): string {
 
 function getStorageKeyForLawyer(sicil?: string): string {
   const s = sicil || activeLawyerSicil || '8109';
-  return `ultra_hukuk_clients_v4_${s}`;
+  return `ultra_hukuk_clients_v6_clean_${s}`;
 }
 
 export function getClientList(): ClientItem[] {
   if (typeof window === 'undefined') return [];
   try {
     const key = getStorageKeyForLawyer();
+    
+    // Purge any legacy versions from localStorage
+    Object.keys(localStorage).forEach((k) => {
+      if ((k.startsWith('ultra_hukuk_clients_') || k.startsWith('client_cases_')) && k !== key) {
+        localStorage.removeItem(k);
+      }
+    });
+
     const raw = localStorage.getItem(key);
     if (!raw) {
       return [];
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+
+    // Filter out any legacy dummy names
+    const dummyNames = ['sabri özcan', 'atlas tekstil', 'serkan yıldırım', 'kuzey rüzgarı', 'elif zeynep doğan'];
+    const cleaned = parsed.filter(c => 
+      !dummyNames.some(d => (c.fullName || '').toLowerCase().includes(d))
+    );
+    if (cleaned.length !== parsed.length) {
+      localStorage.setItem(key, JSON.stringify(cleaned));
+    }
+    return cleaned;
   } catch (err) {
     console.warn('Failed to parse clients from storage:', err);
     return [];
@@ -459,4 +477,32 @@ ${file.analysisSummary || 'Analiz notu mevcut değil.'}
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+export function updateCaseStatus(
+  clientId: string,
+  caseId: string,
+  status: 'Açık' | 'Kapalı' | 'Üst Mahkemede' | 'Beklemede'
+): boolean {
+  const current = getClientList();
+  let found = false;
+  const updated = current.map((c) => {
+    if (c.id === clientId) {
+      return {
+        ...c,
+        cases: c.cases.map((cs) => {
+          if (cs.id === caseId) {
+            found = true;
+            return { ...cs, status: status as any };
+          }
+          return cs;
+        })
+      };
+    }
+    return c;
+  });
+  if (found) {
+    saveClientList(updated);
+  }
+  return found;
 }

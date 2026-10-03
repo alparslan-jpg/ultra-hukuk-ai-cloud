@@ -6,7 +6,7 @@
 // çalışacak şekilde koşullanır ve sekmeler arası anında senkronize olur.
 // ============================================================
 
-export type PartySide = 'Davacı' | 'Davalı' | 'none';
+export type PartySide = 'Davacı' | 'Davalı' | 'Müşteki' | 'Kurum' | 'none';
 
 export interface SelectedPartyContext {
   side: PartySide;
@@ -29,8 +29,27 @@ export function buildPartyBiasDirective(side: PartySide, partyName: string): str
     return 'Hukuki analiz ve dilekçe kurgusu tarafsız, objektif ve kanuni usul kurallarına uygun olarak yürütülecektir.';
   }
 
-  const roleText = side === 'Davacı' ? 'DAVACI (MÜVEKKİL)' : 'DAVALI (MÜVEKKİL)';
-  const counterRoleText = side === 'Davacı' ? 'DAVALI (KARŞI TARAF)' : 'DAVACI (KARŞI TARAF)';
+  let roleText = 'MÜVEKKİL';
+  let counterRoleText = 'KARŞI TARAF';
+  let specificDirective = '';
+
+  if (side === 'Davacı') {
+    roleText = 'DAVACI (MÜVEKKİL)';
+    counterRoleText = 'DAVALI (KARŞI TARAF)';
+    specificDirective = `Davanın TAMAMEN KABULÜNE, alacağın en yüksek yasal/avans/ticari faiziyle tahsiline, karşı tarafın %20'den aşağı olmamak üzere icra inkar tazminatına ve tüm yargılama gideri ile vekalet ücretine mahkum edilmesine odaklan.`;
+  } else if (side === 'Davalı') {
+    roleText = 'DAVALI (MÜVEKKİL)';
+    counterRoleText = 'DAVACI (KARŞI TARAF)';
+    specificDirective = `Haksız, mesnetsiz ve hukuki dayanaktan yoksun DAVANIN USULDEN VE ESASTAN TAMAMEN REDDİNE, haksız takip/dava nedeniyle davacının %20'den aşağı olmamak üzere kötüniyet tazminatına, tüm yargılama harç ve masrafları ile vekalet ücretinin karşı tarafa yükletilmesine odaklan.`;
+  } else if (side === 'Müşteki') {
+    roleText = 'MÜŞTEKİ / MAĞDUR / KATILAN (MÜVEKKİL)';
+    counterRoleText = 'ŞÜPHELİ / SANIK (KARŞI TARAF)';
+    specificDirective = `Müvekkilimizin mağduriyetinin tespiti ile şüpheli/sanığın TCK kapsamında en üst hadden cezalandırılması, kamu davası açılması ve her türlü maddi-manevi tazminat hakkımızın saklı tutulmasına odaklan.`;
+  } else if (side === 'Kurum') {
+    roleText = 'KURUM / TÜZEL KİŞİ TEMSİLCİSİ (MÜVEKKİL)';
+    counterRoleText = 'KARŞI TARAF';
+    specificDirective = `Kurumun kamusal/kurumsal hak ve menfaatlerinin tam korunması, idari ve hukuki süreçlerin kanun ve mevzuata tam uygunluğunun savunulması, haksız rücu ve tazminat taleplerinin tümüyle bertaraf edilmesine odaklan.`;
+  }
 
   return `
 🔥🔥🔥 [ZORUNLU VE TAVİZSİZ MÜVEKKİL SAVUNMA PROTOKOLÜ - %100 BİAS EMİR VE TALİMATI] 🔥🔥🔥
@@ -44,9 +63,7 @@ TÜM USUL, ESAS, DELİL, SÜRE VE TENSİP ANALİZLERİ İSTİSNASIZ ŞU KURALLAR
 2. KARŞI TARAFIN İDDİALARINI ÇÜRÜTME:
    Karşı tarafın ileri sürebileceği veya sürdüğü her türlü iddia, itiraz ve delil; usulden (yetki, görev, zamanaşımı, hak düşürücü süre, arabuluculuk yokluğu) ve esastan derhal çürütülecek, zayıf halkaları tespit edilip avukatımızın eline ezici karşı argümanlar sunulacaktır.
 3. TALEP VE NETİCE-İ TALEP:
-   ${side === 'Davacı'
-     ? `Davanın TAMAMEN KABULÜNE, alacağın en yüksek yasal/avans/ticari faiziyle tahsiline, karşı tarafın %20'den aşağı olmamak üzere icra inkar tazminatına ve tüm yargılama gideri ile vekalet ücretine mahkum edilmesine odaklan.`
-     : `Haksız, mesnetsiz ve hukuki dayanaktan yoksun DAVANIN USULDEN VE ESASTAN TAMAMEN REDDİNE, haksız takip/dava nedeniyle davacının %20'den aşağı olmamak üzere kötüniyet tazminatına, tüm yargılama harç ve masrafları ile vekalet ücretinin karşı tarafa yükletilmesine odaklan.`}
+   ${specificDirective}
 4. DİL VE ÜSLUP:
    Son derece kararlı, kendinden emin, Türk Hukuku doktrin ve Yargıtay Hukuk Genel Kurulu ilkelerine dayalı, UYAP ve mahkeme nezdinde tartışmasız üstünlük sağlayan bir dil kullanılacaktır.
 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
@@ -83,9 +100,13 @@ export class PartyContextService {
     const plaintiffName = ctx.plaintiffName !== undefined ? ctx.plaintiffName : current.plaintiffName;
     const defendantName = ctx.defendantName !== undefined ? ctx.defendantName : current.defendantName;
     
-    let selectedPartyName = '';
-    if (side === 'Davacı') selectedPartyName = plaintiffName;
-    else if (side === 'Davalı') selectedPartyName = defendantName;
+    let selectedPartyName = ctx.selectedPartyName || '';
+    if (!selectedPartyName) {
+      if (side === 'Davacı') selectedPartyName = plaintiffName;
+      else if (side === 'Davalı') selectedPartyName = defendantName;
+      else if (side === 'Müşteki') selectedPartyName = plaintiffName || 'Müşteki';
+      else if (side === 'Kurum') selectedPartyName = plaintiffName || defendantName || 'Kurum';
+    }
 
     const biasPromptDirective = buildPartyBiasDirective(side, selectedPartyName);
 

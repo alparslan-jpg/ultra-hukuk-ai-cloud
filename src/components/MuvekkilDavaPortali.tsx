@@ -26,7 +26,8 @@ import {
   Briefcase,
   X,
   FileCode,
-  ShieldAlert
+  ShieldAlert,
+  ChevronDown
 } from 'lucide-react';
 import {
   CaseFileItem,
@@ -34,7 +35,8 @@ import {
   ClientItem,
   getClientList,
   saveClientList,
-  subscribeToClientUpdates
+  subscribeToClientUpdates,
+  updateCaseStatus
 } from '../services/clientCaseStore';
 import { PartyContextService, SelectedPartyContext, PartySide } from '../services/partyContextService';
 import { DataExtractionAndSyncService } from '../services/dataExtractionAndSyncService';
@@ -71,8 +73,9 @@ export function MuvekkilDavaPortali({
   };
 
   // Navigation states
-  const [selectedClientId, setSelectedClientId] = useState<string | null>('cli-1');
-  const [selectedCaseId, setSelectedCaseId] = useState<string | null>('case-atlas-1');
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
+  const [showPartyDropdown, setShowPartyDropdown] = useState(false);
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -475,12 +478,18 @@ export function MuvekkilDavaPortali({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         {/* Column 1: Müvekkil Listesi (3 Cols) */}
         <div className="lg:col-span-3 bg-white dark:bg-[#0e1524] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-sky-500" />
-              Müvekkiller ({filteredClients.length})
+          <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-800 gap-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5 truncate">
+              <Users className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+              <span>Müvekkiller ({filteredClients.length})</span>
             </h3>
-            <button onClick={() => setShowAddClientModal(true)} className="px-3 py-1.5 bg-sky-600/20 text-sky-600 dark:text-sky-400 hover:bg-sky-600/30 rounded-lg text-base font-bold flex items-center gap-1"><Plus className="w-4 h-4"/> Müvekkil Ekle</button>
+            <button
+              onClick={() => setShowAddClientModal(true)}
+              className="px-2.5 py-1 bg-sky-600/10 hover:bg-sky-600/20 text-sky-600 dark:text-sky-400 border border-sky-500/20 rounded-lg text-xs font-bold flex items-center gap-1 shrink-0 transition-all"
+            >
+              <Plus className="w-3.5 h-3.5"/>
+              <span>Müvekkil Ekle</span>
+            </button>
           </div>
 
           {/* Search & Filter */}
@@ -529,7 +538,28 @@ export function MuvekkilDavaPortali({
 
           {/* Client List Items */}
           <div className="space-y-2 max-h-[65vh] overflow-y-auto pr-1">
-            {filteredClients.map((client) => {
+            {filteredClients.length === 0 ? (
+              <div className="py-10 px-3 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl space-y-2.5">
+                <div className="w-9 h-9 rounded-full bg-sky-50 dark:bg-sky-950/40 text-sky-500 flex items-center justify-center mx-auto">
+                  <Users className="w-4 h-4" />
+                </div>
+                <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Kayıtlı Müvekkil Bulunmuyor
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-[190px] mx-auto">
+                  İlk müvekkilinizi ekleyerek dava ve evrak takibine hemen başlayabilirsiniz.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowAddClientModal(true)}
+                  className="px-2.5 py-1 rounded-lg bg-sky-600 text-white text-xs font-semibold hover:bg-sky-500 transition shadow-xs inline-flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Müvekkil Ekle</span>
+                </button>
+              </div>
+            ) : (
+            filteredClients.map((client) => {
               const isSelected = selectedClientId === client.id;
               return (
                 <div
@@ -557,88 +587,183 @@ export function MuvekkilDavaPortali({
                   </div>
                 </div>
               );
-            })}
+            })
+            )}
           </div>
         </div>
 
         {/* Column 2: Müvekkile Ait Davalar (4 Cols) */}
-        <div className="lg:col-span-4 bg-white dark:bg-[#0e1524] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-            <div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                <Briefcase className="w-4 h-4 text-amber-500" />
-                Müvekkilin Davaları ({selectedClient?.cases.length || 0})
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
-                {selectedClient?.fullName || 'Müvekkil seçilmedi'}
-              </p>
-            </div>
-            <button
-              type="button"
-              disabled={!selectedClient}
-              onClick={() => setShowAddCaseModal(true)}
-              className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-sm font-semibold flex items-center gap-1 transition disabled:opacity-40"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Yeni Dava</span>
-            </button>
-          </div>
-
-          {/* Cases List */}
-          <div className="space-y-2.5 max-h-[65vh] overflow-y-auto pr-1">
-            {selectedClient && selectedClient.cases.length > 0 ? (
-              selectedClient.cases.map((c) => {
-                const isSelected = selectedCaseId === c.id;
-                return (
-                  <div
-                    key={c.id}
-                    onClick={() => {
-                      setSelectedCaseId(c.id);
-                      setSelectedFileIds([]);
-                    }}
-                    className={`p-3.5 rounded-xl border text-sm cursor-pointer transition ${
-                      isSelected
-                        ? 'bg-amber-50/70 dark:bg-amber-950/25 border-amber-400 dark:border-amber-500/50 shadow-sm ring-1 ring-amber-500/20'
-                        : 'bg-white dark:bg-[#141d30]/60 border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-[#141d30]'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-1 mb-1">
-                      <span className="font-bold text-slate-900 dark:text-slate-100 font-mono text-sm tabular-nums">{c.caseNumber}</span>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full font-semibold border ${
-                          c.status === 'Open'
-                            ? 'bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-200 dark:border-sky-500/30'
-                            : c.status === 'Pending'
-                            ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30'
-                            : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
-                        }`}
-                      >
-                        {c.status === 'Open' ? 'Açık' : c.status === 'Pending' ? 'Beklemede' : 'Kapalı'}
-                      </span>
-                    </div>
-
-                    <div className="text-sm font-medium text-amber-600 dark:text-amber-400 mb-1 flex items-center gap-1">
-                      <Gavel className="w-4 h-4 shrink-0" />
-                      <span className="truncate">{c.court}</span>
-                    </div>
-
-                    <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2 mb-2 leading-relaxed">
-                      {c.subject}
-                    </p>
-
-                    <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-800 pt-2">
-                      <span>Aşama: <strong className="text-slate-700 dark:text-slate-300">{c.stage}</strong></span>
-                      <span className="font-mono text-indigo-600 dark:text-indigo-400 font-semibold tabular-nums">{c.files.length} Evrak</span>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="py-8 text-center text-slate-400 dark:text-slate-500 text-sm">
-                Bu müvekkile ait kayıtlı dava dosyası bulunmuyor.
+        <div className="lg:col-span-4 bg-white dark:bg-[#0e1524] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm flex flex-col justify-between space-y-3">
+          <div>
+            <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-800 gap-2">
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <Briefcase className="w-3.5 h-3.5 text-amber-500" />
+                  Müvekkilin Davaları ({selectedClient?.cases.length || 0})
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[190px]">
+                  {selectedClient?.fullName || 'Müvekkil seçilmedi'}
+                </p>
               </div>
-            )}
+              <button
+                type="button"
+                disabled={!selectedClient}
+                onClick={() => setShowAddCaseModal(true)}
+                className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center gap-1 transition disabled:opacity-40"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Yeni Dava</span>
+              </button>
+            </div>
+
+            {/* Cases List */}
+            <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1 mt-3">
+              {!selectedClient ? (
+                <div className="py-12 px-3 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
+                  <Briefcase className="w-8 h-8 text-slate-400 mx-auto opacity-70" />
+                  <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Müvekkil Seçilmedi
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Davaları görüntülemek için sol listeden bir müvekkil seçiniz.
+                  </p>
+                </div>
+              ) : selectedClient.cases.length === 0 ? (
+                <div className="py-10 px-3 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl space-y-2.5">
+                  <Briefcase className="w-8 h-8 text-amber-500/60 mx-auto" />
+                  <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Kayıtlı Dava Bulunmuyor
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-[210px] mx-auto">
+                    Bu müvekkile ait açık veya derdest dava kaydı yoktur.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddCaseModal(true)}
+                    className="px-2.5 py-1 rounded-lg bg-amber-600 text-white text-xs font-semibold hover:bg-amber-500 transition shadow-xs inline-flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>İlk Davayı Aç</span>
+                  </button>
+                </div>
+              ) : (
+                selectedClient.cases.map((c) => {
+                  const isSelected = selectedCaseId === c.id;
+                  const currentStatus =
+                    c.status === 'Open' || c.status === 'Açık' ? 'Açık' :
+                    c.status === 'Closed' || c.status === 'Kapalı' ? 'Kapalı' :
+                    c.status === 'Pending' || c.status === 'Beklemede' ? 'Beklemede' :
+                    'Üst Mahkemede';
+
+                  return (
+                    <div
+                      key={c.id}
+                      onClick={() => {
+                        setSelectedCaseId(c.id);
+                        setSelectedFileIds([]);
+                      }}
+                      className={`p-3.5 rounded-xl border text-sm cursor-pointer transition ${
+                        isSelected
+                          ? 'bg-amber-50/70 dark:bg-amber-950/25 border-amber-400 dark:border-amber-500/50 shadow-sm ring-1 ring-amber-500/20'
+                          : 'bg-white dark:bg-[#141d30]/60 border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-[#141d30]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <span className="font-bold text-slate-900 dark:text-slate-100 font-mono text-sm tabular-nums">{c.caseNumber}</span>
+                        <select
+                          value={currentStatus}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            if (selectedClient) {
+                              updateCaseStatus(selectedClient.id, c.id, e.target.value as any);
+                            }
+                          }}
+                          className={`text-[11px] font-bold px-2 py-0.5 rounded-full border cursor-pointer outline-none transition ${
+                            currentStatus === 'Açık'
+                              ? 'bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-200 dark:border-sky-500/30'
+                              : currentStatus === 'Beklemede'
+                              ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30'
+                              : currentStatus === 'Üst Mahkemede'
+                              ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/30'
+                              : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
+                          }`}
+                        >
+                          <option value="Açık" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Açık</option>
+                          <option value="Beklemede" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Beklemede</option>
+                          <option value="Üst Mahkemede" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Üst Mahkemede</option>
+                          <option value="Kapalı" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Kapalı</option>
+                        </select>
+                      </div>
+
+                      <div className="text-sm font-medium text-amber-600 dark:text-amber-400 mb-1 flex items-center gap-1">
+                        <Gavel className="w-4 h-4 shrink-0" />
+                        <span className="truncate">{c.court}</span>
+                      </div>
+
+                      <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2 mb-2 leading-relaxed">
+                        {c.subject}
+                      </p>
+
+                      <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-800 pt-2">
+                        <span>Aşama: <strong className="text-slate-700 dark:text-slate-300">{c.stage}</strong></span>
+                        <span className="font-mono text-indigo-600 dark:text-indigo-400 font-semibold tabular-nums">{c.files.length} Evrak</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
+
+          {/* Dava Safahatı & Tensip İncelemesi (GRİ ALAN Optimizasyonu) */}
+          {selectedCase ? (
+            <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-[#121b2d] rounded-xl p-3 border border-slate-200/70 dark:border-slate-800/80">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <Scale className="w-3.5 h-3.5 text-indigo-500" />
+                  <span>Dava Safahatı & Tensip Özeti</span>
+                </div>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-medium">
+                  Aktif Takip
+                </span>
+              </div>
+
+              <div className="space-y-1.5 text-xs">
+                <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
+                  <span className="text-slate-400 dark:text-slate-500">Mahkeme:</span>
+                  <span className="font-medium text-slate-800 dark:text-slate-200 truncate max-w-[160px]">{selectedCase.court}</span>
+                </div>
+                <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
+                  <span className="text-slate-400 dark:text-slate-500">Esas No:</span>
+                  <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">{selectedCase.caseNumber}</span>
+                </div>
+                <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
+                  <span className="text-slate-400 dark:text-slate-500">Aşama:</span>
+                  <span className="font-medium text-amber-600 dark:text-amber-400">{selectedCase.stage}</span>
+                </div>
+                <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
+                  <span className="text-slate-400 dark:text-slate-500">Kayıtlı Evrak:</span>
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">{selectedCase.files.length} Adet</span>
+                </div>
+
+                <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                  <div className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300 mb-0.5">
+                    <Calendar className="w-3 h-3 text-slate-400" />
+                    <span>Tensip & Süre Notu:</span>
+                  </div>
+                  Cevap dilekçesi, delil listesi ve tensip zaptındaki kesin süreler Ajan Konseyi ve Usul Ajanı tarafından senkronize denetlenmektedir.
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-[#121b2d]/50 rounded-xl p-3 border border-dashed border-slate-200 dark:border-slate-800 text-center">
+              <Scale className="w-5 h-5 text-slate-400 mx-auto mb-1 opacity-60" />
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 block">
+                Safahat ve tensip özeti için bir dava seçiniz.
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Column 3: Dava Dosyaları & Evraklar (5 Cols) */}
@@ -688,47 +813,187 @@ export function MuvekkilDavaPortali({
               </div>
             </div>
 
-            {/* TARAF SEÇİMİ VE %100 MÜVEKKİL YANLISI SAVUNMA KALKANI */}
-            <div className="bg-amber-500/10 dark:bg-amber-950/20 border border-amber-500/30 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
-              <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
-                <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                <span>Müvekkil Taraf Seçimi:</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <label className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border cursor-pointer text-xs select-none transition ${
-                  partyContext.side === 'Davacı'
-                    ? 'bg-emerald-600 text-white border-emerald-500 font-bold shadow-xs'
-                    : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-500'
-                }`}>
-                  <input
-                    type="checkbox"
-                    checked={partyContext.side === 'Davacı'}
-                    onChange={() => handleSelectSide(partyContext.side === 'Davacı' ? 'none' : 'Davacı')}
-                    className="rounded text-emerald-600 focus:ring-emerald-500 w-3 h-3"
-                  />
-                  <span>Davacı:</span>
-                  <span className="font-semibold underline">
-                    {partyContext.plaintiffName || selectedClient?.fullName || 'Belirlenmedi'}
+            {/* TARAF SEÇİMİ VE %100 MÜVEKKİL YANLISI SAVUNMA KALKANI (MOR ALAN — AÇILIR PENCERE / POPOVER) */}
+            <div className="relative">
+              <div className="bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-amber-500/10 border border-purple-500/30 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                  <span className="font-bold text-slate-800 dark:text-slate-200">Müvekkil Tarafı:</span>
+                  <span className={`px-2 py-0.5 rounded-md font-semibold text-xs border ${
+                    partyContext.side === 'Davacı'
+                      ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40'
+                      : partyContext.side === 'Davalı'
+                      ? 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/40'
+                      : partyContext.side === 'Müşteki'
+                      ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/40'
+                      : partyContext.side === 'Kurum'
+                      ? 'bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/40'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700'
+                  }`}>
+                    {partyContext.side !== 'none'
+                      ? `${partyContext.side} (${partyContext.selectedPartyName || selectedClient?.fullName || 'Aktif'})`
+                      : 'Belirlenmedi (Objektif)'}
                   </span>
-                </label>
+                </div>
 
-                <label className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border cursor-pointer text-xs select-none transition ${
-                  partyContext.side === 'Davalı'
-                    ? 'bg-blue-600 text-white border-blue-500 font-bold shadow-xs'
-                    : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-500'
-                }`}>
-                  <input
-                    type="checkbox"
-                    checked={partyContext.side === 'Davalı'}
-                    onChange={() => handleSelectSide(partyContext.side === 'Davalı' ? 'none' : 'Davalı')}
-                    className="rounded text-blue-600 focus:ring-blue-500 w-3 h-3"
-                  />
-                  <span>Davalı:</span>
-                  <span className="font-semibold underline">
-                    {partyContext.defendantName || (selectedCase as any)?.opponent || (selectedCase as any)?.defendant || 'Belirlenmedi'}
-                  </span>
-                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowPartyDropdown((prev) => !prev)}
+                  className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs flex items-center gap-1.5 transition shadow-xs"
+                >
+                  <span>Taraf Sıfatı Belirle</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showPartyDropdown ? 'rotate-180' : ''}`} />
+                </button>
               </div>
+
+              {/* Açılır Pencere (Popover Modal) */}
+              {showPartyDropdown && (
+                <div className="absolute left-0 right-0 top-full mt-2 z-30 p-3.5 bg-white dark:bg-[#0f172a] rounded-xl shadow-xl border border-purple-500/30 ring-1 ring-black/5 dark:ring-white/10 space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center gap-1.5 font-bold text-xs text-slate-800 dark:text-slate-200">
+                      <ShieldAlert className="w-4 h-4 text-purple-500" />
+                      <span>Taraf Seçimi & %100 Müvekkil Kalkanı</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowPartyDropdown(false)}
+                      className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
+                    Seçtiğiniz taraf sıfatına göre Ajan Konseyi, Yargıtay emsal taraması ve dilekçe mimarisi %100 bu tarafı savunacak ve karşı taraf argümanlarını çürütecektir.
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {/* Davacı */}
+                    <div
+                      onClick={() => {
+                        const newSide = partyContext.side === 'Davacı' ? 'none' : 'Davacı';
+                        handleSelectSide(newSide);
+                      }}
+                      className={`p-2.5 rounded-lg border cursor-pointer flex items-center justify-between transition ${
+                        partyContext.side === 'Davacı'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-500 ring-1 ring-emerald-500/30'
+                          : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={partyContext.side === 'Davacı'}
+                          onChange={() => {}}
+                          className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5"
+                        />
+                        <div>
+                          <span className="font-bold text-emerald-700 dark:text-emerald-400 block">Davacı (Müvekkil)</span>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[140px] block">
+                            {partyContext.plaintiffName || selectedClient?.fullName || 'Belirlenmedi'}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-100/60 dark:bg-emerald-950 px-1.5 py-0.5 rounded">
+                        HMK m.119
+                      </span>
+                    </div>
+
+                    {/* Davalı */}
+                    <div
+                      onClick={() => {
+                        const newSide = partyContext.side === 'Davalı' ? 'none' : 'Davalı';
+                        handleSelectSide(newSide);
+                      }}
+                      className={`p-2.5 rounded-lg border cursor-pointer flex items-center justify-between transition ${
+                        partyContext.side === 'Davalı'
+                          ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-500 ring-1 ring-blue-500/30'
+                          : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={partyContext.side === 'Davalı'}
+                          onChange={() => {}}
+                          className="rounded text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                        />
+                        <div>
+                          <span className="font-bold text-blue-700 dark:text-blue-400 block">Davalı (Müvekkil)</span>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[140px] block">
+                            {partyContext.defendantName || (selectedCase as any)?.opponent || (selectedCase as any)?.defendant || 'Belirlenmedi'}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-100/60 dark:bg-blue-950 px-1.5 py-0.5 rounded">
+                        HMK m.126
+                      </span>
+                    </div>
+
+                    {/* Müşteki / Mağdur */}
+                    <div
+                      onClick={() => {
+                        const newSide = partyContext.side === 'Müşteki' ? 'none' : 'Müşteki';
+                        handleSelectSide(newSide);
+                      }}
+                      className={`p-2.5 rounded-lg border cursor-pointer flex items-center justify-between transition ${
+                        partyContext.side === 'Müşteki'
+                          ? 'bg-rose-50 dark:bg-rose-950/30 border-rose-500 ring-1 ring-rose-500/30'
+                          : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={partyContext.side === 'Müşteki'}
+                          onChange={() => {}}
+                          className="rounded text-rose-600 focus:ring-rose-500 w-3.5 h-3.5"
+                        />
+                        <div>
+                          <span className="font-bold text-rose-700 dark:text-rose-400 block">Müşteki / Mağdur</span>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[140px] block">
+                            {selectedClient?.fullName || 'Belirlenmedi'}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-100/60 dark:bg-rose-950 px-1.5 py-0.5 rounded">
+                        CMK m.237
+                      </span>
+                    </div>
+
+                    {/* Kurum / Şirket */}
+                    <div
+                      onClick={() => {
+                        const newSide = partyContext.side === 'Kurum' ? 'none' : 'Kurum';
+                        handleSelectSide(newSide);
+                      }}
+                      className={`p-2.5 rounded-lg border cursor-pointer flex items-center justify-between transition ${
+                        partyContext.side === 'Kurum'
+                          ? 'bg-purple-50 dark:bg-purple-950/30 border-purple-500 ring-1 ring-purple-500/30'
+                          : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={partyContext.side === 'Kurum'}
+                          onChange={() => {}}
+                          className="rounded text-purple-600 focus:ring-purple-500 w-3.5 h-3.5"
+                        />
+                        <div>
+                          <span className="font-bold text-purple-700 dark:text-purple-400 block">Kurum / Tüzel Kişi</span>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[140px] block">
+                            {selectedClient?.type === 'Tüzel Kişi / Şirket' ? selectedClient.fullName : 'Şirket/Kurum'}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-semibold text-purple-600 dark:text-purple-400 bg-purple-100/60 dark:bg-purple-950 px-1.5 py-0.5 rounded">
+                        TTK / İYUK
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Batch Controls Toolbar */}
