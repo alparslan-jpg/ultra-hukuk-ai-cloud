@@ -3,20 +3,46 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/x-icon" href="/assets/UltraHukuk-DoXzzUll.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ultra Hukuk AI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Ultra Hukuk AI — Yapay Zeka Hukuk Asistanı & Dava Portalı</title>
     <meta name="description" content="Yapay zekâ destekli Türk Hukuku dava analizi, çift taraflı Şeytanın Avukatı, UYAP dilekçe taslağı ve avukat lisans yönetim sistemi." />
+    
+    <!-- PWA Web App Manifest & Mobile Integration -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Ultra Hukuk" />
+    <link rel="apple-touch-icon" href="/assets/UltraHukuk-DoXzzUll.ico" />
+
     <meta property="og:title" content="Ultra Hukuk AI" />
     <meta property="og:description" content="Yapay zekâ destekli Türk Hukuku dava analizi, çift taraflı Şeytanın Avukatı, UYAP dilekçe taslağı ve avukat lisans yönetim sistemi." />
+    
     <!-- Typography: Plus Jakarta Sans for body clarity and Syne for refined legal display presence -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-    <script type="module" crossorigin src="/assets/index-C5snREdv.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DR1ukTyx.css">
+    <script type="module" crossorigin src="/assets/index-dojf7enV.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CWodlEBw.css">
   </head>
-  <body class="antialiased min-h-screen overflow-x-hidden w-full">
+  <body class="antialiased min-h-screen overflow-x-hidden w-full bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
     <div id="root"></div>
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then((registration) => {
+              console.log('[PWA] 🟢 Service Worker başarıyla kaydedildi. Kapsam:', registration.scope);
+            })
+            .catch((error) => {
+              console.warn('[PWA] ⚠️ Service Worker kaydı başarısız:', error);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

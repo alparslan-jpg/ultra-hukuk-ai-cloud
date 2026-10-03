@@ -65,7 +65,8 @@ import { DavaTrendiOngoru } from './DavaTrendiOngoru';
 import { DavaIstatistikleriOzeti } from './DavaIstatistikleriOzeti';
 import { ClientItem, ClientCase, setActiveLawyerSicil, getArchivedCases, subscribeToClientUpdates } from '../services/clientCaseStore';
 import { LegalArticle } from '../services/legalDatabaseService';
-import { triggerUdfDownload } from '../services/udfGeneratorService';
+import { triggerUdfDownload, generateUdfXml } from '../services/udfGeneratorService';
+import { ESignatureSignModal } from './ESignatureSignModal';
 
 export interface LawyerUser {
   id: string;
@@ -136,7 +137,10 @@ export function LawyerWorkspace({ user, initialTab, onNavigateHome }: LawyerWork
 
 
   // Multi-agent consultation context passed from client case files
-  const [councilCaseContext, setCouncilCaseContext] = useState<{
+    const [eSignModalOpen, setESignModalOpen] = useState<boolean>(false);
+  const [signingUdfXml, setSigningUdfXml] = useState<string>('');
+  const [signingDocTitle, setSigningDocTitle] = useState<string>('UYAP_Dava_Dilekcesi.udf');
+const [councilCaseContext, setCouncilCaseContext] = useState<{
     clientName: string;
     caseNumber: string;
     subject: string;
@@ -2298,6 +2302,29 @@ export function LawyerWorkspace({ user, initialTab, onNavigateHome }: LawyerWork
                     <span>UYAP (.UDF) İndir</span>
                   </button>
                   <button
+                    type="button"
+                    onClick={() => {
+                      const xml = generateUdfXml(petitionText, {
+                        court,
+                        caseNo,
+                        subject,
+                        plaintiff: client,
+                        defendant: opponent,
+                        lawyerName: user.fullName,
+                        lawyerSicil: user.sicilNo,
+                        documentTitle: 'UYAP Dava Dilekçesi Taslağı'
+                      });
+                      setSigningUdfXml(xml);
+                      setSigningDocTitle(`UYAP_${(caseNo || 'Dava_Dilekcesi').replace(/[^a-zA-Z0-9]/g, '_')}.udf`);
+                      setESignModalOpen(true);
+                    }}
+                    className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1.5 rounded-lg border border-indigo-500 flex items-center gap-1.5 transition shadow-sm"
+                    title="AKİS / USB E-İmza Çipi ile İmzala"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>E-İmza ile İmzala</span>
+                  </button>
+                  <button
                     onClick={() => copyToClipboard(petitionText)}
                     className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1.5 transition"
                   >
@@ -2893,7 +2920,15 @@ export function LawyerWorkspace({ user, initialTab, onNavigateHome }: LawyerWork
         />
       )}
 
-    </div>
+          <ESignatureSignModal
+        isOpen={eSignModalOpen}
+        onClose={() => setESignModalOpen(false)}
+        xmlContent={signingUdfXml}
+        documentTitle={signingDocTitle}
+        lawyerSicil={user.sicilNo}
+        courtName={court || 'Yetkili Mahkeme'}
+      />
+</div>
   );
 }
 

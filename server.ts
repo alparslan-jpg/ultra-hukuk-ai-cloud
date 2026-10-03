@@ -22,6 +22,7 @@ import { financeRouter } from './routes/v1/finance.ts';
 import { integrationsRouter } from './routes/v1/integrations.ts';
 import { queueRouter } from './routes/v1/queue.ts';
 import { aiRouter } from './routes/v1/ai.ts';
+import { billingRouter } from './routes/v1/billing.ts';
 import { forensicAuditMiddleware } from './src/middleware/forensicAuditMiddleware.ts';
 import type { AuditLogRecord } from './src/services/persistentDatabaseService.ts';
 import { CircuitBreaker } from './src/services/circuitBreakerService.ts';
@@ -5065,6 +5066,7 @@ app.use('/api/v1/finance', financeRouter);
 app.use('/api/v1/integrations', integrationsRouter);
 app.use('/api/v1/queue', queueRouter);
 app.use('/api/v1/ai', aiRouter);
+app.use('/api/v1/billing', billingRouter);
 
 app.post('/api/ai/rag-precedent-search', async (req: Request, res: Response) => {
   const { query, category } = req.body;

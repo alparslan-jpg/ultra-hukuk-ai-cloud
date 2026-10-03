@@ -11,6 +11,9 @@ import { LawyerCaseListSection } from './components/LawyerCaseListSection';
 import { LawyerCaseAnalyticsCharts } from './components/LawyerCaseAnalyticsCharts';
 import { DailyTaskReminders } from './components/DailyTaskReminders';
 import { LoginScreen } from './components/LoginScreen';
+import { LandingPage } from './components/LandingPage';
+import { BillingModal } from './components/BillingModal';
+import { Zap } from 'lucide-react';
 import { HukukiHesaplamaAraclariModal } from './components/HukukiHesaplamaAraclariModal';
 import { AjanKonseyiOdasi } from './components/AjanKonseyiOdasi';
 import { AgentCapabilitiesDrawer } from './components/AgentCapabilitiesDrawer';
@@ -107,7 +110,8 @@ export default function App() {
   );
 
   // Hukuki Hesaplama Araçları Modal State
-  const [hesaplamaModalOpen, setHesaplamaModalOpen] = useState<boolean>(false);
+    const [billingModalOpen, setBillingModalOpen] = useState<boolean>(false);
+const [hesaplamaModalOpen, setHesaplamaModalOpen] = useState<boolean>(false);
   const [raporlarModalOpen, setRaporlarModalOpen] = useState<boolean>(false);
 
   // Özelleştirilmiş Menü Sabitlenen Sekmeler (Pinned Tabs)
@@ -187,14 +191,31 @@ export default function App() {
 
   // Login gate — placed AFTER all hooks (React Rules of Hooks)
   if (!isAuthenticated) {
+    if (typeof window !== 'undefined' && window.location.hash === '#login') {
+      return (
+        <LoginScreen 
+          onLogin={(userData) => { 
+            setIsAuthenticated(true); 
+            if (userData && !userData.isAdmin) {
+              setCurrentLawyer(userData);
+            }
+          }} 
+        />
+      );
+    }
+
     return (
-      <LoginScreen 
-        onLogin={(userData) => { 
-          setIsAuthenticated(true); 
+      <LandingPage
+        onLoginSuccess={(userData) => {
+          setIsAuthenticated(true);
           if (userData && !userData.isAdmin) {
             setCurrentLawyer(userData);
           }
-        }} 
+        }}
+        onOpenAdminLogin={() => {
+          setCurrentMode('admin');
+          setIsAuthenticated(true);
+        }}
       />
     );
   }
@@ -260,7 +281,7 @@ export default function App() {
                 </span>
               </div>
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 font-mono tabular-nums">
-                {currentLawyer.daysRemaining}G
+                {currentLawyer.daysRemaining}G (Abonelik)
               </span>
             </div>
 
@@ -453,7 +474,7 @@ export default function App() {
                 </span>
               </div>
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 font-mono tabular-nums">
-                {currentLawyer.daysRemaining}G
+                {currentLawyer.daysRemaining}G (Abonelik)
               </span>
             </div>
 

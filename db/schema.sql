@@ -405,4 +405,45 @@ CREATE TABLE IF NOT EXISTS ai_quota (
 
 CREATE INDEX IF NOT EXISTS idx_ai_quota_sicil_date ON ai_quota(lawyer_sicil_no, usage_date);
 
+-- 11. SaaS Abonelik ve Paket Tablosu (Faz 3 Madde 2)
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id TEXT PRIMARY KEY,
+  lawyer_sicil_no TEXT NOT NULL,
+  plan_tier TEXT NOT NULL DEFAULT 'standart', -- 'standart', 'pro', 'enterprise'
+  plan_name TEXT NOT NULL DEFAULT 'Standart Paket',
+  status TEXT NOT NULL DEFAULT 'active', -- 'active', 'past_due', 'canceled', 'trial'
+  monthly_token_limit BIGINT NOT NULL DEFAULT 10000,
+  monthly_price_try NUMERIC(10, 2) NOT NULL DEFAULT 950.00,
+  current_period_start TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  current_period_end TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '30 days'),
+  payment_provider TEXT NOT NULL DEFAULT 'iyzico',
+  card_last4 TEXT DEFAULT '4242',
+  auto_renew BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(lawyer_sicil_no)
+);
+
+-- 12. SaaS Fatura ve Ödeme Dekontları Tablosu
+CREATE TABLE IF NOT EXISTS invoices (
+  id TEXT PRIMARY KEY,
+  lawyer_sicil_no TEXT NOT NULL,
+  subscription_id TEXT REFERENCES subscriptions(id) ON DELETE SET NULL,
+  invoice_no TEXT NOT NULL UNIQUE,
+  amount_try NUMERIC(10, 2) NOT NULL,
+  vat_amount_try NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  plan_name TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'paid', -- 'paid', 'pending', 'failed', 'refunded'
+  payment_method TEXT NOT NULL DEFAULT 'Kredi Kartı (3D Secure)',
+  payment_provider TEXT NOT NULL DEFAULT 'iyzico',
+  provider_payment_id TEXT,
+  invoice_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  pdf_url TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_subscriptions_sicil ON subscriptions(lawyer_sicil_no);
+CREATE INDEX IF NOT EXISTS idx_invoices_sicil ON invoices(lawyer_sicil_no);
+CREATE INDEX IF NOT EXISTS idx_invoices_date ON invoices(invoice_date);
+
 

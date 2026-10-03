@@ -1,0 +1,57 @@
+{
+  "name": "Ultra Hukuk AI — Otonom Hukuki Yapay Zeka & Dava Portalı",
+  "short_name": "Ultra Hukuk",
+  "description": "Yapay zekâ destekli Türk Hukuku dava analizi, Şeytanın Avukatı, Hakem Motoru, UYAP UDF ihracı ve avukat lisans yönetim sistemi.",
+  "start_url": "/",
+  "id": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#020617",
+  "theme_color": "#0f172a",
+  "categories": ["business", "productivity", "legal"],
+  "lang": "tr",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/UltraHukuk.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/UltraHukuk.ico",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/UltraHukuk.ico",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dava Derin Analiz",
+      "short_name": "Dava Analizi",
+      "description": "Evrak yükleyip Şeytanın Avukatı ve Hakem terazisini çalıştırın",
+      "url": "/#analyzer",
+      "icons": [{ "src": "/UltraHukuk.ico", "sizes": "96x96" }]
+    },
+    {
+      "name": "UYAP UDF Dilekçe",
+      "short_name": "UDF Dilekçe",
+      "description": "Yargıtay içtihatlı UYAP dava dilekçesi üretin ve E-İmzalayın",
+      "url": "/#petitions",
+      "icons": [{ "src": "/UltraHukuk.ico", "sizes": "96x96" }]
+    },
+    {
+      "name": "Müvekkiller & Dava Takibi",
+      "short_name": "Dava Portalı",
+      "description": "Müvekkil ekleyin ve duruşma takvimini izleyin",
+      "url": "/#clients",
+      "icons": [{ "src": "/UltraHukuk.ico", "sizes": "96x96" }]
+    }
+  ]
+}
