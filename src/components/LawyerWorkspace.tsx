@@ -717,17 +717,7 @@ export function LawyerWorkspace({ user, initialTab, onNavigateHome }: LawyerWork
             </div>
           </div>
           <div className="flex items-center gap-2 text-[11px] flex-wrap">
-            {onNavigateHome && (
-              <button
-                type="button"
-                onClick={onNavigateHome}
-                className="text-xs px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 font-bold transition flex items-center gap-1.5 shadow-sm"
-                title="Ana Sayfaya ve Modül Merkezine Dön"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Ana Sayfa</span>
-              </button>
-            )}
+            
             <div className="text-[11px] font-mono bg-slate-100 dark:bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-400">
               Sicil: <strong className="text-amber-600 dark:text-amber-400">{user.sicilNo}</strong> ({user.baroAdi})
             </div>

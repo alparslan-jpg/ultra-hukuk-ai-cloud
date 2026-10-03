@@ -306,6 +306,16 @@ Tanık 2: Kenan Yıldız (Davalı Tanığı - Eski Muhasebe Müdürü). Beyan: "
   }
   console.log('  ✅ Cımbız Ajanı %100 Müvekkil Yanlısı Savunma Protokolü Doğrulandı.');
 
+  console.log('\n▶ TEST 6: Otomatik Müvekkil ve Taraf Çıkarımı (Evraktan Otonom Kayıt)');
+  const syncedClients = DataExtractionAndSyncService.autoSyncExtractedDataToClients(extracted);
+  console.log(`  ✅ Dava Evrakından Otomatik Oluşturulan/Eşleşen Müvekkil Sayısı: ${syncedClients.length}`);
+  const hasPlaintiff = syncedClients.some(c => c.fullName.includes('Selin Yılmaz'));
+  const hasDefendant = syncedClients.some(c => c.fullName.includes('Kuzey Ege Lojistik'));
+  if (!hasPlaintiff || !hasDefendant) {
+    throw new Error('Dava evrakından davacı veya davalı müvekkil portföyüne otomatik eklenemedi!');
+  }
+  console.log('  ✅ Doğrulandı: Davacı (Selin Yılmaz) ve Davalı (Kuzey Ege Lojistik) otonom olarak müvekkil ve dava listesine eklendi.');
+
   console.log('\n============================================================');
   console.log('🎯 GATE 5 TESTİ KUSURSUZ ŞEKİLDE TAMAMLANDI: BAŞARILI (PASS)');
   console.log('   - Davacı / Davalı Checkbox Seçimi ve Senkronizasyonu: Hazır');

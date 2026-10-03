@@ -218,19 +218,8 @@ export function AjanKonseyiOdasi({
         try {
           const extracted = DataExtractionAndSyncService.extractFromText(raw, file.name);
           if (extracted.plaintiffs.length > 0 || extracted.defendants.length > 0) {
-            const current = PartyContextService.get();
-            const pName = extracted.plaintiffs[0]?.fullName || current.plaintiffName;
-            const dName = extracted.defendants[0]?.fullName || current.defendantName;
-            const side = current.side === 'none' ? 'Davacı' : current.side;
-            const updated = PartyContextService.set({
-              plaintiffName: pName,
-              defendantName: dName,
-              courtName: extracted.courtName,
-              esasNo: extracted.esasNo,
-              subject: extracted.subject,
-              side
-            });
-            setPartyContext(updated);
+            DataExtractionAndSyncService.autoSyncExtractedDataToClients(extracted);
+            setPartyContext(PartyContextService.get());
           }
         } catch (err) {
           console.warn('Otomatik taraf çıkarımı:', err);

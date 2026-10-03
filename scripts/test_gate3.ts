@@ -85,6 +85,18 @@ async function runGate3Test() {
   }
   console.log('  ✅ Doğrulandı: Üst navigasyon menüsünde MEVZUAT yanında ÖZELLEŞTİR dropdown ve sabitlenen butonlar aktif.');
 
+  console.log('\n▶ TEST 5: Kırmızı Alanların (Ana Sayfa Butonları ve Müvekkil Ekle Butonları) Tasfiyesi');
+  const portalCode = fs.readFileSync(path.resolve(process.cwd(), 'src/components/MuvekkilDavaPortali.tsx'), 'utf-8');
+  if (portalCode.includes('Yeni Müvekkil Ekle') || portalCode.includes('<span>Müvekkil Ekle</span>')) {
+    throw new Error('HATA: MuvekkilDavaPortali içinde Müvekkil Ekle butonları halen mevcut!');
+  }
+  console.log('  ✅ Doğrulandı: Müvekkil Portalı başlığındaki ve kartlarındaki "+ Müvekkil Ekle" butonları tamamen kaldırıldı.');
+
+  if (workspaceCode.includes('title="Ana Sayfaya ve Modül Merkezine Dön"') || workspaceCode.includes('<span>Ana Sayfa</span>')) {
+    throw new Error('HATA: LawyerWorkspace içinde Ana Sayfa butonu halen mevcut!');
+  }
+  console.log('  ✅ Doğrulandı: Çalışma masası başlığındaki "← Ana Sayfa" butonu tamamen kaldırıldı.');
+
   console.log('\n============================================================');
   console.log('🎯 GATE 3 TESTİ KUSURSUZ ŞEKİLDE TAMAMLANDI: BAŞARILI (PASS)');
   console.log('   - Temiz Başlangıç: Mock veriler temizlendi');

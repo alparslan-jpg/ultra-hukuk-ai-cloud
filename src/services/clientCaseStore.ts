@@ -62,8 +62,10 @@ function getStorageKeyForLawyer(sicil?: string): string {
   return `ultra_hukuk_clients_v6_clean_${s}`;
 }
 
+let memoryClientsCache: ClientItem[] = [];
+
 export function getClientList(): ClientItem[] {
-  if (typeof window === 'undefined') return [];
+  if (typeof window === 'undefined') return memoryClientsCache;
   try {
     const key = getStorageKeyForLawyer();
     
@@ -109,6 +111,7 @@ export function clearAllClientData(): void {
 }
 
 export function saveClientList(clients: ClientItem[]): void {
+  memoryClientsCache = clients;
   if (typeof window === 'undefined') return;
   try {
     const key = getStorageKeyForLawyer();

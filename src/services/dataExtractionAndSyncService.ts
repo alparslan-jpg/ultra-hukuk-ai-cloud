@@ -6,6 +6,9 @@
 // hatasız olarak çıkarıp sistemi beslemek ve senkronize etmektir.
 // ============================================================
 
+import { getClientList, saveClientList, ClientItem, ClientCase } from './clientCaseStore';
+import { PartyContextService } from './partyContextService';
+
 export interface ExtractedParty {
   fullName: string;
   role: 'Davacı' | 'Davalı';
@@ -281,5 +284,94 @@ export class DataExtractionAndSyncService {
       witnesses,
       evidenceDocuments
     };
+  }
+
+  /**
+   * Müvekkil ekleme butonları kaldırıldığı için, evraklardan çıkarılan
+   * davacı, davalı ve tarafları otomatik olarak müvekkil listesine ve dava sistemine dinamik ekler.
+   */
+  public static autoSyncExtractedDataToClients(extracted: ExtractedCaseData): ClientItem[] {
+    try {
+      const currentClients = getClientList();
+      const updatedClients = [...currentClients];
+
+      const partiesToSync = [
+        ...extracted.plaintiffs.map(p => ({ ...p, role: 'Davacı' as const })),
+        ...extracted.defendants.map(d => ({ ...d, role: 'Davalı' as const }))
+      ];
+
+      for (const party of partiesToSync) {
+        if (!party.fullName || party.fullName.length < 3) continue;
+
+        let existingClient = updatedClients.find(
+          c => c.fullName.toLowerCase() === party.fullName.toLowerCase()
+        );
+
+        const opponent = party.role === 'Davacı'
+          ? (extracted.defendants[0]?.fullName || 'Davalı Taraf')
+          : (extracted.plaintiffs[0]?.fullName || 'Davacı Taraf');
+
+        const caseItem: ClientCase = {
+          id: `case-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          caseNumber: extracted.esasNo || '2026/Belirlenmedi Esas',
+          court: extracted.courtName || 'Asliye Ticaret Mahkemesi',
+          subject: extracted.subject || 'Hukuki Alacak ve İtirazın İptali',
+          status: 'Açık',
+          openedDate: new Date().toISOString().split('T')[0],
+          stage: 'Dava Açılışı & Tensip',
+          estimatedValue: extracted.claimAmount ? `${extracted.claimAmount.toLocaleString('tr-TR')} TRY` : 'Belirtilmedi',
+          opponentName: opponent,
+          files: []
+        };
+
+        if (existingClient) {
+          const hasCase = existingClient.cases.some(
+            cs => cs.caseNumber === extracted.esasNo || (cs.court === extracted.courtName && cs.subject === extracted.subject)
+          );
+          if (!hasCase) {
+            existingClient.cases.unshift(caseItem);
+          }
+        } else {
+          const isCompany = /A\.Ş\.|Ltd\.|Şti\.|Anonim|Limited|Holding|Banka|Kooperatif/i.test(party.fullName);
+          const newClient: ClientItem = {
+            id: `cli-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            fullName: party.fullName,
+            type: isCompany ? 'Tüzel Kişi / Şirket' : 'Gerçek Kişi',
+            idNumber: party.tcOrTaxNo || (isCompany ? 'Vergi No (Evraktan Alındı)' : 'TCKN (Evraktan Alındı)'),
+            email: '',
+            phone: '',
+            address: party.address || '',
+            notes: `Dava evrakından AI Veri Çıkarma Ekibi tarafından tespit edildi (${party.role}).`,
+            cases: [caseItem]
+          };
+          updatedClients.unshift(newClient);
+        }
+      }
+
+      saveClientList(updatedClients);
+
+      // PartyContextService'e de yansıt
+      const currentContext = PartyContextService.get();
+      const pName = extracted.plaintiffs[0]?.fullName || currentContext.plaintiffName;
+      const dName = extracted.defendants[0]?.fullName || currentContext.defendantName;
+      PartyContextService.set({
+        courtName: extracted.courtName,
+        esasNo: extracted.esasNo,
+        subject: extracted.subject,
+        facts: extracted.facts,
+        evidence: extracted.evidenceList.join(', '),
+        plaintiffName: pName,
+        defendantName: dName,
+        plaintiffClaims: extracted.plaintiffClaims,
+        defendantClaims: extracted.defendantClaims,
+        witnesses: extracted.witnesses,
+        evidenceDocuments: extracted.evidenceDocuments
+      });
+
+      return updatedClients;
+    } catch (e) {
+      console.warn('Auto-sync clients failed:', e);
+      return [];
+    }
   }
 }

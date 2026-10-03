@@ -372,20 +372,7 @@ export function DavaDerinAnaliz({
           try {
             const extracted = DataExtractionAndSyncService.extractFromText(textContent, file.name);
             if (extracted.plaintiffs.length > 0 || extracted.defendants.length > 0) {
-              const current = PartyContextService.get();
-              const pName = extracted.plaintiffs[0]?.fullName || current.plaintiffName;
-              const dName = extracted.defendants[0]?.fullName || current.defendantName;
-              const side = current.side === 'none' ? 'Davacı' : current.side;
-              PartyContextService.set({
-                plaintiffName: pName,
-                defendantName: dName,
-                courtName: extracted.courtName,
-                esasNo: extracted.esasNo,
-                subject: extracted.subject,
-                facts: extracted.facts,
-                evidence: extracted.evidenceList.join(', '),
-                side
-              });
+              DataExtractionAndSyncService.autoSyncExtractedDataToClients(extracted);
             }
           } catch {}
         }
