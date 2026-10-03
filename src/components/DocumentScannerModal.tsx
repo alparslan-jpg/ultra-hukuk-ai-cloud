@@ -420,7 +420,7 @@ export function DocumentScannerModal({
       ocrText: sample.sampleText,
       ocrResult: {
         success: true,
-        modelUsed: 'Gemini 3.8 Flash Vision (Simülasyon)',
+        modelUsed: 'Akıllı Optik Metin Tanıma ve Sayısallaştırma Motoru',
         guvenilirlikSkoru: 'Yüksek (%98)',
         tespitEdilenAlanlar: {
           belgeTuru: sample.title,
@@ -666,7 +666,7 @@ export function DocumentScannerModal({
                   Adli Evrak & Delil Tarayıcı
                 </h3>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-semibold font-mono">
-                  Gemini Vision OCR
+                  Akıllı Optik Metin Tanıma Motoru (OCR)
                 </span>
               </div>
               <p className="text-xs text-slate-400">
@@ -1080,7 +1080,7 @@ export function DocumentScannerModal({
                   </div>
                   <div>
                     <h5 className="text-xs font-bold text-slate-200">
-                      Gemini Vision OCR Çalışıyor...
+                      Akıllı Optik Metin Tanıma Motoru (OCR) Çalışıyor...
                     </h5>
                     <p className="text-[11px] text-slate-400 mt-1 max-w-xs">
                       Kağıt evraktaki metin, mühür, imza ve tebliğ şerhleri mikroskobik düzeyde taranıyor.

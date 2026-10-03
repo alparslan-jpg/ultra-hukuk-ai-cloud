@@ -47,7 +47,7 @@ export function SecmeliOzelliklerVeGitPaneli({ onNavigateToTab }: SecmeliOzellik
       id: 'feat-council',
       category: 'Yapay Zeka & Ajanlar',
       title: 'Baş Hukuk Müşaviri & Çoklu Ajan Konsültasyon Odası',
-      description: 'Uygulamayı yöneten Gemini 3.1 Pro / Flash Baş Müşaviri ile arkadaki 4 uzman ajanın yazılı, sesli (mikrofon) veya evrak yüklemeli dava danışması.',
+      description: 'Uygulamayı yöneten Baş Hukuk Müşaviri (Derin Bağlam Muhakeme Motoru) ile arkadaki 4 uzman ajanın yazılı, sesli (mikrofon) veya evrak yüklemeli dava danışması.',
       status: 'Yüklendi (Aktif)',
       impact: 'Kritik Usul Güvenliği',
       selected: true

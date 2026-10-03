@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { PartyContextService } from '../services/partyContextService';
 import {
   Scale,
   ShieldAlert,
@@ -287,6 +288,28 @@ export function LawyerWorkspace({ user, initialTab, onNavigateHome }: LawyerWork
   const [ocrResult, setOcrResult] = useState<any>(null);
   const [isOcrLoading, setIsOcrLoading] = useState<boolean>(false);
 
+  // Global Taraf ve Dava Senkronizasyonu (AI Dilekçe Formu Otomatik Dolum)
+  useEffect(() => {
+    const unsub = PartyContextService.subscribe((ctx) => {
+      if (ctx.courtName) setCourt(ctx.courtName);
+      if (ctx.plaintiffName) setClient(ctx.plaintiffName);
+      if (ctx.defendantName) setOpponent(ctx.defendantName);
+      if (ctx.subject) setSubject(ctx.subject);
+      if (ctx.esasNo) setCaseNo(ctx.esasNo);
+      if (ctx.facts && !petitionDetails) setPetitionDetails(ctx.facts);
+    });
+
+    const initCtx = PartyContextService.get();
+    if (initCtx.courtName && !court) setCourt(initCtx.courtName);
+    if (initCtx.plaintiffName && !client) setClient(initCtx.plaintiffName);
+    if (initCtx.defendantName && !opponent) setOpponent(initCtx.defendantName);
+    if (initCtx.subject && !subject) setSubject(initCtx.subject);
+    if (initCtx.esasNo && !caseNo) setCaseNo(initCtx.esasNo);
+    if (initCtx.facts && !petitionDetails) setPetitionDetails(initCtx.facts);
+
+    return unsub;
+  }, []);
+
   // 10. Stratejik Dava Brifingi State
   const [briefingText, setBriefingText] = useState<string>('');
   const [briefingContext, setBriefingContext] = useState<string>('sozlesme');
@@ -386,7 +409,7 @@ export function LawyerWorkspace({ user, initialTab, onNavigateHome }: LawyerWork
       `Başlık: ${data.title || 'Hukuki Uyuşmazlık Analizi'}`,
       `Tarih: ${data.analyzedAt ? new Date(data.analyzedAt).toLocaleString('tr-TR') : new Date().toLocaleString('tr-TR')}`,
       `Risk Seviyesi: ${data.overallRiskLevel || 'BİLDİRİLMEMİŞ'}`,
-      `Kaynak Motor: ${data.source || 'Gemini 3.8 Flash'}`,
+      `Kaynak Motor: ${data.source || 'Derin Bağlam ve Külliyat Muhakeme Motoru'}`,
       ``,
       `--- YÖNETİCİ ÖZETİ ---`,
       data.executiveSummary || '',
@@ -1077,7 +1100,7 @@ export function LawyerWorkspace({ user, initialTab, onNavigateHome }: LawyerWork
               <div className="flex items-center gap-2">
                 <Brain className="w-4 h-4 text-sky-500 dark:text-sky-400 shrink-0" />
                 <span className="text-slate-700 dark:text-slate-300 text-[11px]">
-                  Evrak yükleyerek <strong>Gemini Flash & Pro</strong> ile derin analiz yapmak ister misiniz?
+                  Evrak yükleyerek <strong>Derin Bağlam ve Külliyat Muhakeme Motoru</strong> ile derin analiz yapmak ister misiniz?
                 </span>
               </div>
               <button
@@ -1456,7 +1479,7 @@ export function LawyerWorkspace({ user, initialTab, onNavigateHome }: LawyerWork
               {isBriefingLoading ? (
                 <>
                   <Sparkles className="w-4 h-4 animate-spin text-slate-950" />
-                  <span>Gemini Risk & Argüman Analizi Yapıyor...</span>
+                  <span>Derin Risk & Argüman Analizi Yapılıyor...</span>
                 </>
               ) : (
                 <>
@@ -1476,7 +1499,7 @@ export function LawyerWorkspace({ user, initialTab, onNavigateHome }: LawyerWork
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[10px] font-mono text-amber-400 uppercase tracking-wider bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-                        {briefingResult.source || 'Gemini 3.8 Flash'}
+                        {briefingResult.source || 'Derin Bağlam ve Külliyat Muhakeme Motoru'}
                       </span>
                       {briefingResult.overallRiskLevel && (
                         <span
@@ -3083,7 +3106,7 @@ export function LawyerWorkspace({ user, initialTab, onNavigateHome }: LawyerWork
         />
       )}
 
-      {/* TAB 16: DAVA DERİN ANALİZ (GEMINI FLASH VS PRO TOGGLE & CASE FILES UPLOAD) */}
+      {/* TAB 16: DAVA DERİN ANALİZ (DERİN BAĞLAM MUHAKEME MOTORU & CASE FILES UPLOAD) */}
       {activeTab === 'deep_analysis' && (
         <DavaDerinAnaliz
           lawyerSicilNo={user.sicilNo}

@@ -177,6 +177,27 @@ export function MuvekkilDavaPortali({
   const selectedClient = clients.find((c) => c.id === selectedClientId) || clients[0] || null;
   const selectedCase = selectedClient?.cases.find((cs) => cs.id === selectedCaseId) || selectedClient?.cases[0] || null;
 
+  // Global Senkronizasyon: Seçili dosya değiştiğinde tüm sistem bileşenlerine ve AI Dilekçe/Simülasyona aktar
+  useEffect(() => {
+    if (selectedCase && selectedClient) {
+      const pContext = PartyContextService.get();
+      const isDefendant = pContext.side === 'Davalı';
+      const plaintiffName = isDefendant ? ((selectedCase as any)?.opponent || (selectedCase as any)?.defendant || 'Davacı') : selectedClient.fullName;
+      const defendantName = isDefendant ? selectedClient.fullName : ((selectedCase as any)?.opponent || (selectedCase as any)?.defendant || 'Davalı');
+      const side = pContext.side === 'none' ? 'Davacı' : pContext.side;
+      
+      const updated = PartyContextService.set({
+        plaintiffName,
+        defendantName,
+        courtName: selectedCase.court,
+        esasNo: selectedCase.caseNumber,
+        subject: selectedCase.subject,
+        side
+      });
+      setPartyContext(updated);
+    }
+  }, [selectedCase?.id, selectedClient?.id]);
+
   // Filter clients
   const filteredClients = clients.filter((c) => {
     const matchType = clientTypeFilter === 'All' || c.type === clientTypeFilter;

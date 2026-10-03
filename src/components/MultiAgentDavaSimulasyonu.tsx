@@ -89,6 +89,12 @@ export function MultiAgentDavaSimulasyonu({
       if (ctx.subject) {
         setCaseSubject(ctx.subject);
       }
+      if (ctx.facts && !caseDetails) {
+        setCaseDetails(ctx.facts);
+      }
+      if (ctx.evidence && !evidenceSummary) {
+        setEvidenceSummary(ctx.evidence);
+      }
     });
 
     const current = PartyContextService.get();
@@ -97,6 +103,12 @@ export function MultiAgentDavaSimulasyonu({
     }
     if (current.subject) {
       setCaseSubject(current.subject);
+    }
+    if (current.facts && !caseDetails) {
+      setCaseDetails(current.facts);
+    }
+    if (current.evidence && !evidenceSummary) {
+      setEvidenceSummary(current.evidence);
     }
 
     return unsub;
@@ -172,7 +184,7 @@ ${simulationResult.stratejikTavsiye}
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                Anthropic Claude 3.5 & Opus Hibrit
+                Stratejik Analiz & Yüksek Hakem Hibrit
               </span>
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-purple-500/20 text-purple-300 border border-purple-500/30">
                 3 Rol Simülasyonu
@@ -204,7 +216,7 @@ ${simulationResult.stratejikTavsiye}
                     : 'text-slate-300 hover:bg-white/10'
                 }`}
               >
-                Claude 3.5 Sonnet
+                Stratejik Analiz ve Simülasyon Motoru
               </button>
               <button
                 type="button"
@@ -215,7 +227,7 @@ ${simulationResult.stratejikTavsiye}
                     : 'text-slate-300 hover:bg-white/10'
                 }`}
               >
-                Claude 3 Opus
+                Yüksek Hakem ve Nihai Karar Motoru
               </button>
               <button
                 type="button"
@@ -226,7 +238,7 @@ ${simulationResult.stratejikTavsiye}
                     : 'text-slate-300 hover:bg-white/10'
                 }`}
               >
-                Gemini 3.1 Pro
+                Derin Bağlam ve Külliyat Muhakeme Motoru
               </button>
             </div>
           </div>
@@ -335,7 +347,7 @@ ${simulationResult.stratejikTavsiye}
               {loading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div>
-                  <span>Claude & Çoklu Ajanlar Dosyayı İnceliyor...</span>
+                  <span>Stratejik Analiz & Çoklu Ajanlar Dosyayı İnceliyor...</span>
                 </>
               ) : (
                 <>
@@ -375,7 +387,7 @@ ${simulationResult.stratejikTavsiye}
                   Dava Simülasyon Grubu Aktif
                 </h4>
                 <p className="text-xs text-slate-500 mt-1">
-                  Claude 3.5 Sonnet derin muhakeme motoru, dosyadaki zamanaşımı, usul eksiklikleri ve
+                  Stratejik Analiz ve Simülasyon Motoru, dosyadaki zamanaşımı, usul eksiklikleri ve
                   bilirkişi risklerini denetliyor...
                 </p>
               </div>

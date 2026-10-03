@@ -16,6 +16,8 @@ export interface SelectedPartyContext {
   courtName?: string;
   esasNo?: string;
   subject?: string;
+  facts?: string;
+  evidence?: string;
   biasPromptDirective: string;
   lastUpdated: string;
 }
@@ -68,6 +70,8 @@ export class PartyContextService {
       courtName: '',
       esasNo: '',
       subject: '',
+      facts: '',
+      evidence: '',
       biasPromptDirective: buildPartyBiasDirective('none', ''),
       lastUpdated: new Date().toISOString()
     };

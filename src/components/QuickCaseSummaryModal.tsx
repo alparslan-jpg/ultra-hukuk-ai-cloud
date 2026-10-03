@@ -135,7 +135,7 @@ export function QuickCaseSummaryModal({
       summaryData.keyLegalTakeaways.map((t, i) => `• ${t}`).join('\n') + `\n\n` +
       `YAKLAŞAN SÜRELER VE AVUKAT EYLEM PLANI:\n` +
       summaryData.upcomingDeadlinesAndActions.map((a, i) => `• ${a}`).join('\n') + `\n\n` +
-      `(Üretici Model: ${summaryData.modelUsed || 'Gemini 3.8 Flash AI'} · Ultra Hukuk AI)`;
+      `(Üretici Model: ${summaryData.modelUsed || 'Derin Hukuki Muhakeme Motoru'} · Ultra Hukuk AI)`;
 
     navigator.clipboard.writeText(text);
     setCopied(true);
@@ -178,7 +178,7 @@ export function QuickCaseSummaryModal({
               </span>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 font-bold flex items-center gap-1">
                 <Sparkles className="w-3 h-3 text-amber-500" />
-                <span>Gemini 3.8 Flash AI Özeti</span>
+                <span>Derin Hukuki Muhakeme Özeti</span>
               </span>
             </div>
 
@@ -224,7 +224,7 @@ export function QuickCaseSummaryModal({
                   Dava Dosyası ve Yargılama Geçmişi Çözümleniyor...
                 </h4>
                 <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                  Gemini 3.8 Flash; mahkeme tensip zaptını, safahat aşamalarını ve yürürlükteki pozitif mevzuatı tarayarak yönetici özetini hazırlıyor.
+                  Derin Hukuki Muhakeme Motoru; mahkeme tensip zaptını, safahat aşamalarını ve yürürlükteki pozitif mevzuatı tarayarak yönetici özetini hazırlıyor.
                 </p>
               </div>
             </div>

@@ -398,12 +398,12 @@ export const HukukAjaniYonetimPaneli: React.FC<HukukAjaniYonetimPaneliProps> = (
                   </span>
                 </h2>
                 <span className="text-[11px] font-mono text-purple-300">
-                  Multi-Model Strategy: Gemini Flash (Hızlı Görevler) & Gemini Pro (Derin Akıl Yürütme)
+                  Çoklu Motor Mimarisi: Hızlı Tasnif ve Operasyon & Derin Bağlam Muhakeme
                 </span>
               </div>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed max-w-3xl">
-              Türk Hukuk normlarına (TBK, HMK, TTK, İİK, İş K.) göre özelleştirilmiş <strong>18 uzman yapay zeka ajanı</strong> tek merkezden yönetilir. Her bir ajan, görev türüne göre optimize edilmiş Gemini modeli ile eşleştirilmiş olup anlık durumları ve aktif görevleri canlı izlenmektedir.
+              Türk Hukuk normlarına (TBK, HMK, TTK, İİK, İş K.) göre özelleştirilmiş <strong>18 uzman yapay zeka ajanı</strong> tek merkezden yönetilir. Her bir ajan, görev türüne göre optimize edilmiş yerli muhakeme motoru ile eşleştirilmiş olup anlık durumları ve aktif görevleri canlı izlenmektedir.
             </p>
           </div>
 
@@ -434,7 +434,7 @@ export const HukukAjaniYonetimPaneli: React.FC<HukukAjaniYonetimPaneliProps> = (
           </div>
 
           <div className="bg-[#091022] border border-slate-800 rounded-xl p-3">
-            <div className="text-[10px] uppercase font-bold text-slate-400">Gemini-3.8-Flash</div>
+            <div className="text-[10px] uppercase font-bold text-slate-400">Hızlı Tasnif Motoru</div>
             <div className="flex items-center justify-between mt-1">
               <span className="text-lg font-black font-mono text-cyan-400">{flashCount} Ajan</span>
               <span className="text-[10px] font-mono text-slate-400">~0.9 sn</span>
@@ -443,7 +443,7 @@ export const HukukAjaniYonetimPaneli: React.FC<HukukAjaniYonetimPaneliProps> = (
           </div>
 
           <div className="bg-[#091022] border border-slate-800 rounded-xl p-3">
-            <div className="text-[10px] uppercase font-bold text-slate-400">Gemini-3.1-Pro</div>
+            <div className="text-[10px] uppercase font-bold text-slate-400">Derin Bağlam Motoru</div>
             <div className="flex items-center justify-between mt-1">
               <span className="text-lg font-black font-mono text-purple-400">{proCount} Ajan</span>
               <span className="text-[10px] font-mono text-slate-400">~3.1 sn</span>
@@ -452,7 +452,7 @@ export const HukukAjaniYonetimPaneli: React.FC<HukukAjaniYonetimPaneliProps> = (
           </div>
 
           <div className="bg-[#091022] border border-slate-800 rounded-xl p-3">
-            <div className="text-[10px] uppercase font-bold text-slate-400">Gemini-3.5-Transcribe</div>
+            <div className="text-[10px] uppercase font-bold text-slate-400">Ses Çözümleme Motoru</div>
             <div className="flex items-center justify-between mt-1">
               <span className="text-lg font-black font-mono text-emerald-400">{transcribeCount} Ajan</span>
               <span className="text-[10px] font-mono text-slate-400">~1.6 sn</span>
@@ -493,7 +493,7 @@ export const HukukAjaniYonetimPaneli: React.FC<HukukAjaniYonetimPaneliProps> = (
             <div className="flex items-center justify-between">
               <span className="font-bold text-cyan-300 flex items-center gap-1.5">
                 <Zap className="w-3.5 h-3.5 text-cyan-400" />
-                Gemini-3.8-Flash
+                Hızlı Tasnif ve Operasyon Motoru
               </span>
               <span className="text-[10px] bg-cyan-950/80 text-cyan-300 px-2 py-0.5 rounded font-mono border border-cyan-800/60">
                 10 Ajan
@@ -509,7 +509,7 @@ export const HukukAjaniYonetimPaneli: React.FC<HukukAjaniYonetimPaneliProps> = (
             <div className="flex items-center justify-between">
               <span className="font-bold text-purple-300 flex items-center gap-1.5">
                 <Brain className="w-3.5 h-3.5 text-purple-400" />
-                Gemini-3.1-Pro-Preview
+                Derin Bağlam ve Külliyat Muhakeme Motoru
               </span>
               <span className="text-[10px] bg-purple-950/80 text-purple-300 px-2 py-0.5 rounded font-mono border border-purple-800/60">
                 7 Ajan
@@ -525,7 +525,7 @@ export const HukukAjaniYonetimPaneli: React.FC<HukukAjaniYonetimPaneliProps> = (
             <div className="flex items-center justify-between">
               <span className="font-bold text-emerald-300 flex items-center gap-1.5">
                 <Mic className="w-3.5 h-3.5 text-emerald-400" />
-                Gemini-3.5-Transcribe
+                Hukuki Ses Çözümleme ve Dikte Motoru
               </span>
               <span className="text-[10px] bg-emerald-950/80 text-emerald-300 px-2 py-0.5 rounded font-mono border border-emerald-800/60">
                 1 Ajan
@@ -699,7 +699,7 @@ export const HukukAjaniYonetimPaneli: React.FC<HukukAjaniYonetimPaneliProps> = (
                 </div>
               </div>
 
-              {/* Current Task & Assigned Gemini Model */}
+              {/* Current Task & Assigned Engine Model */}
               <div className="space-y-2 pt-1">
                 {/* Current Task Pill */}
                 <div className="flex items-center justify-between text-xs bg-[#080d19] p-2 rounded-xl border border-slate-800">
@@ -729,7 +729,7 @@ export const HukukAjaniYonetimPaneli: React.FC<HukukAjaniYonetimPaneliProps> = (
                         : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                     }`}
                   >
-                    {agent.assignedModel}
+                    {agent.assignedModel === 'gemini-3.8-flash' ? 'Hızlı Tasnif Motoru' : agent.assignedModel === 'gemini-3.1-pro-preview' ? 'Derin Bağlam Motoru' : 'Ses Çözümleme Motoru'}
                   </span>
                 </div>
               </div>

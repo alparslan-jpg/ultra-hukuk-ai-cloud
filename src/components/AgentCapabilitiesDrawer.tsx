@@ -49,7 +49,7 @@ export const AGENT_GROUPS: AgentGroup[] = [
         id: 'bas-musavir',
         name: 'Baş Hukuk Müşaviri (Supreme Legal Orchestrator)',
         badge: 'Yüksek Karar Organı',
-        model: 'Gemini 3.1 Pro (Derin Akıl)',
+        model: 'Derin Bağlam ve Külliyat Muhakeme Motoru',
         description: 'Tüm dava kurgusunu, görevli/yetkili mahkemeyi, zorunlu arabuluculuk şartını ve 4 uzman ajanın tespitlerini tek bir nihai hüküm çatısı altında konsolide eder.',
         skills: [
           '4 uzman ajanın (Usul, Emsal, Şeytanın Avukatı, Dilekçe) raporlarını çapraz sentezleme',
@@ -67,7 +67,7 @@ export const AGENT_GROUPS: AgentGroup[] = [
         id: 'derin-analiz',
         name: 'Dava Derin Analiz Ajanı (Flash & Pro Engine)',
         badge: 'Çok Katmanlı Muhakeme',
-        model: 'Gemini 3.1 Pro & 3.8 Flash Hibrit',
+        model: 'Derin Muhakeme & Hızlı Tasnif Hibrit Motoru',
         description: 'Yüklenen tüm dava evraklarını tek tek ve bir bütünlük içinde tarar. Hızlı modda acil harita, Derin Akıl modunda ise mikroskobik delil ve süre denetimi yürütür.',
         skills: [
           'Yüklenen evrakları tek tek ayıklayıp maddi vakıa kronolojisi çıkarma',
@@ -85,7 +85,7 @@ export const AGENT_GROUPS: AgentGroup[] = [
         id: 'stratejik-brifing',
         name: 'Stratejik Dava Brifingi Ajanı',
         badge: 'Yönetici & Müvekkil Raporu',
-        model: 'Gemini 3.8 Flash',
+        model: 'Hızlı Tasnif ve Operasyon Motoru',
         description: 'Yüzlerce sayfalık dava klasörlerini 2 dakikalık yönetici brifingine, müvekkil bilgilendirme notuna ve avukat duruşma cep kartına dönüştürür.',
         skills: [
           'Davanın kilit kırılma noktalarını maddeleştirme',
@@ -115,7 +115,7 @@ export const AGENT_GROUPS: AgentGroup[] = [
         id: 'usul-sure-ajani',
         name: '1. Usul & Süre Ajanı',
         badge: 'HMK Usul Muhafızı',
-        model: 'Gemini 3.1 Pro',
+        model: 'Derin Bağlam ve Külliyat Muhakeme Motoru',
         description: 'Davanın açıldığı mahkemenin görev ve yetkisini, zorunlu dava şartı arabuluculuk sürecini ve ilk itirazları saniye saniye denetler.',
         skills: [
           'HMK m. 114 Dava şartlarını (gider avansı, vekâletname, taraf ehliyeti) kontrol etme',
@@ -132,7 +132,7 @@ export const AGENT_GROUPS: AgentGroup[] = [
         id: 'otuzbes-usul',
         name: '35 Noktalı Usul Denetim Ajanı',
         badge: 'Kapsamlı Usul Check-Up',
-        model: 'Gemini 3.1 Pro',
+        model: 'Derin Bağlam ve Külliyat Muhakeme Motoru',
         description: 'Yargıtay bozma kararlarına konu olan 35 kritik usuli prosedürü tek tek tarayarak davanın usulden bozulma riskini sıfıra indirir.',
         skills: [
           'Husumet, hukuki yarar ve derdestlik itirazlarını tarama',
@@ -168,7 +168,7 @@ export const AGENT_GROUPS: AgentGroup[] = [
         id: 'mevzuat-capraz',
         name: 'Mevzuat Çapraz Doğrulama & Atıf Denetçisi',
         badge: 'Yürürlük ve İptal Radarı',
-        model: 'Gemini 3.8 Flash + Mevzuat DB',
+        model: 'Hızlı Tasnif Motoru + Mevzuat DB',
         description: 'Dilekçelerde yer alan kanun maddelerinin yürürlükte olup olmadığını, AYM tarafından iptal edilip edilmediğini anlık denetler.',
         skills: [
           'Dilekçedeki kanun atıflarını Resmi Gazete ve Mevzuat Bilgi Sistemi ile eşleştirme',
@@ -197,7 +197,7 @@ export const AGENT_GROUPS: AgentGroup[] = [
         id: 'cimbiz-ajani',
         name: 'Adli Hakikat & Cımbız Ajanı',
         badge: 'Davayı Kazandıran Altın Detay',
-        model: 'Gemini 3.1 Pro (Mikroskobik Denetim)',
+        model: 'Derin Bağlam Motoru (Mikroskobik Denetim)',
         description: 'Yüzlerce sayfa arasına gizlenmiş, davanın seyrini lehe çevirecek en kritik delili (Örn: Tapudaki "Davalıdır" şerhi, imza çelişkisi, sahtelik) cımbızla çeker.',
         skills: [
           'Davanın kaderini değiştirecek "Altın Ayrıntıyı" ve kanun maddesini bulma',
@@ -215,7 +215,7 @@ export const AGENT_GROUPS: AgentGroup[] = [
         id: 'seytanin-avukati',
         name: '3. Şeytanın Avukatı (Harp Odası)',
         badge: 'Karşı Taraf Zihniyeti & Panzehir',
-        model: 'Gemini 3.1 Pro (Taktiksel Harp)',
+        model: 'Derin Bağlam Motoru (Taktiksel Harp)',
         description: 'Karşı tarafın en yırtıcı avukatı rolüne bürünerek dosyaya saldırır; en zayıf delillerimizi açığa çıkarır ve bunların panzehir savunmasını inşa eder.',
         skills: [
           'Karşı tarafın sunabileceği en tehlikeli savunma ve defileri simüle etme',
@@ -233,7 +233,7 @@ export const AGENT_GROUPS: AgentGroup[] = [
         id: 'bilirkisi-lab',
         name: 'Bilirkişi İtiraz Laboratuvarı (HMK 281)',
         badge: 'Rapor ve Kusur Denetçisi',
-        model: 'Gemini 3.1 Pro',
+        model: 'Derin Bağlam ve Külliyat Muhakeme Motoru',
         description: 'Bilirkişi raporlarındaki maddi hataları, eksik araştırmayı, yetki aşımını (hukuki tavsiyede bulunma) yakalar ve 2 haftalık itiraz dilekçesini hazırlar.',
         skills: [
           'Bilirkişinin yetki sınırını aşıp hâkim yerine hukuki niteleme yaptığını saptama',
@@ -251,7 +251,7 @@ export const AGENT_GROUPS: AgentGroup[] = [
         id: 'durusma-stratejisi',
         name: 'Duruşma Stratejisi & Çapraz Sorgu Simülatörü',
         badge: 'Duruşma Salonu Taktisyeni',
-        model: 'Gemini 3.1 Pro',
+        model: 'Derin Bağlam ve Külliyat Muhakeme Motoru',
         description: 'Duruşmada hâkime yapılacak sözlü açıklamaları, karşı taraf tanıklarına sorulacak HMK 152 çapraz sorgu sorularını kronolojik olarak hazırlar.',
         skills: [
           'HMK m. 152 doğrudan soru sorma hakkı kapsamında tanıkları köşeye sıkıştıracak sorular',
@@ -281,7 +281,7 @@ export const AGENT_GROUPS: AgentGroup[] = [
         id: 'dilekce-mimari',
         name: '4. Dilekçe Mimarı (UYAP Dilekçe Lab)',
         badge: 'Resmi Yargı Metin İnşası',
-        model: 'Gemini 3.1 Pro (Dilekçe Mühendisliği)',
+        model: 'Derin Bağlam Motoru (Dilekçe Mühendisliği)',
         description: 'HMK m. 119 standartlarına birebir uygun dava, cevap ve beyan dilekçeleri yazar. Netice-i Talep fıkrasını ve tensip müzekkere taleplerini kusursuz kurar.',
         skills: [
           'Mahkeme, taraf ve konu bilgilerini hatasız yerleştirme',
@@ -299,7 +299,7 @@ export const AGENT_GROUPS: AgentGroup[] = [
         id: 'stratejik-dilekce-motoru',
         name: 'Stratejik Dilekçe Motoru (Cımbız Entegreli)',
         badge: 'Yönetici Özeti & Dipnotlu İleri Dilekçe',
-        model: 'Gemini 3.1 Pro (Büyük Hukuki Muhakeme)',
+        model: 'Derin Bağlam ve Külliyat Muhakeme Motoru',
         description: 'Cımbız Ajanı ve Ajan Konseyi içgörüleriyle beslenen; Yönetici Özeti, Usul Bertarafı, Müktesep Hak ve Akademik/İçtihat Dipnotları içeren dev dilekçeler üretir.',
         skills: [
           'Dilekçenin başına hâkimin 1 dakikada kavrayacağı "Yönetici Özeti" ekleme',
@@ -317,7 +317,7 @@ export const AGENT_GROUPS: AgentGroup[] = [
         id: 'yargitay-emsal',
         name: '2. Yargıtay Emsal Karar Ajanı',
         badge: 'HGK, Daire ve BAM İlke Kararları',
-        model: 'Gemini 3.1 Pro + Yargıtay DB',
+        model: 'Derin Bağlam Motoru + Yargıtay DB',
         description: 'Yargıtay Hukuk Genel Kurulu, Ceza Genel Kurulu, ilgili Daireler ve BAM ilke kararlarını tarar; doktrinde atıf alan güncel içtihatları linkleriyle sunar.',
         skills: [
           'Somut uyuşmazlığa birebir uyan güncel HGK ve Daire kararlarını çıkarma',
@@ -347,7 +347,7 @@ export const AGENT_GROUPS: AgentGroup[] = [
         id: 'adli-ocr',
         name: 'Adli Belge / Evrak Okuma (OCR) Ajanı',
         badge: 'Taranmış Evrak Ayrıştırıcı',
-        model: 'Vision Gemini OCR + NLP',
+        model: 'Akıllı Optik Metin Tanıma ve Sayısallaştırma Motoru',
         description: 'Eski tapu kayıtlarını, el yazılı senetleri, silik mahkeme zaptlarını ve taranmış PDF dosyalarını %99 doğrulukla arama yapılabilir hukuki metne dönüştürür.',
         skills: [
           'Çok sayfalı dava evraklarını toplu olarak OCR ile metne çevirme',
@@ -382,7 +382,7 @@ export const AGENT_GROUPS: AgentGroup[] = [
         id: 'sozluk-ajani',
         name: 'Hukuk Terimleri Sözlüğü & Doktrin Ajanı',
         badge: 'Kavram ve Doktrin Ansiklopedisi',
-        model: 'Gemini 3.8 Flash + Hukuk Lügati DB',
+        model: 'Hızlı Tasnif Motoru + Hukuk Lügati DB',
         description: 'Eski hukuk terimlerini, Osmanlıca kadastro kayıt tabirlerini (gabn, şüf\'a, istihkak) ve Latince ilkeleri güncel Yargıtay uygulamalarıyla açıklar.',
         skills: [
           'Eski tapu ve kadastro terimlerinin güncel Medeni Kanun karşılığını bulma',
@@ -399,13 +399,13 @@ export const AGENT_GROUPS: AgentGroup[] = [
   },
   {
     id: 'grup-6',
-    title: '6. Claude Destekli Hibrit & Çoklu Ajan Grubu (İş Emri Standartları)',
-    subtitle: 'Anthropic Claude 3.5 Sonnet / Opus, RAG Arama ve Kurumsal Büro Yönetimi',
+    title: '6. Stratejik Analiz ve Simülasyon Grubu (İş Emri Standartları)',
+    subtitle: 'Stratejik Analiz & Yüksek Hakem Motoru, RAG Arama ve Kurumsal Büro Yönetimi',
     icon: Sparkles,
     color: 'from-amber-600 via-orange-600 to-purple-700',
     badgeColor: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
-    summary: 'Milyonlarca Yargıtay/Danıştay içtihadı üzerinde semantik RAG arama, Claude 3.5 motoru ile UYAP uyumlu dilekçe sentezi, 3 rollü (Hâkim, Karşı Taraf, Bilirkişi) dava risk simülasyonu ve Apilex tarzı kurumsal büro & finans yönetimi.',
-    workflowChain: 'RAG İçtihat Taraması ➔ Claude Derin Muhakeme & Dilekçe ➔ 3 Rol Simülasyonu (Hâkim/Bilirkişi) ➔ Kurumsal Büro & SMM',
+    summary: 'Milyonlarca Yargıtay/Danıştay içtihadı üzerinde semantik RAG arama, Stratejik Analiz motoru ile UYAP uyumlu dilekçe sentezi, 3 rollü (Hâkim, Karşı Taraf, Bilirkişi) dava risk simülasyonu ve Apilex tarzı kurumsal büro & finans yönetimi.',
+    workflowChain: 'RAG İçtihat Taraması ➔ Stratejik Derin Muhakeme & Dilekçe ➔ 3 Rol Simülasyonu (Hâkim/Bilirkişi) ➔ Kurumsal Büro & SMM',
     agents: [
       {
         id: 'rag-ictihat-uzmani',
@@ -426,10 +426,10 @@ export const AGENT_GROUPS: AgentGroup[] = [
         color: 'yellow'
       },
       {
-        id: 'claude-dilekce-asistani',
-        name: 'Ajan 2: Claude-Powered Hukuki Muhakeme ve Dilekçe Sentezleme Asistanı',
-        badge: 'Claude 3.5 Sonnet / Opus',
-        model: 'Anthropic Claude 3.5 Sonnet & Claude 3 Opus',
+        id: 'stratejik-dilekce-asistani',
+        name: 'Ajan 2: Stratejik Hukuki Muhakeme ve Dilekçe Sentezleme Asistanı',
+        badge: 'Stratejik Analiz / Yüksek Hakem',
+        model: 'Stratejik Analiz ve Simülasyon & Yüksek Hakem Motoru',
         description: 'Toplanan emsal kararları, dava dosyalarını ve delilleri harmanlayarak UYAP/UDF formatına tam uyumlu, ikna edici ve hatasız dilekçe taslakları üretir.',
         skills: [
           'Geniş bağlam penceresiyle yüzlerce sayfalık bilirkişi raporlarını analiz etme',
@@ -447,7 +447,7 @@ export const AGENT_GROUPS: AgentGroup[] = [
         id: 'multi-agent-simulasyon',
         name: 'Ajan 3: Multi-Agent Dava Simülasyon Grubu (Rol Tabanlı Danışmanlık)',
         badge: '3-Perspektif Risk Testi',
-        model: 'Claude 3.5 Sonnet (Hâkim, Karşı Taraf, Bilirkişi)',
+        model: 'Stratejik Analiz ve Simülasyon Motoru (3 Rol)',
         description: 'Bir davanın zayıf ve güçlü yönlerini farklı yargı perspektiflerinden test eder: Taraf Avukatı, Hâkim/Savcı ve Bilirkişi.',
         skills: [
           'Taraf Avukatı Ajanı: Agresif savunma ve lehte argüman üretimi',

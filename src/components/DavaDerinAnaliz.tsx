@@ -30,6 +30,8 @@ import { Ghost, Target, Brain, FileWarning,
 } from 'lucide-react';
 import { crossReferenceAiWithStatutes, CrossReferenceAuditReport } from '../services/legalDatabaseService';
 import { DocumentScannerModal } from './DocumentScannerModal';
+import { PartyContextService } from '../services/partyContextService';
+import { DataExtractionAndSyncService } from '../services/dataExtractionAndSyncService';
 
 export interface UploadedCaseFile {
   id: string;
@@ -186,7 +188,9 @@ export function DavaDerinAnaliz({
   onNavigateToCrossref,
 }: DavaDerinAnalizProps) {
   // Model Toggle State: 'flash' vs 'pro'
-  const [modelMode, setModelMode] = useState<'flash' | 'pro'>('pro');
+  // Model Mode: Derin Analiz Zorunlu Aktif
+  const modelMode: 'pro' = 'pro';
+  const setModelMode = (_mode: any) => {};
 
   // Input states
   const [caseSubject, setCaseSubject] = useState('');
@@ -243,9 +247,7 @@ export function DavaDerinAnaliz({
     try {
       setTimeout(() => {
         setLoadingStep(
-          activeMode === 'pro'
-            ? '🧠 Gemini 3.1 Pro: HMK/TBK usul tuzakları ve derin muhakeme yürütülüyor...'
-            : '⚡ Gemini 3.8 Flash: Hızlı vakıa haritası ve genel bakış özetleniyor...'
+          '🧠 Derin Bağlam ve Külliyat Muhakeme Motoru: HMK/TBK usul tuzakları ve derin muhakeme yürütülüyor...'
         );
       }, 700);
 
@@ -306,6 +308,27 @@ export function DavaDerinAnaliz({
           isScanned: file.type.startsWith('image/')
         };
         setUploadedFiles((prev) => [...prev, newFile]);
+        if (textContent) {
+          try {
+            const extracted = DataExtractionAndSyncService.extractFromText(textContent, file.name);
+            if (extracted.plaintiffs.length > 0 || extracted.defendants.length > 0) {
+              const current = PartyContextService.get();
+              const pName = extracted.plaintiffs[0]?.fullName || current.plaintiffName;
+              const dName = extracted.defendants[0]?.fullName || current.defendantName;
+              const side = current.side === 'none' ? 'Davacı' : current.side;
+              PartyContextService.set({
+                plaintiffName: pName,
+                defendantName: dName,
+                courtName: extracted.courtName,
+                esasNo: extracted.esasNo,
+                subject: extracted.subject,
+                facts: extracted.facts,
+                evidence: extracted.evidenceList.join(', '),
+                side
+              });
+            }
+          } catch {}
+        }
       };
       if (file.type.includes('text') || file.name.endsWith('.txt') || file.name.endsWith('.udf')) {
         reader.readAsText(file);
@@ -323,7 +346,7 @@ export function DavaDerinAnaliz({
   const handleCopyReport = () => {
     if (!analysisResult) return;
     const text = `=== ULTRA HUKUK AI - DAVA DERİN ANALİZ RAPORU ===
-Model: ${analysisResult.modelUsed} (${analysisResult.modelMode === 'pro' ? 'Gemini 3.1 Pro Derin Muhakeme' : 'Gemini 3.8 Flash Hızlı Genel Bakış'})
+Model: ${analysisResult.modelUsed} (Derin Bağlam ve Külliyat Muhakeme Motoru - Zorunlu Derin Akıl)
 Tarih: ${analysisResult.analyzedAt}
 Dava Türü: ${analysisResult.davaTuru}
 Görevli/Yetkili Mahkeme: ${analysisResult.gorevliYetkiliMahkeme}
@@ -358,7 +381,7 @@ ${analysisResult.derinHukukiMuhakeme.stratejikEylemPlani.join('\n')}
     const reportContent = `ULTRA HUKUK AI - DAVA DERİN ANALİZ VE USULİ DENETİM RAPORU
 ===========================================================
 Tarih: ${analysisResult.analyzedAt}
-Model: ${analysisResult.modelUsed} (${analysisResult.modelMode === 'pro' ? 'Gemini 3.1 Pro' : 'Gemini 3.8 Flash'})
+Model: ${analysisResult.modelUsed} (Derin Bağlam ve Külliyat Muhakeme Motoru)
 Dava Türü: ${analysisResult.davaTuru}
 Mahkeme: ${analysisResult.gorevliYetkiliMahkeme}
 Kazanma İhtimali: %${analysisResult.kazanmaIhtimali}
@@ -438,45 +461,18 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
       <div className="flex-1 space-y-6">
         {/* Header & Model Selector Card */}
         <div className="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl relative overflow-hidden backdrop-blur-md">
-          {/* Dedicated Model Toggle Component */}
-          <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-1.5 flex flex-col sm:flex-row gap-1 shadow-inner self-start lg:self-center">
-            <button
-              type="button"
-              onClick={() => setModelMode('flash')}
-              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
-                modelMode === 'flash'
-                  ? 'bg-gradient-to-r from-amber-500/20 to-amber-600/30 text-amber-300 border border-amber-500/50 shadow-md ring-1 ring-amber-500/30'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
-              }`}
-            >
-              <Zap className={`w-4 h-4 ${modelMode === 'flash' ? 'text-amber-400 fill-amber-400/20' : 'text-slate-500'}`} />
-              <div className="text-left">
-                <div className="flex items-center gap-1.5">
-                  <span>Gemini Flash</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-mono">Hızlı</span>
-                </div>
-                <div className="text-[10px] text-slate-400 font-normal">Hızlı Genel Bakış & Özet</div>
+          {/* Dedicated Model Indicator (Zorunlu Derin Akıl) */}
+          <div className="bg-slate-950/80 border border-sky-500/40 rounded-2xl p-2.5 flex items-center gap-3 shadow-inner self-start lg:self-center">
+            <div className="w-8 h-8 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
+              <Brain className="w-4 h-4 text-sky-400" />
+            </div>
+            <div className="text-left">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-sky-300">Derin Bağlam ve Külliyat Muhakeme Motoru</span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-mono font-bold">Zorunlu & Aktif</span>
               </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setModelMode('pro')}
-              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
-                modelMode === 'pro'
-                  ? 'bg-gradient-to-r from-sky-500/20 to-indigo-600/30 text-sky-300 border border-sky-500/50 shadow-md ring-1 ring-sky-500/30'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
-              }`}
-            >
-              <Brain className={`w-4 h-4 ${modelMode === 'pro' ? 'text-sky-400' : 'text-slate-500'}`} />
-              <div className="text-left">
-                <div className="flex items-center gap-1.5">
-                  <span>Gemini Pro</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-300 font-mono">Derin</span>
-                </div>
-                <div className="text-[10px] text-slate-400 font-normal">Derin Hukuki Muhakeme</div>
-              </div>
-            </button>
+              <div className="text-[11px] text-slate-400 font-normal">Tavizsiz Derin Hukuki Muhakeme ve Usul Denetimi</div>
+            </div>
           </div>
         </div>
 
@@ -485,7 +481,7 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
           <div className="flex items-center gap-2 text-slate-400">
             <>
                 <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
-                <span className="text-slate-300 font-medium">Gemini 3.1 Pro Derin Akıl Aktif:</span>
+                <span className="text-slate-300 font-medium">Derin Bağlam ve Külliyat Muhakeme Motoru Aktif:</span>
                 <span>HMK 200 senetle ispat sınırları, tebliğ şerhi mikro-ayrıntıları, zamanaşımı tuzakları ve harp odası karşı hücum stratejisi tavizsiz derinlikle yürütülür.</span>
               </>
           </div>
@@ -727,9 +723,7 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
                     <Zap className="w-4 h-4 text-amber-200" />
                   )}
                   <span>
-                    {modelMode === 'pro'
-                      ? 'Gemini Pro ile Derin Hukuki Analizi Başlat'
-                      : 'Gemini Flash ile Hızlı İncelemeyi Başlat'}
+                    {'Derin Hukuki Muhakeme Analizini Başlat'}
                   </span>
                 </>
               )}
@@ -756,7 +750,7 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
                           : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
                       }`}
                     >
-                      🧠 Gemini 3.1 Pro (Derin Muhakeme)
+                      🧠 Derin Bağlam ve Külliyat Muhakeme Motoru
                     </span>
                     {auditReport && (
                       <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold border bg-indigo-500/10 text-indigo-400 border-indigo-500/30 flex items-center gap-1">
@@ -1028,7 +1022,7 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
                   Sol panelden dava evraklarını (PDF, UDF, fatura, tensip zaptı) ekleyin veya dava özetini girin. 
-                  Sistem varsayılan ve zorunlu olarak <strong>Gemini 3.1 Pro Derin Hukuki Muhakeme</strong> ile kapsamlı analizi başlatır.
+                  Sistem varsayılan ve zorunlu olarak <strong>Derin Bağlam ve Külliyat Muhakeme Motoru</strong> ile kapsamlı analizi başlatır.
                 </p>
                 <div className="pt-2">
                   <button

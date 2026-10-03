@@ -17,6 +17,7 @@ export interface ExtractedCaseData {
   courtName: string;
   esasNo: string;
   subject: string;
+  facts: string;
   plaintiffs: ExtractedParty[];
   defendants: ExtractedParty[];
   evidenceList: string[];
@@ -123,6 +124,15 @@ export class DataExtractionAndSyncService {
       evidenceList.push('Fatura ve İrsaliyeler', 'Banka Dekontları', 'Ticari Defter ve Kayıtlar', 'Bilirkişi İncelemesi', 'Tanık Beyanları');
     }
 
+    // 8.5 Maddi Olaylar ve Vakıalar
+    let facts = '';
+    const olayMatch = text.match(/(?:AÇIKLAMALAR|OLAYLAR|VAKIALAR|MADDİ\s*VAKIALAR)\s*:?\s*([\s\S]*?)(?:HUKUKİ\s*(?:DELİLLER|SEBEPLER)|NETİCE|$)/i);
+    if (olayMatch && olayMatch[1].trim().length > 20) {
+      facts = olayMatch[1].trim();
+    } else {
+      facts = text.slice(0, 1000);
+    }
+
     // 8. Kritik Tarihler
     const criticalDates: { label: string; date: string }[] = [];
     const dateRegex = /(\d{1,2}[\.\/]\d{1,2}[\.\/]\d{4})/g;
@@ -144,6 +154,7 @@ export class DataExtractionAndSyncService {
       criticalDates,
       claimAmount,
       currency: 'TRY',
+      facts,
       summary: `${courtName} nezdinde görülen ${esasNo} sayılı dosyada; Davacı (${plaintiffs.map(p => p.fullName).join(', ') || 'Belirtilmedi'}) tarafından Davalı (${defendants.map(d => d.fullName).join(', ') || 'Belirtilmedi'}) aleyhine ikame edilen dava.`,
       extractedAt: new Date().toISOString(),
       extractionConfidence: (plaintiffs.length > 0 && defendants.length > 0) ? 95 : 75

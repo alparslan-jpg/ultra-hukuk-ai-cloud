@@ -346,7 +346,7 @@ export function HukukTerimleriSozlugu({
           criticalDeadlines: data.criticalDeadlines,
           proceduralTips: data.proceduralTips,
           relatedTerms: data.relatedTerms || [],
-          modelUsed: data.modelUsed || 'Gemini 3.8 Flash',
+          modelUsed: data.modelUsed || 'Derin Hukuki Muhakeme Motoru',
           generatedAt: data.generatedAt || new Date().toISOString(),
           isCustomGenerated: true
         };
@@ -402,7 +402,7 @@ export function HukukTerimleriSozlugu({
                 Hukuk Terimleri Sözlüğü
               </h2>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 font-bold flex items-center gap-1">
-                <span>Gemini 3.8 Flash AI Destekli</span>
+                <span>Derin Hukuki Muhakeme Motoru Destekli</span>
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
@@ -569,7 +569,7 @@ export function HukukTerimleriSozlugu({
 
                   {/* Clean unboxed metadata with typographic dot (Zero-pill discipline) */}
                   <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-mono">
-                    <span>{activeDefinition.modelUsed || 'Gemini 3.8 Flash AI'}</span>
+                    <span>{activeDefinition.modelUsed || 'Derin Hukuki Muhakeme Motoru'}</span>
                     <span aria-hidden="true">·</span>
                     <span>Doğrulanmış Hukuk Terminolojisi</span>
                   </div>

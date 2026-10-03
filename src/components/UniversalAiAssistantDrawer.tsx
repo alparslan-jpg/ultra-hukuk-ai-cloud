@@ -96,7 +96,7 @@ export function UniversalAiAssistantDrawer({
         };
         setMessages((prev) => [...prev, aiMsg]);
       } else {
-        // Standard quick legal assistant response (Hybrid Gemini/Claude)
+        // Standard quick legal assistant response (Hybrid Deep Reasoner)
         const res = await fetch('/api/v1/cases/analytics/summary');
         const resData = await res.json();
 

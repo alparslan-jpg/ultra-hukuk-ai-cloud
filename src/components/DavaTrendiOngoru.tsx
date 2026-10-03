@@ -13,7 +13,7 @@ export const DavaTrendiOngoru: React.FC<DavaTrendiOngoruProps> = ({ cases }) => 
 
   const analyzeTrends = async () => {
     setLoading(true);
-    // Simulate Gemini API call for trend prediction
+    // Simülasyon ve Derin Muhakeme Motoru çağrısı
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     // Mock data for prediction outcomes

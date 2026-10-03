@@ -1099,7 +1099,7 @@ export function AjanKonseyiOdasi({
               <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-slate-300 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
                 <span>
-                  Baş Hukuk Müşaviri ({orchestratorModel === 'pro' ? 'Gemini 3.1 Pro' : 'Gemini 3.8 Flash'}) ve 4 arka plan ajanı uyuşmazlığı inceliyor...
+                  Baş Hukuk Müşaviri ({orchestratorModel === 'pro' ? 'Derin Bağlam ve Külliyat Muhakeme Motoru' : 'Hızlı Tasnif ve Operasyon Motoru'}) ve 4 arka plan ajanı uyuşmazlığı inceliyor...
                 </span>
               </div>
             </div>
