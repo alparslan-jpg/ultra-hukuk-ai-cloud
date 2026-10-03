@@ -1,4 +1,4 @@
-import { Router, Response } from 'express';
+import { Router, Request, Response } from 'express';
 import { requireRole, AuthenticatedRequest } from '../middleware/rbac.ts';
 import { centralDrive } from '../../src/services/centralDriveService.ts';
 import { writeAudit } from '../../src/services/auditService.ts';
@@ -252,4 +252,20 @@ integrationsRouter.get('/drive/status', requireRole(['yonetici', 'avukat', 'staj
   return res.json({ success: true, drive: await centralDrive.getStatus() });
 });
 
+// POST /api/v1/integrations/udf/validate-and-stamp — UDF XML Şema Doğrulama ve Dijital Damga (Faz 2 Madde 4)
+integrationsRouter.post('/udf/validate-and-stamp', async (req: Request, res: Response) => {
+  try {
+    const { xmlContent, lawyerSicil = '8109', courtName } = req.body;
+    if (!xmlContent) {
+      return res.status(400).json({ success: false, message: 'Doğrulanacak XML içeriği zorunludur.' });
+    }
+    const { UdfValidatorService } = await import('../../src/services/udfValidatorService');
+    const result = await UdfValidatorService.validateAndStampUdf(xmlContent, lawyerSicil, courtName);
+    return res.json({ success: true, result });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: 'UDF doğrulama hatası.', error: err?.message });
+  }
+});
+
 export default integrationsRouter;
+

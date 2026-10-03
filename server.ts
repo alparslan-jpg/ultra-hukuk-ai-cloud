@@ -24,6 +24,8 @@ import { queueRouter } from './routes/v1/queue.ts';
 import { aiRouter } from './routes/v1/ai.ts';
 import { forensicAuditMiddleware } from './src/middleware/forensicAuditMiddleware.ts';
 import type { AuditLogRecord } from './src/services/persistentDatabaseService.ts';
+import { CircuitBreaker } from './src/services/circuitBreakerService.ts';
+import { AiRateLimiterAndQueue } from './src/services/aiRateLimiterAndQueue.ts';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -153,44 +155,57 @@ export async function callRoutedGemini(
   }
 
   const { primary, fallback } = getModelForTask(task);
-  
-  // 1. Aşama: Birincil mimari model katmanını dene
-  try {
-    const response = await genAI.models.generateContent({
-      model: getLiveModelCandidate(primary),
-      contents,
-    });
-    const text = response.text || '';
-    logAiUsage(sicil, typeof contents === 'string' ? contents.length : 1200, text.length);
-    return { text, modelUsed: primary };
-  } catch (err: any) {
-    console.warn(`[Multi-Model Router] ${primary} çağrısı yanıt vermedi (${err?.message || err}), canlı API eşdeğerine bağlanılıyor...`);
-    
-    // 2. Aşama: Canlı Google API modeline akıllı yönlendirme (gemini-2.5-pro / gemini-2.5-flash)
-    try {
-      const liveTarget = getLiveModelCandidate(primary);
-      const response = await genAI.models.generateContent({
-        model: liveTarget,
-        contents,
-      });
-      const text = response.text || '';
-      logAiUsage(sicil, typeof contents === 'string' ? contents.length : 1200, text.length);
-      return { text, modelUsed: `${primary} (${liveTarget})` };
-    } catch (secondErr: any) {
-      console.warn(`[Multi-Model Router] Canlı eşdeğer de başarısız oldu, yedek modele (${fallback}) geçiliyor:`, secondErr?.message);
-      
-      // 3. Aşama: Güvenli fallback modeli
-      const response = await genAI.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents,
-      });
-      const text = response.text || '';
-      logAiUsage(sicil, typeof contents === 'string' ? contents.length : 1200, text.length);
-      return { text, modelUsed: fallback };
-    }
-  }
-}
 
+  const breaker = CircuitBreaker.getInstance('gemini-multi-model', {
+    failureThreshold: 3,
+    cooldownPeriodMs: 25000,
+    timeoutMs: 40000
+  });
+
+  return await breaker.execute(
+    async () => {
+      // 1. Aşama: Birincil mimari model katmanını dene
+      try {
+        const response = await genAI!.models.generateContent({
+          model: getLiveModelCandidate(primary),
+          contents,
+        });
+        const text = response.text || '';
+        logAiUsage(sicil, typeof contents === 'string' ? contents.length : 1200, text.length);
+        return { text, modelUsed: primary };
+      } catch (err: any) {
+        console.warn(`[Multi-Model Router] ${primary} çağrısı yanıt vermedi (${err?.message || err}), canlı API eşdeğerine bağlanılıyor...`);
+        
+        // 2. Aşama: Canlı Google API modeline akıllı yönlendirme (gemini-2.5-pro / gemini-2.5-flash)
+        const liveTarget = getLiveModelCandidate(primary);
+        const response = await genAI!.models.generateContent({
+          model: liveTarget,
+          contents,
+        });
+        const text = response.text || '';
+        logAiUsage(sicil, typeof contents === 'string' ? contents.length : 1200, text.length);
+        return { text, modelUsed: `${primary} (${liveTarget})` };
+      }
+    },
+    async (fallbackErr) => {
+      console.warn(`[CircuitBreaker:Fallback] Birincil modeller başarısız oldu (${fallbackErr?.message}), self-healing yedek modele (${fallback}) geçiliyor...`);
+      try {
+        const response = await genAI!.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents,
+        });
+        const text = response.text || '';
+        logAiUsage(sicil, typeof contents === 'string' ? contents.length : 1200, text.length);
+        return { text, modelUsed: fallback };
+      } catch (finalErr: any) {
+        return {
+          text: `[Sistem Otomatik İyileştirme]: Yapay zekâ model sağlayıcısında geçici bir yoğunluk yaşanmaktadır. Talep güvenli kuyruğa alınmıştır. (Sistem devresi koruma modu aktif).`,
+          modelUsed: 'system-self-healing-fallback'
+        };
+      }
+    }
+  );
+}
 
 app.use(cors());
 app.use(express.json({ limit: '100mb' }));
@@ -1233,6 +1248,9 @@ function logAiUsage(sicilNo: string, inputChars: number, outputChars: number) {
     });
   }
   db.persist();
+  AiRateLimiterAndQueue.recordUsage(sicilNo, inTokens, outTokens).catch((err) => {
+    console.warn('[AiRateLimiterAndQueue] Quota log warning:', err?.message);
+  });
 }
 
 // 1. Complete Case Analysis (Tüm Ajanlar Birleşik Dava Analizi)

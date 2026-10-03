@@ -61,16 +61,25 @@ ${contentParagraphs}
 </udfDocument>`;
 }
 
+import { UdfValidatorService } from './udfValidatorService';
+
 /**
- * Tarayıcı üzerinden doğrudan .udf uzantılı dosyayı indirir.
+ * Tarayıcı üzerinden doğrudan şema doğrulamalı ve dijital damgalı .udf uzantılı dosyayı indirir.
  */
-export function triggerUdfDownload(
+export async function triggerUdfDownload(
   filename: string,
   rawText: string,
   metadata: UdfDocumentMetadata
-): void {
-  const xmlContent = generateUdfXml(rawText, metadata);
-  const blob = new Blob([xmlContent], { type: 'application/xml;charset=utf-8' });
+): Promise<void> {
+  const baseXml = generateUdfXml(rawText, metadata);
+  // Adalet Bakanlığı schema.xsd doğrulaması, otomatik onarım ve dijital damga (Madde 4)
+  const validated = await UdfValidatorService.validateAndStampUdf(
+    baseXml,
+    metadata.lawyerSicil || '8109',
+    metadata.court || 'Nöbetçi Asliye Hukuk Mahkemesi'
+  );
+
+  const blob = new Blob([validated.repairedXml], { type: 'application/xml;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   
   const link = document.createElement('a');
@@ -81,3 +90,4 @@ export function triggerUdfDownload(
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+

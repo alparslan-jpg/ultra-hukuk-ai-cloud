@@ -388,3 +388,21 @@ CREATE TABLE IF NOT EXISTS secure_file_chunks (
 CREATE INDEX IF NOT EXISTS idx_secure_files_owner ON secure_files(owner_sicil);
 CREATE INDEX IF NOT EXISTS idx_secure_file_chunks_file ON secure_file_chunks(file_id, chunk_index);
 
+-- 10. Yapay Zeka Günlük Token & Kota Tablosu (API Maliyet, Limit ve Hız Kısıtlama Yönetimi)
+CREATE TABLE IF NOT EXISTS ai_quota (
+  id TEXT PRIMARY KEY,
+  lawyer_sicil_no TEXT NOT NULL,
+  usage_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  tokens_used BIGINT NOT NULL DEFAULT 0,
+  requests_count INTEGER NOT NULL DEFAULT 0,
+  daily_token_limit BIGINT NOT NULL DEFAULT 1000000, -- 1M Token Günlük Tavan
+  cost_estimate_usd NUMERIC(10, 6) NOT NULL DEFAULT 0,
+  is_throttled BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(lawyer_sicil_no, usage_date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_quota_sicil_date ON ai_quota(lawyer_sicil_no, usage_date);
+
+

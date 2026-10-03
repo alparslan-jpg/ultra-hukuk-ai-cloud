@@ -33,6 +33,7 @@ import { DocumentScannerModal } from './DocumentScannerModal';
 import { PartyContextService, SelectedPartyContext, PartySide } from '../services/partyContextService';
 import { getClientList } from '../services/clientCaseStore';
 import { DataExtractionAndSyncService } from '../services/dataExtractionAndSyncService';
+import { AgentActivityConsole } from './AgentActivityConsole';
 
 export interface UploadedCaseFile {
   id: string;
@@ -1036,29 +1037,31 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
               </div>
             </div>
           ) : (
-            /* Empty State */
-            <div className="h-full min-h-[460px] flex flex-col items-center justify-center text-center p-8 bg-slate-900/60 rounded-2xl border border-dashed border-slate-800 space-y-4">
-              <div className="p-4 bg-slate-800/80 border border-slate-700/80 rounded-2xl text-slate-400">
-                <Brain className="w-10 h-10 text-amber-400/80" />
-              </div>
-              <div className="max-w-md space-y-2">
-                <h3 className="text-base font-bold text-slate-200">
-                  Dava Evraklarınızı Yükleyin ve Analizi Başlatın
-                </h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Sol panelden dava evraklarını (PDF, UDF, fatura, tensip zaptı) ekleyin veya dava özetini girin. 
-                  Sistem varsayılan ve zorunlu olarak <strong>Derin Bağlam ve Külliyat Muhakeme Motoru</strong> ile kapsamlı analizi başlatır.
-                </p>
-                <div className="pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setScannerModalOpen(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-semibold transition cursor-pointer"
-                  >
-                    <Camera className="w-4 h-4 text-emerald-400" />
-                    <span>Kamera ile Kağıt Delil Tara (OCR)</span>
-                  </button>
-                </div>
+            /* Ajan Aktivite Konsolu (Canlı SSE Akışı - Faz 2 Madde 3) */
+            <div className="space-y-4">
+              <AgentActivityConsole
+                initialDocumentText={claimSummary || caseSubject || (uploadedFiles[0]?.content || '')}
+                fileName={uploadedFiles[0]?.name || 'dava_evraki.pdf'}
+                onAnalysisComplete={(res) => {
+                  if (res && res.extracted) {
+                    setCaseSubject(res.extracted.subject || caseSubject);
+                  }
+                }}
+              />
+
+              <div className="flex items-center justify-between p-3.5 bg-slate-900/40 rounded-xl border border-slate-800 text-xs text-slate-400">
+                <span className="flex items-center gap-1.5">
+                  <Brain className="w-3.5 h-3.5 text-amber-400" />
+                  Evrak ve delilleri sol panelden seçerek "Derin Hukuki Muhakeme Analizi" veya yukarıdaki konsoldan "Ajanları Başlat (SSE)" akışını tetikleyebilirsiniz.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setScannerModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition shrink-0 cursor-pointer"
+                >
+                  <Camera className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Kamera OCR</span>
+                </button>
               </div>
             </div>
           )}
