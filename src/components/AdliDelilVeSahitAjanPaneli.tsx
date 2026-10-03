@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ShieldAlert,
   ShieldCheck,
@@ -24,9 +24,13 @@ import {
   Brain,
   MessageSquare,
   RefreshCw,
-  FolderOpen
+  FolderOpen,
+  Pencil,
+  Trash2,
+  Plus
 } from 'lucide-react';
 import { getClientList, getActiveLawyerSicil } from '../services/clientCaseStore';
+import { PartyContextService, SelectedPartyContext } from '../services/partyContextService';
 
 export interface WitnessItem {
   id: string;
@@ -83,6 +87,45 @@ export function AdliDelilVeSahitAjanPaneli({
   // Evidence Documents Dataset
   const [evidenceDocuments, setEvidenceDocuments] = useState<DocumentItem[]>([]);
 
+  // Party Context & Auto-population from active case
+  const [partyContext, setPartyContext] = useState<SelectedPartyContext>(() => PartyContextService.get());
+
+  useEffect(() => {
+    const unsub = PartyContextService.subscribe((ctx) => {
+      setPartyContext(ctx);
+      if (ctx.courtName && !court) setCourt(ctx.courtName);
+      if (ctx.esasNo && !caseNo) setCaseNo(ctx.esasNo);
+      if (ctx.subject && !subject) setSubject(ctx.subject);
+      if (ctx.plaintiffName && !plaintiff) setPlaintiff(ctx.plaintiffName);
+      if (ctx.defendantName && !defendant) setDefendant(ctx.defendantName);
+      if (ctx.plaintiffClaims && !plaintiffClaims) setPlaintiffClaims(ctx.plaintiffClaims);
+      if (ctx.defendantClaims && !defendantClaims) setDefendantClaims(ctx.defendantClaims);
+      if (ctx.witnesses && ctx.witnesses.length > 0 && witnesses.length === 0) {
+        setWitnesses(ctx.witnesses);
+      }
+      if (ctx.evidenceDocuments && ctx.evidenceDocuments.length > 0 && evidenceDocuments.length === 0) {
+        setEvidenceDocuments(ctx.evidenceDocuments);
+      }
+    });
+
+    const current = PartyContextService.get();
+    if (current.courtName && !court) setCourt(current.courtName);
+    if (current.esasNo && !caseNo) setCaseNo(current.esasNo);
+    if (current.subject && !subject) setSubject(current.subject);
+    if (current.plaintiffName && !plaintiff) setPlaintiff(current.plaintiffName);
+    if (current.defendantName && !defendant) setDefendant(current.defendantName);
+    if (current.plaintiffClaims && !plaintiffClaims) setPlaintiffClaims(current.plaintiffClaims);
+    if (current.defendantClaims && !defendantClaims) setDefendantClaims(current.defendantClaims);
+    if (current.witnesses && current.witnesses.length > 0 && witnesses.length === 0) {
+      setWitnesses(current.witnesses);
+    }
+    if (current.evidenceDocuments && current.evidenceDocuments.length > 0 && evidenceDocuments.length === 0) {
+      setEvidenceDocuments(current.evidenceDocuments);
+    }
+
+    return unsub;
+  }, []);
+
   // Analysis State
   const [isLoading, setIsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
@@ -91,12 +134,138 @@ export function AdliDelilVeSahitAjanPaneli({
   >('cimbiz');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  // New witness input state
+  // Witness input & edit state
   const [showAddWitnessModal, setShowAddWitnessModal] = useState(false);
+  const [editingWitnessId, setEditingWitnessId] = useState<string | null>(null);
   const [newWitnessName, setNewWitnessName] = useState('');
   const [newWitnessSide, setNewWitnessSide] = useState<'Davacı Tanığı' | 'Davalı Tanığı' | 'Mahkemece Resen Çağrılan Tanık'>('Davalı Tanığı');
   const [newWitnessAffiliation, setNewWitnessAffiliation] = useState('');
   const [newWitnessStatement, setNewWitnessStatement] = useState('');
+
+  const handleStartAddWitness = () => {
+    setEditingWitnessId(null);
+    setNewWitnessName('');
+    setNewWitnessSide(partyContext.side === 'Davacı' ? 'Davalı Tanığı' : 'Davacı Tanığı');
+    setNewWitnessAffiliation('');
+    setNewWitnessStatement('');
+    setShowAddWitnessModal(true);
+  };
+
+  const handleStartEditWitness = (wit: WitnessItem) => {
+    setEditingWitnessId(wit.id);
+    setNewWitnessName(wit.name);
+    setNewWitnessSide(wit.side);
+    setNewWitnessAffiliation(wit.affiliation);
+    setNewWitnessStatement(wit.statementText);
+    setShowAddWitnessModal(true);
+  };
+
+  const handleDeleteWitness = (id: string) => {
+    setWitnesses((prev) => prev.filter((w) => w.id !== id));
+  };
+
+  const handleAddWitnessSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newWitnessName.trim() || !newWitnessStatement.trim()) return;
+
+    if (editingWitnessId) {
+      setWitnesses((prev) =>
+        prev.map((w) =>
+          w.id === editingWitnessId
+            ? {
+                ...w,
+                name: newWitnessName,
+                side: newWitnessSide,
+                affiliation: newWitnessAffiliation || 'Belirtilmedi',
+                statementText: newWitnessStatement
+              }
+            : w
+        )
+      );
+      setEditingWitnessId(null);
+    } else {
+      const newItem: WitnessItem = {
+        id: `wit-${Date.now()}`,
+        name: newWitnessName,
+        side: newWitnessSide,
+        affiliation: newWitnessAffiliation || 'Belirtilmedi',
+        statementText: newWitnessStatement,
+        testimonyDate: new Date().toISOString().split('T')[0]
+      };
+      setWitnesses((prev) => [...prev, newItem]);
+    }
+
+    setNewWitnessName('');
+    setNewWitnessAffiliation('');
+    setNewWitnessStatement('');
+    setShowAddWitnessModal(false);
+  };
+
+  // Evidence Document input & edit state
+  const [showAddDocModal, setShowAddDocModal] = useState(false);
+  const [editingDocId, setEditingDocId] = useState<string | null>(null);
+  const [newDocName, setNewDocName] = useState('');
+  const [newDocType, setNewDocType] = useState('Ticari Evrak / Senet');
+  const [newDocValue, setNewDocValue] = useState('Kesin Delil (HMK m. 199 - TTK m. 21)');
+  const [newDocPreview, setNewDocPreview] = useState('');
+
+  const handleStartAddDoc = () => {
+    setEditingDocId(null);
+    setNewDocName('');
+    setNewDocType('Ticari Evrak / Senet');
+    setNewDocValue('Kesin Delil (HMK m. 199 - TTK m. 21)');
+    setNewDocPreview('');
+    setShowAddDocModal(true);
+  };
+
+  const handleStartEditDoc = (doc: DocumentItem) => {
+    setEditingDocId(doc.id);
+    setNewDocName(doc.name);
+    setNewDocType(doc.type);
+    setNewDocValue(doc.evidentiaryValue);
+    setNewDocPreview(doc.contentPreview);
+    setShowAddDocModal(true);
+  };
+
+  const handleDeleteDoc = (id: string) => {
+    setEvidenceDocuments((prev) => prev.filter((d) => d.id !== id));
+  };
+
+  const handleAddDocSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDocName.trim()) return;
+
+    if (editingDocId) {
+      setEvidenceDocuments((prev) =>
+        prev.map((d) =>
+          d.id === editingDocId
+            ? {
+                ...d,
+                name: newDocName,
+                type: newDocType,
+                evidentiaryValue: newDocValue,
+                contentPreview: newDocPreview || `Dosya içeriğindeki ${newDocName} evrakı.`
+              }
+            : d
+        )
+      );
+      setEditingDocId(null);
+    } else {
+      const newDoc: DocumentItem = {
+        id: `ev-${Date.now()}`,
+        name: newDocName,
+        type: newDocType,
+        date: new Date().toISOString().split('T')[0],
+        contentPreview: newDocPreview || `Dosya içeriğindeki ${newDocName} evrakı.`,
+        evidentiaryValue: newDocValue
+      };
+      setEvidenceDocuments((prev) => [...prev, newDoc]);
+    }
+
+    setNewDocName('');
+    setNewDocPreview('');
+    setShowAddDocModal(false);
+  };
 
   // Run Forensic Audit
   const handleRunForensicAudit = async () => {
@@ -117,7 +286,10 @@ export function AdliDelilVeSahitAjanPaneli({
           defendantClaims
         },
         targetFocus: 'all',
-        lawyerSicilNo: '8109'
+        lawyerSicilNo: '8109',
+        biasPromptDirective: partyContext.biasPromptDirective,
+        clientSide: partyContext.side,
+        selectedPartyName: partyContext.selectedPartyName
       };
 
       const res = await fetch('/api/ai/forensic-evidence-audit', {
@@ -143,26 +315,6 @@ export function AdliDelilVeSahitAjanPaneli({
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(null), 2000);
-  };
-
-  const handleAddWitnessSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newWitnessName.trim() || !newWitnessStatement.trim()) return;
-
-    const newItem: WitnessItem = {
-      id: `wit-${Date.now()}`,
-      name: newWitnessName,
-      side: newWitnessSide,
-      affiliation: newWitnessAffiliation || 'Belirtilmedi',
-      statementText: newWitnessStatement,
-      testimonyDate: new Date().toISOString().split('T')[0]
-    };
-
-    setWitnesses((prev) => [...prev, newItem]);
-    setNewWitnessName('');
-    setNewWitnessAffiliation('');
-    setNewWitnessStatement('');
-    setShowAddWitnessModal(false);
   };
 
   return (
@@ -218,6 +370,32 @@ export function AdliDelilVeSahitAjanPaneli({
           </div>
         </div>
       </div>
+
+      {/* Mor Alan: Taraf Seçimi & %100 Müvekkil Yanlısı Savunma Protokolü Bildirimi */}
+      {partyContext.side !== 'none' && (
+        <div className="p-3.5 bg-gradient-to-r from-purple-950/70 via-slate-900 to-indigo-950/70 border border-purple-500/40 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-lg">
+          <div className="flex items-center gap-2.5">
+            <span className="p-1.5 bg-purple-500/20 border border-purple-500/40 rounded-lg text-purple-300">
+              <Scale className="w-4 h-4" />
+            </span>
+            <div>
+              <span className="text-slate-400 text-[11px] block">Aktif Müvekkil Savunma Protokolü:</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-white text-xs">
+                  {partyContext.selectedPartyName || (partyContext.side === 'Davacı' ? plaintiff : defendant) || 'Müvekkil'}
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-purple-500/30 text-purple-200 font-extrabold border border-purple-500/40 text-[10px]">
+                  {partyContext.side} (MÜVEKKİL)
+                </span>
+              </div>
+            </div>
+          </div>
+          <span className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            %100 Müvekkil Lehine Adli İnceleme & Karşı İddiaları Çürütme Açık
+          </span>
+        </div>
+      )}
 
       {/* 2. Dava ve Şahit Veri Giriş / Özet Alanı */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -282,20 +460,53 @@ export function AdliDelilVeSahitAjanPaneli({
                 <FileCheck2 className="w-3.5 h-3.5 text-emerald-400" />
                 Dosyadaki Yazılı Deliller ({evidenceDocuments.length})
               </h3>
+              <button
+                type="button"
+                onClick={handleStartAddDoc}
+                className="px-2 py-0.5 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500/40 text-emerald-300 font-semibold text-[10px] flex items-center gap-1 transition"
+                title="Yeni Delil / Evrak Ekle"
+              >
+                <Plus className="w-3 h-3" />
+                <span>+ Delil Ekle</span>
+              </button>
             </div>
 
             <div className="space-y-2">
-              {evidenceDocuments.map((doc) => (
-                <div key={doc.id} className="p-2.5 bg-slate-800/70 border border-slate-700/60 rounded-xl space-y-1 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-slate-200 truncate">{doc.name}</span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                      {doc.evidentiaryValue.split(' ')[0]}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-400 line-clamp-2">{doc.contentPreview}</p>
+              {evidenceDocuments.length === 0 ? (
+                <div className="p-3 bg-slate-800/40 border border-dashed border-slate-700 rounded-xl text-center text-slate-400 text-xs">
+                  Henüz yazılı delil girilmedi. + Delil Ekle ile ekleyebilirsiniz.
                 </div>
-              ))}
+              ) : (
+                evidenceDocuments.map((doc) => (
+                  <div key={doc.id} className="p-2.5 bg-slate-800/70 border border-slate-700/60 rounded-xl space-y-1 text-xs group">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-slate-200 truncate pr-2">{doc.name}</span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          {doc.evidentiaryValue.split(' ')[0]}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditDoc(doc)}
+                          className="p-1 hover:bg-slate-700 text-slate-400 hover:text-sky-300 rounded transition"
+                          title="Delili Düzenle"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteDoc(doc.id)}
+                          className="p-1 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded transition"
+                          title="Delili Sil"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-400 line-clamp-2">{doc.contentPreview}</p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -316,44 +527,68 @@ export function AdliDelilVeSahitAjanPaneli({
 
               <button
                 type="button"
-                onClick={() => setShowAddWitnessModal(true)}
+                onClick={handleStartAddWitness}
                 className="px-3 py-1.5 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-300 font-semibold text-xs flex items-center gap-1.5 transition"
               >
+                <Plus className="w-3.5 h-3.5" />
                 <span>+ Yeni Şahit Ekle</span>
               </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {witnesses.map((wit, idx) => (
-                <div
-                  key={wit.id}
-                  className={`p-3.5 rounded-xl border transition ${
-                    wit.side === 'Davalı Tanığı'
-                      ? 'bg-rose-950/20 border-rose-500/30'
-                      : 'bg-emerald-950/20 border-emerald-500/30'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div>
-                      <div className="font-bold text-slate-200 text-xs flex items-center gap-1.5">
-                        <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] flex items-center justify-center font-bold">
-                          {idx + 1}
+              {witnesses.length === 0 ? (
+                <div className="col-span-1 md:col-span-2 p-4 bg-slate-800/40 border border-dashed border-slate-700 rounded-xl text-center text-slate-400 text-xs">
+                  Henüz tanık/şahit kaydı bulunmuyor. + Yeni Şahit Ekle butonuyla ekleyebilirsiniz.
+                </div>
+              ) : (
+                witnesses.map((wit, idx) => (
+                  <div
+                    key={wit.id}
+                    className={`p-3.5 rounded-xl border transition ${
+                      wit.side === 'Davalı Tanığı'
+                        ? 'bg-rose-950/20 border-rose-500/30'
+                        : 'bg-emerald-950/20 border-emerald-500/30'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div>
+                        <div className="font-bold text-slate-200 text-xs flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-300 text-[10px] flex items-center justify-center font-bold">
+                            {idx + 1}
+                          </span>
+                          <span>{wit.name}</span>
+                        </div>
+                        <span
+                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full inline-block mt-1 ${
+                            wit.side === 'Davalı Tanığı'
+                              ? 'bg-rose-500/20 text-rose-300'
+                              : 'bg-emerald-500/20 text-emerald-300'
+                          }`}
+                        >
+                          {wit.side}
                         </span>
-                        <span>{wit.name}</span>
                       </div>
-                      <span
-                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full inline-block mt-1 ${
-                          wit.side === 'Davalı Tanığı'
-                            ? 'bg-rose-500/20 text-rose-300'
-                            : 'bg-emerald-500/20 text-emerald-300'
-                        }`}
-                      >
-                        {wit.side}
-                      </span>
-                    </div>
 
-                    <span className="text-[10px] text-slate-400 font-mono">{wit.testimonyDate || '2025'}</span>
-                  </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] text-slate-400 font-mono">{wit.testimonyDate || '2025'}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditWitness(wit)}
+                          className="p-1 hover:bg-slate-700 text-slate-400 hover:text-sky-300 rounded transition"
+                          title="Şahidi Düzenle"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteWitness(wit.id)}
+                          className="p-1 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded transition"
+                          title="Şahidi Sil"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
 
                   <div className="space-y-1.5 text-xs">
                     <div className="text-[11px] text-amber-300/90 font-medium">
@@ -370,7 +605,8 @@ export function AdliDelilVeSahitAjanPaneli({
                     )}
                   </div>
                 </div>
-              ))}
+              ))
+            )}
             </div>
           </div>
 
@@ -943,7 +1179,7 @@ export function AdliDelilVeSahitAjanPaneli({
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
                 <Users className="w-4 h-4 text-indigo-400" />
-                <span>Yeni Dava Şahidi Tanımla</span>
+                <span>{editingWitnessId ? 'Dava Şahidini Düzenle' : 'Yeni Dava Şahidi Tanımla'}</span>
               </h3>
               <button
                 type="button"
@@ -1017,7 +1253,98 @@ export function AdliDelilVeSahitAjanPaneli({
                   type="submit"
                   className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition shadow-lg shadow-indigo-600/30"
                 >
-                  Şahidi Kaydet
+                  {editingWitnessId ? 'Güncellemeyi Kaydet' : 'Şahidi Kaydet'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Yazılı Delil Ekleme / Düzenleme */}
+      {showAddDocModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <FileCheck2 className="w-4 h-4 text-emerald-400" />
+                <span>{editingDocId ? 'Yazılı Delili Düzenle' : 'Yeni Yazılı Delil / Belge Ekle'}</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowAddDocModal(false)}
+                className="text-slate-400 hover:text-slate-200 text-xs"
+              >
+                ✕ Kapat
+              </button>
+            </div>
+
+            <form onSubmit={handleAddDocSubmit} className="space-y-3 text-xs">
+              <div>
+                <label className="text-slate-300 font-medium block mb-1">Delil / Belge Adı</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Örn: 2025/112 Sayılı Fatura ve Sevk İrsaliyesi"
+                  value={newDocName}
+                  onChange={(e) => setNewDocName(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-xs focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-300 font-medium block mb-1">Delil Türü</label>
+                  <select
+                    value={newDocType}
+                    onChange={(e: any) => setNewDocType(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-xs focus:ring-1 focus:ring-emerald-500"
+                  >
+                    <option value="Ticari Evrak / Senet">Ticari Evrak / Senet</option>
+                    <option value="Banka Resmi Kaydı">Banka Resmi Kaydı</option>
+                    <option value="Sözleşme / Protokol">Sözleşme / Protokol</option>
+                    <option value="Uzman / Bilirkişi Raporu">Uzman / Bilirkişi Raporu</option>
+                    <option value="Resmi Yazışma / İhtarname">Resmi Yazışma / İhtarname</option>
+                    <option value="Tanık Listesi / Tutanak">Tanık Listesi / Tutanak</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-slate-300 font-medium block mb-1">HMK İspat Değeri</label>
+                  <input
+                    type="text"
+                    placeholder="Örn: Kesin Delil (HMK m. 199 - TTK m. 21)"
+                    value={newDocValue}
+                    onChange={(e) => setNewDocValue(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-xs focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-slate-300 font-medium block mb-1">Delil İçerik Özeti / Kısa Bilgi</label>
+                <textarea
+                  rows={3}
+                  placeholder="Belgenin dosyadaki önemi, imza durumu ve ihtilaf konusu maddesini yazınız..."
+                  value={newDocPreview}
+                  onChange={(e) => setNewDocPreview(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-xs focus:ring-1 focus:ring-emerald-500 leading-relaxed"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddDocModal(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition"
+                >
+                  Vazgeç
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow-lg shadow-emerald-600/30"
+                >
+                  {editingDocId ? 'Güncellemeyi Kaydet' : 'Delili Kaydet'}
                 </button>
               </div>
             </form>

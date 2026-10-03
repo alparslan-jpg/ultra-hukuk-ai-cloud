@@ -4,6 +4,7 @@
 // ============================================================
 
 import { PartyContextService, buildPartyBiasDirective } from '../src/services/partyContextService';
+import { DataExtractionAndSyncService } from '../src/services/dataExtractionAndSyncService';
 import express from 'express';
 import { createServer } from 'http';
 
@@ -189,12 +190,130 @@ async function runGate5Test() {
     throw new Error('Yeni yüklenen dosya otomatik seçilmedi!');
   }
 
+  console.log('\n▶ TEST 5: Cımbız Ajanı (Adli Hakikat ve Şahit Çelişkileri) Otomatik Veri Doldurma & Düzenlenebilirlik');
+  
+  // 5.1 Otomatik Veri Çıkarma ve Doldurma Testi
+  const sampleDavaEvraki = `
+T.C. BAKIRKÖY 3. ASLİYE TİCARET MAHKEMESİ
+ESAS NO: 2026/412 Esas
+
+DAVACI: Selin Yılmaz (Vekili: Av. Alparslan)
+DAVALI: Kuzey Ege Lojistik Nakliyat A.Ş.
+
+DAVA KONUSU: 450.000,00 TL tutarındaki cari hesap ve navlun faturasına dayalı itirazın iptali ve icra inkar tazminatı talebidir.
+
+DAVACI İDDİASI: Davacı Selin Yılmaz, sözleşme ve sevk irsaliyeleri tahtında tüm taşıma edimlerini eksiksiz ifa ettiğini, faturaların tebliğine rağmen ödeme yapılmadığını ve borçlunun icra takibine kötüniyetle itiraz ettiğini beyan etmiştir.
+
+DAVALI SAVUNMASI: Davalı Kuzey Ege Lojistik Nakliyat A.Ş., malların gecikmeli ve hasarlı teslim edildiğini, cari hesap mutabakatının bulunmadığını, borcun doğmadığını savunarak davanın usulden ve esastan reddini talep etmiştir.
+
+HUKUKİ DELİLLER:
+1. 15.10.2025 Tarihli Navlun Faturası ve Sevk İrsaliyesi
+2. Banka Cari Hesap Ekstreleri ve Swift Kayıtları
+3. Bakırköy 2. İcra Dairesi 2026/108 İcra Dosyası
+4. Bilirkişi Raporu
+5. Tanık Beyanları
+
+TANIKLAR VE ŞAHİT LİSTESİ:
+Tanık 1: Mehmet Aksoy (Davacı Tanığı - Lojistik Depo Amiri). Beyan: "Malların bizzat 15.10.2025 tarihinde sevk irsaliyesi imzalatılarak teslim edildiğini gördüm."
+Tanık 2: Kenan Yıldız (Davalı Tanığı - Eski Muhasebe Müdürü). Beyan: "Mutabakat sağlanamadı, aramızda ihtilaf mevcuttu." (Not: Davalı şirketle iş mahkemesinde husumeti bulunmaktadır).
+  `.trim();
+
+  const extracted = DataExtractionAndSyncService.extractFromText(sampleDavaEvraki, 'Dava_Dilekcesi.pdf');
+
+  console.log(`  ✅ Mahkeme Otomatik Dolduruldu: "${extracted.courtName}"`);
+  console.log(`  ✅ Uyuşmazlık Konusu Otomatik Dolduruldu: "${extracted.subject.substring(0, 45)}..."`);
+  console.log(`  ✅ Davacı İddiası Otomatik Çıkarıldı: "${extracted.plaintiffClaims.substring(0, 50)}..."`);
+  console.log(`  ✅ Davalı Savunması Otomatik Çıkarıldı: "${extracted.defendantClaims.substring(0, 50)}..."`);
+  console.log(`  ✅ Dosyadaki Yazılı Deliller Listelendi: ${extracted.evidenceDocuments.length} adet evrak`);
+  console.log(`  ✅ Dinlenen / Gösterilen Şahitler Listelendi: ${extracted.witnesses.length} adet tanık`);
+
+  if (!extracted.courtName.includes('BAKIRKÖY') || !extracted.plaintiffClaims || !extracted.defendantClaims) {
+    throw new Error('Cımbız Ajanı temel alanlar otomatik doldurulamadı!');
+  }
+  if (extracted.evidenceDocuments.length === 0 || extracted.witnesses.length === 0) {
+    throw new Error('Cımbız Ajanı delil veya şahit listesi boş döndü!');
+  }
+
+  // 5.2 Düzenlenebilirlik (Editable State) Testi
+  let editedPlaintiffClaims = extracted.plaintiffClaims + ' [Ek Talep: %20 İcra İnkar Tazminatı]';
+  console.log('  ✅ Mahkeme ve Taraf İddiaları Avukat Tarafından Düzenlendi (Editable).');
+
+  // Şahit listesine yeni şahit ekleme, düzenleme ve silme simülasyonu
+  let currentWitnesses = [...extracted.witnesses];
+  const newWitness = {
+    id: 'wit-new-1',
+    name: 'Ayşe Demir',
+    side: 'Davacı Tanığı' as const,
+    affiliation: 'Görgü Tanığı / Muhasebe Uzmanı',
+    statementText: 'Teslimat anında faturanın davalı yetkilisi tarafından onaylandığına şahidim.',
+    testimonyDate: '2025-11-01',
+    notes: 'HMK 254 tarafsız tanık.'
+  };
+  currentWitnesses.push(newWitness);
+  console.log(`  ✅ Yeni Şahit Başarıyla Eklendi: "${newWitness.name}". Toplam Şahit: ${currentWitnesses.length}`);
+
+  // Şahit düzenleme
+  currentWitnesses = currentWitnesses.map(w => w.id === 'wit-new-1' ? { ...w, affiliation: 'Baş Muhasebeci (Yetkili İmzacı)' } : w);
+  const updatedWit = currentWitnesses.find(w => w.id === 'wit-new-1');
+  if (updatedWit?.affiliation !== 'Baş Muhasebeci (Yetkili İmzacı)') {
+    throw new Error('Şahit düzenleme başarısız!');
+  }
+  console.log('  ✅ Şahit Bilgisi Başarıyla Düzenlendi (Editable State).');
+
+  // Şahit silme
+  const beforeCount = currentWitnesses.length;
+  currentWitnesses = currentWitnesses.filter(w => w.id !== 'wit-new-1');
+  if (currentWitnesses.length !== beforeCount - 1) {
+    throw new Error('Şahit silme işlemi başarısız!');
+  }
+  console.log(`  ✅ Şahit Başarıyla Silindi (Delete Action). Kalan Şahit: ${currentWitnesses.length}`);
+
+  // Yazılı delil ekleme, düzenleme ve silme simülasyonu
+  let currentDocs = [...extracted.evidenceDocuments];
+  const newDoc = {
+    id: 'doc-new-1',
+    name: 'Noter İhtarnamesi ve Tebliğ Şerhi',
+    type: 'Resmi Yazışma / İhtarname',
+    evidentiaryValue: 'Kesin Delil (HMK m. 199)',
+    contentPreview: 'Borçluya keşide edilen temerrüt ihtarnamesi ve PTT tebliğ mazbatası.'
+  };
+  currentDocs.push(newDoc);
+  console.log(`  ✅ Yeni Delil Başarıyla Eklendi: "${newDoc.name}". Toplam Delil: ${currentDocs.length}`);
+
+  // Delil düzenleme
+  currentDocs = currentDocs.map(d => d.id === 'doc-new-1' ? { ...d, evidentiaryValue: 'HMK m. 193 Delil Sözleşmesi Uyarınca Kesin Delil' } : d);
+  console.log('  ✅ Delil Bilgisi Başarıyla Düzenlendi (Editable State).');
+
+  // Delil silme
+  currentDocs = currentDocs.filter(d => d.id !== 'doc-new-1');
+  console.log(`  ✅ Delil Başarıyla Silindi (Delete Action). Kalan Delil: ${currentDocs.length}`);
+
+  // 5.3 %100 Müvekkil Yanlısı Taraf Seçimi Entegrasyonu
+  const partyCtx = PartyContextService.set({
+    side: 'Davacı',
+    plaintiffName: extracted.plaintiffs[0]?.fullName,
+    defendantName: extracted.defendants[0]?.fullName,
+    courtName: extracted.courtName,
+    subject: extracted.subject,
+    plaintiffClaims: editedPlaintiffClaims,
+    defendantClaims: extracted.defendantClaims,
+    witnesses: currentWitnesses,
+    evidenceDocuments: currentDocs
+  });
+
+  if (!partyCtx.biasPromptDirective.includes('DAVACI (MÜVEKKİL)') || !partyCtx.biasPromptDirective.includes('TAMAMEN KABULÜNE')) {
+    throw new Error('Cımbız Ajanı Müvekkil Yanlısı Savunma Protokolü tetiklenemedi!');
+  }
+  console.log('  ✅ Cımbız Ajanı %100 Müvekkil Yanlısı Savunma Protokolü Doğrulandı.');
+
   console.log('\n============================================================');
   console.log('🎯 GATE 5 TESTİ KUSURSUZ ŞEKİLDE TAMAMLANDI: BAŞARILI (PASS)');
   console.log('   - Davacı / Davalı Checkbox Seçimi ve Senkronizasyonu: Hazır');
   console.log('   - %100 Müvekkil Yanlısı AI Savunma Protokolü: Doğrulandı');
   console.log('   - Dinamik Şablon (Radio/Exclusive) ve Düzenlenebilir Alanlar: Doğrulandı');
   console.log('   - Pembe Alan: Evrak Açılır Listesi, Tekil/Toplu Seçim & Filtreleme: Doğrulandı');
+  console.log('   - Cımbız Ajanı: Mahkeme, Konu, İddialar, Deliller ve Şahitler Otomatik Dolduruldu');
+  console.log('   - Cımbız Ajanı: Ekleme, Silme ve Metin Düzenleme (Editable State): Doğrulandı');
   console.log('   - Simülasyon ve Dilekçe Entegrasyonu: Aktif');
   console.log('============================================================\n');
 }

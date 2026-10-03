@@ -18,6 +18,10 @@ export interface SelectedPartyContext {
   subject?: string;
   facts?: string;
   evidence?: string;
+  plaintiffClaims?: string;
+  defendantClaims?: string;
+  witnesses?: any[];
+  evidenceDocuments?: any[];
   biasPromptDirective: string;
   lastUpdated: string;
 }
