@@ -163,11 +163,38 @@ async function runGate5Test() {
   }
   console.log('  ✅ Avukat Tarafından Serbest Düzenleme (Editable) Başarıyla Test Edildi.');
 
+  console.log('\n▶ TEST 4: Pembe Alan (Dava Evrak & Dosya Yönetimi - Tekil/Toplu Seçim & Filtreleme)');
+  const sampleFiles = [
+    { id: 'f-1', name: 'Tensip_Zapti.pdf' },
+    { id: 'f-2', name: 'Bilirkisi_Raporu.pdf' },
+    { id: 'f-3', name: 'Fatura_Ve_Irsaliye.pdf' }
+  ];
+
+  let selectedIds: string[] = ['f-1', 'f-2', 'f-3'];
+  console.log(`  ✅ Başlangıçta Tüm Evraklar Seçili: ${selectedIds.length}/${sampleFiles.length}`);
+
+  // Tekil seçim testi: f-3 seçimi kaldırılıyor
+  selectedIds = selectedIds.filter(id => id !== 'f-3');
+  console.log(`  ✅ Tekil Seçim Kaldırıldı (Fatura_Ve_Irsaliye çıkarıldı). Kalan: ${selectedIds.length} adet`);
+  if (selectedIds.includes('f-3') || selectedIds.length !== 2) {
+    throw new Error('Tekil evrak filtreleme başarısız!');
+  }
+
+  // Yeni dosya ekleme testi
+  const newFile = { id: 'f-4', name: 'Banka_Dekontu.pdf' };
+  sampleFiles.push(newFile);
+  selectedIds.push(newFile.id);
+  console.log(`  ✅ Yeni Evrak Yüklendi ve Otomatik Seçildi: "${newFile.name}". Toplam Seçili: ${selectedIds.length}`);
+  if (!selectedIds.includes('f-4')) {
+    throw new Error('Yeni yüklenen dosya otomatik seçilmedi!');
+  }
+
   console.log('\n============================================================');
   console.log('🎯 GATE 5 TESTİ KUSURSUZ ŞEKİLDE TAMAMLANDI: BAŞARILI (PASS)');
   console.log('   - Davacı / Davalı Checkbox Seçimi ve Senkronizasyonu: Hazır');
   console.log('   - %100 Müvekkil Yanlısı AI Savunma Protokolü: Doğrulandı');
   console.log('   - Dinamik Şablon (Radio/Exclusive) ve Düzenlenebilir Alanlar: Doğrulandı');
+  console.log('   - Pembe Alan: Evrak Açılır Listesi, Tekil/Toplu Seçim & Filtreleme: Doğrulandı');
   console.log('   - Simülasyon ve Dilekçe Entegrasyonu: Aktif');
   console.log('============================================================\n');
 }

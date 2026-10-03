@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Ghost, Target, Brain, FileWarning,
+import { Ghost, Target, Brain, FileWarning, FolderOpen, CheckSquare, Square, Plus, ChevronDown,
   Zap,
   UploadCloud,
   FileText,
@@ -30,7 +30,8 @@ import { Ghost, Target, Brain, FileWarning,
 } from 'lucide-react';
 import { crossReferenceAiWithStatutes, CrossReferenceAuditReport } from '../services/legalDatabaseService';
 import { DocumentScannerModal } from './DocumentScannerModal';
-import { PartyContextService } from '../services/partyContextService';
+import { PartyContextService, SelectedPartyContext, PartySide } from '../services/partyContextService';
+import { getClientList } from '../services/clientCaseStore';
 import { DataExtractionAndSyncService } from '../services/dataExtractionAndSyncService';
 
 export interface UploadedCaseFile {
@@ -192,15 +193,73 @@ export function DavaDerinAnaliz({
   const modelMode: 'pro' = 'pro';
   const setModelMode = (_mode: any) => {};
 
-  // Input states
+  // Input states (Auto-populated from active case/party while 100% editable)
   const [caseSubject, setCaseSubject] = useState('');
   const [claimSummary, setClaimSummary] = useState('');
-  const [perspective, setPerspective] = useState<'Davacı' | 'Davalı'>('Davacı');
-  
-  // File upload state
+  const [perspective, setPerspective] = useState<PartySide>('Davacı');
+
+  // Party Context & Popover State (MOR ALAN)
+  const [partyContext, setPartyContext] = useState<SelectedPartyContext>(() => PartyContextService.get());
+  const [showPartyDropdown, setShowPartyDropdown] = useState(false);
+
+  // File upload & Batch selection state (PEMBE ALAN)
   const [uploadedFiles, setUploadedFiles] = useState<UploadedCaseFile[]>([]);
+  const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
+  const [showFileListDropdown, setShowFileListDropdown] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [scannerModalOpen, setScannerModalOpen] = useState(false);
+
+  // Synchronize with PartyContextService & ClientCaseStore
+  React.useEffect(() => {
+    const unsub = PartyContextService.subscribe((ctx) => {
+      setPartyContext(ctx);
+      if (ctx.subject && !caseSubject) {
+        setCaseSubject(ctx.subject);
+      }
+      if (ctx.facts && !claimSummary) {
+        setClaimSummary(ctx.facts);
+      }
+      if (ctx.side && ctx.side !== 'none') {
+        setPerspective(ctx.side);
+      }
+    });
+
+    const current = PartyContextService.get();
+    if (current.subject) setCaseSubject(current.subject);
+    if (current.facts) setClaimSummary(current.facts);
+    if (current.side && current.side !== 'none') setPerspective(current.side);
+
+    // Load existing case files from store if available
+    try {
+      const allClients = getClientList();
+      const initialFiles: UploadedCaseFile[] = [];
+      allClients.forEach(cl => {
+        cl.cases.forEach(cs => {
+          cs.files.forEach(f => {
+            initialFiles.push({
+              id: f.id,
+              name: f.name,
+              size: f.size || 45000,
+              type: f.type || 'Evrak',
+              content: (f as any).content || `${f.name} dosya içeriği ayrıştırıldı.`,
+              uploadedAt: 'Kayıtlı Evrak'
+            });
+          });
+        });
+      });
+
+      if (initialFiles.length > 0) {
+        setUploadedFiles(prev => {
+          const ids = new Set(prev.map(p => p.id));
+          const toAdd = initialFiles.filter(item => !ids.has(item.id));
+          return [...prev, ...toAdd];
+        });
+        setSelectedFileIds(prev => (prev.length === 0 ? initialFiles.map(f => f.id) : prev));
+      }
+    } catch {}
+
+    return unsub;
+  }, []);
 
   // Madde 6: Kamera yalnızca Mobil APK ortamında aktif edilir (Web'de gizlenir)
   const isMobileApk = typeof window !== 'undefined' && Boolean(
@@ -308,6 +367,7 @@ export function DavaDerinAnaliz({
           isScanned: file.type.startsWith('image/')
         };
         setUploadedFiles((prev) => [...prev, newFile]);
+        setSelectedFileIds((prev) => [...prev, newFile.id]);
         if (textContent) {
           try {
             const extracted = DataExtractionAndSyncService.extractFromText(textContent, file.name);
@@ -420,127 +480,195 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
   );
 
   return (
-    <div className="flex gap-6">
-      {/* Analiz Geçmişi Sidebar */}
-      <div className="hidden lg:block w-72 shrink-0 space-y-4">
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
-          <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-sky-400" />
-            Analiz Geçmişi
-          </h3>
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-500" />
-            <input
-              type="text"
-              value={historySearch}
-              onChange={(e) => setHistorySearch(e.target.value)}
-              placeholder="Geçmiş analizlerde ara..."
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
-            />
-          </div>
-          <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
-            {filteredHistory.map((item, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => {
-                  setAnalysisResult(ensureAgentReports(item));
-                  setActiveViewTab('basHukukMusaviri');
-                }}
-                className="w-full text-left p-3 rounded-xl bg-slate-950/50 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition space-y-1"
-              >
-                <div className="text-xs font-semibold text-slate-200 truncate">{item.davaTuru}</div>
-                <div className="text-[10px] text-slate-500 font-mono">{item.analyzedAt}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Area */}
-      <div className="flex-1 space-y-6">
-        {/* Header & Model Selector Card */}
-        <div className="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl relative overflow-hidden backdrop-blur-md">
-          {/* Dedicated Model Indicator (Zorunlu Derin Akıl) */}
-          <div className="bg-slate-950/80 border border-sky-500/40 rounded-2xl p-2.5 flex items-center gap-3 shadow-inner self-start lg:self-center">
-            <div className="w-8 h-8 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
-              <Brain className="w-4 h-4 text-sky-400" />
-            </div>
-            <div className="text-left">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-sky-300">Derin Bağlam ve Külliyat Muhakeme Motoru</span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-mono font-bold">Zorunlu & Aktif</span>
-              </div>
-              <div className="text-[11px] text-slate-400 font-normal">Tavizsiz Derin Hukuki Muhakeme ve Usul Denetimi</div>
-            </div>
-          </div>
+    <div className="w-full space-y-6">
+      {/* Top Header & Taraf Kalkanı Açılır Penceresi (KIRMIZI ALAN: Sol panel kaldırıldı, tam sayfa genişliği aktif) */}
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+            <Brain className="w-5 h-5 text-sky-400" />
+            <span>Dava Derin Analizi & Evrak İnceleme</span>
+          </h2>
+          <p className="text-xs text-slate-400 mt-1">
+            Seçili veya yüklenen evraklar üzerinden HMK usul tuzakları, delil denetimi ve Yargıtay emsal muhakemesi.
+          </p>
         </div>
 
-        {/* Model Feature Explainer Banner */}
-        <div className="mt-4 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 text-slate-400">
-            <>
-                <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
-                <span className="text-slate-300 font-medium">Derin Bağlam ve Külliyat Muhakeme Motoru Aktif:</span>
-                <span>HMK 200 senetle ispat sınırları, tebliğ şerhi mikro-ayrıntıları, zamanaşımı tuzakları ve harp odası karşı hücum stratejisi tavizsiz derinlikle yürütülür.</span>
-              </>
-          </div>
-        </div>
-      </div>
-
-
-      {/* Main Grid: Upload & Inputs (Left) | AI Insights (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: File Upload & Case Parameters (5 Cols) */}
-        <div className="lg:col-span-5 space-y-5">
-          {/* File Upload Area */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <UploadCloud className="w-4 h-4 text-sky-400" />
-                <h3 className="text-sm font-semibold text-slate-200">Dava Dosyası & Evrak Yükleme</h3>
-              </div>
-              <span className="text-xs text-slate-400 font-mono">
-                {uploadedFiles.length} dosya yüklendi
+        {/* MOR ALAN: Taraf Seçimi Açılır Pencere (Popover / Checkbox Kalkanı) */}
+        <div className="relative">
+          <div className="flex items-center gap-2">
+            <div className="px-3 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center gap-2 text-xs">
+              <ShieldAlert className="w-4 h-4 text-purple-400" />
+              <span className="text-slate-300 font-medium">Müvekkil:</span>
+              <span className="font-bold text-purple-300">
+                {partyContext.side !== 'none'
+                  ? `${partyContext.side} (${partyContext.selectedPartyName || 'Savunulan'})`
+                  : 'Belirlenmedi (Objektif)'}
               </span>
             </div>
 
-            {/* Document Scanning Utility Action Banner - Sadece Mobil APK */}
-            {isMobileApk && (
-            <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-950/80 via-slate-900 to-teal-950/50 border border-emerald-500/40 shadow-lg relative overflow-hidden group">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shrink-0 group-hover:scale-105 transition shadow-sm">
-                    <Camera className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-100">
-                        Kamera ile Kağıt Delil & Evrak Tara
-                      </span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-medium">
-                        Vision OCR
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
-                      Fiziki senet, tebligat veya tutanakları kameranızla fotoğraflayıp OCR ile analize ekleyin.
-                    </p>
-                  </div>
-                </div>
+            <button
+              type="button"
+              onClick={() => setShowPartyDropdown((prev) => !prev)}
+              className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-sm"
+            >
+              <span>Taraf Sıfatı Belirle</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showPartyDropdown ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
 
+          {/* Açılır Pencere */}
+          {showPartyDropdown && (
+            <div className="absolute right-0 top-full mt-2 z-40 w-80 p-3.5 bg-slate-900 rounded-2xl shadow-2xl border border-purple-500/40 ring-1 ring-white/10 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                <span className="font-bold text-xs text-purple-300 flex items-center gap-1.5">
+                  <ShieldAlert className="w-4 h-4 text-purple-400" />
+                  Müvekkil Tarafı Seçimi (%100 Koruma)
+                </span>
                 <button
                   type="button"
-                  onClick={() => setScannerModalOpen(true)}
-                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-emerald-950/40 shrink-0 cursor-pointer"
+                  onClick={() => setShowPartyDropdown(false)}
+                  className="text-slate-400 hover:text-white"
                 >
-                  <ScanLine className="w-4 h-4" />
-                  <span>Kamerayı Aç</span>
+                  <X className="w-4 h-4" />
                 </button>
               </div>
+
+              <div className="space-y-2 text-xs">
+                {(['Davacı', 'Davalı', 'Müşteki', 'Kurum'] as const).map((side) => {
+                  const isChecked = partyContext.side === side;
+                  return (
+                    <label
+                      key={side}
+                      onClick={() => {
+                        const newSide = isChecked ? 'none' : side;
+                        PartyContextService.selectSide(newSide);
+                        setPerspective(newSide === 'none' ? 'Davacı' : newSide);
+                      }}
+                      className={`p-2.5 rounded-xl border cursor-pointer flex items-center justify-between transition ${
+                        isChecked
+                          ? 'bg-purple-950/40 border-purple-500 text-white ring-1 ring-purple-500/30'
+                          : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {}}
+                          className="rounded text-purple-600 focus:ring-purple-500 w-3.5 h-3.5"
+                        />
+                        <span className="font-bold">{side} (Müvekkil)</span>
+                      </div>
+                      <span className="text-[10px] text-purple-400 font-mono">
+                        {side === 'Davacı' ? 'HMK m.119' : side === 'Davalı' ? 'HMK m.126' : side === 'Müşteki' ? 'CMK m.237' : 'TTK/İYUK'}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* Main Grid: Upload & Inputs (Left 5 Cols) | AI Insights (Right 7 Cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column: Pembe Alan (Evrak Yönetimi) + Mavi Alan (Dava Çerçevesi) */}
+        <div className="lg:col-span-5 space-y-5">
+          {/* PEMBE ALAN: Dava Evrak & Dosya Yönetimi */}
+          <div className="bg-pink-950/20 border border-pink-500/30 rounded-2xl p-5 shadow-lg space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FolderOpen className="w-4 h-4 text-pink-400" />
+                <h3 className="text-sm font-bold text-pink-200">
+                  Dava Evrak & Dosya Yönetimi (Pembe Alan)
+                </h3>
+              </div>
+              <span className="text-xs text-pink-300 font-mono">
+                {selectedFileIds.length} / {uploadedFiles.length} Evrak Seçili
+              </span>
+            </div>
+
+            {/* Dava Dosyası Bilgi Kartı (Açılır Liste Tetikleyici) */}
+            <div
+              onClick={() => setShowFileListDropdown((prev) => !prev)}
+              className="p-3 rounded-xl bg-slate-950/70 border border-pink-500/20 hover:border-pink-500/40 cursor-pointer transition flex items-center justify-between"
+            >
+              <div>
+                <div className="text-xs font-bold text-slate-200">
+                  {partyContext.courtName || 'Bakırköy Asliye Ticaret Mahkemesi'}
+                </div>
+                <div className="text-[11px] text-slate-400 font-mono">
+                  {partyContext.esasNo || '2026/412 Esas'} — {uploadedFiles.length} Kayıtlı Evrak
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-pink-400 font-semibold">
+                <span>{showFileListDropdown ? 'Listeyi Kapat' : 'Evrakları Göster'}</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showFileListDropdown ? 'rotate-180' : ''}`} />
+              </div>
+            </div>
+
+            {/* Açılır Evrak Listesi (Tek Tek veya Toplu Seçim) */}
+            {showFileListDropdown && (
+              <div className="p-3 rounded-xl bg-slate-950/90 border border-slate-800 space-y-2.5 max-h-60 overflow-y-auto">
+                <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 text-xs">
+                  <span className="font-semibold text-slate-400">İncelenecek Evraklar:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (selectedFileIds.length === uploadedFiles.length) {
+                        setSelectedFileIds([]);
+                      } else {
+                        setSelectedFileIds(uploadedFiles.map((f) => f.id));
+                      }
+                    }}
+                    className="text-pink-400 hover:text-pink-300 font-bold text-[11px]"
+                  >
+                    {selectedFileIds.length === uploadedFiles.length ? 'Seçimi Kaldır' : 'Tümünü Seç'}
+                  </button>
+                </div>
+
+                {uploadedFiles.length === 0 ? (
+                  <div className="text-center py-4 text-xs text-slate-500">
+                    Henüz kayıtlı veya yüklenmiş evrak bulunmuyor.
+                  </div>
+                ) : (
+                  uploadedFiles.map((file) => {
+                    const isChecked = selectedFileIds.includes(file.id);
+                    return (
+                      <div
+                        key={file.id}
+                        onClick={() => {
+                          setSelectedFileIds((prev) =>
+                            isChecked ? prev.filter((id) => id !== file.id) : [...prev, file.id]
+                          );
+                        }}
+                        className={`p-2 rounded-lg border text-xs cursor-pointer flex items-center justify-between transition ${
+                          isChecked
+                            ? 'bg-pink-950/30 border-pink-500/40 text-pink-200'
+                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {}}
+                            className="rounded text-pink-600 focus:ring-pink-500 w-3.5 h-3.5 shrink-0"
+                          />
+                          <span className="truncate font-medium">{file.name}</span>
+                        </div>
+                        <span className="text-[10px] text-slate-500 shrink-0 font-mono ml-2">
+                          {Math.round(file.size / 1024)} KB
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             )}
 
-            {/* Drag & Drop Zone */}
+            {/* Toplu Dosya Yükleme Alanı */}
             <label
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
@@ -548,15 +676,14 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
                 e.preventDefault();
                 setDragOver(false);
                 if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                  // Trigger handleFileUpload logic via simulated event
                   const event = { target: { files: e.dataTransfer.files } } as any;
                   handleFileUpload(event);
                 }
               }}
-              className={`block border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-colors ${
+              className={`block border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-colors ${
                 dragOver
-                  ? 'border-sky-400 bg-sky-500/10'
-                  : 'border-slate-700/80 hover:border-slate-600 bg-slate-950/50 hover:bg-slate-950'
+                  ? 'border-pink-400 bg-pink-500/10'
+                  : 'border-pink-500/30 hover:border-pink-500/60 bg-slate-950/50 hover:bg-slate-950'
               }`}
             >
               <input
@@ -566,113 +693,35 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
                 onChange={handleFileUpload}
                 className="hidden"
               />
-              <div className="flex flex-col items-center gap-2">
-                <div className="p-2.5 bg-sky-500/10 border border-sky-500/20 rounded-full text-sky-400">
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="p-2 bg-pink-500/10 border border-pink-500/20 rounded-full text-pink-400">
                   <UploadCloud className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-xs font-semibold text-sky-400 hover:underline">Dosyaları Seçin</span>
+                  <span className="text-xs font-bold text-pink-400 hover:underline">Toplu Dosya Yükle</span>
                   <span className="text-xs text-slate-400"> veya buraya sürükleyin</span>
                 </div>
-                <p className="text-[11px] text-slate-500">
-                  PDF, UDF (UYAP), DOCX, TXT, Resim / Kamera Çekimi (Azami 25MB)
+                <p className="text-[10px] text-slate-500">
+                  PDF, UDF (UYAP), DOCX, TXT (Yüklenen yeni dosyalar otomatik analize dahil edilir)
                 </p>
               </div>
             </label>
-
-            {/* Uploaded File List */}
-            {uploadedFiles.length > 0 && (
-              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                {uploadedFiles.map((file) => {
-                  const isScannedDoc = file.isScanned || file.name.startsWith('Taranan');
-                  return (
-                    <div
-                      key={file.id}
-                      className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 hover:border-slate-700 text-xs transition"
-                    >
-                      <div className="flex items-center gap-2.5 overflow-hidden">
-                        <div className={`p-1.5 rounded-lg ${isScannedDoc ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-300'}`}>
-                          {isScannedDoc ? (
-                            <Camera className="w-3.5 h-3.5 text-emerald-400" />
-                          ) : (
-                            <FileText className="w-3.5 h-3.5 text-sky-400" />
-                          )}
-                        </div>
-                        <div className="truncate">
-                          <div className="flex items-center gap-1.5">
-                            <p className="font-medium text-slate-200 truncate">{file.name}</p>
-                            {isScannedDoc && (
-                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-mono">
-                                Kamera OCR
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[10px] text-slate-500">
-                            {Math.round(file.size / 1024)} KB • {file.uploadedAt}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => setViewingScannedFile(file)}
-                          className="text-slate-400 hover:text-emerald-400 p-1.5 rounded-lg hover:bg-slate-800 transition"
-                          title="Evrak ve OCR İçeriğini İncele"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => removeFile(file.id)}
-                          className="text-slate-500 hover:text-rose-400 p-1.5 rounded-lg hover:bg-slate-800 transition"
-                          title="Dosyayı kaldır"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </div>
 
-          {/* Case Context Form */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+          {/* MAVİ ALAN: Dava Çerçevesi & Müvekkil Bilgileri (Otomatik Çekilir & Düzenlenebilir) */}
+          <div className="bg-sky-950/20 border border-sky-500/30 rounded-2xl p-5 shadow-lg space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                <FileSearch className="w-4 h-4 text-amber-400" />
-                Dava Çerçevesi & Müvekkil Bilgileri
+              <h3 className="text-sm font-bold text-sky-200 flex items-center gap-2">
+                <FileSearch className="w-4 h-4 text-sky-400" />
+                Dava Çerçevesi & Müvekkil Bilgileri (Mavi Alan)
               </h3>
-              {/* Perspective Toggle */}
-              <div className="flex rounded-lg bg-slate-950 p-0.5 border border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setPerspective('Davacı')}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition ${
-                    perspective === 'Davacı'
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  Davacı Tarafı
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPerspective('Davalı')}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition ${
-                    perspective === 'Davalı'
-                      ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  Davalı Tarafı
-                </button>
-              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-medium">
+                Otomatik Çekildi (Düzenlenebilir)
+              </span>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
                 Dava Başlığı / Konusu:
               </label>
               <input
@@ -680,20 +729,20 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
                 value={caseSubject}
                 onChange={(e) => setCaseSubject(e.target.value)}
                 placeholder="Örn: İtirazın İptali, Alacak, İşe İade..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500/60 transition"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-sky-500 transition"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
-                Talep & İddia Özeti (Ek Bilgiler):
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Talep & İddia Özeti (Maddi Vakıalar):
               </label>
               <textarea
-                rows={3}
+                rows={4}
                 value={claimSummary}
                 onChange={(e) => setClaimSummary(e.target.value)}
-                placeholder="Müvekkilin temel talebini, uyuşmazlığın kökenini veya tebliğ tarihlerini yazın..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-amber-500/60 transition resize-none"
+                placeholder="Dava dosyasından çekilen olaylar ve müvekkilin temel talepleri..."
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 focus:outline-none focus:border-sky-500 transition resize-none leading-relaxed font-sans"
               />
             </div>
 
@@ -705,9 +754,7 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
               className={`w-full py-3 px-4 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 shadow-lg transition-all duration-200 ${
                 loading
                   ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                  : modelMode === 'pro'
-                  ? 'bg-gradient-to-r from-sky-600 via-indigo-600 to-sky-700 hover:from-sky-500 hover:to-indigo-600 text-white shadow-sky-900/30 border border-sky-400/30'
-                  : 'bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white shadow-amber-900/30 border border-amber-400/30'
+                  : 'bg-gradient-to-r from-sky-600 via-indigo-600 to-sky-700 hover:from-sky-500 hover:to-indigo-600 text-white shadow-sky-900/30 border border-sky-400/30'
               }`}
             >
               {loading ? (
@@ -717,20 +764,13 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
                 </>
               ) : (
                 <>
-                  {modelMode === 'pro' ? (
-                    <Brain className="w-4 h-4 text-sky-200" />
-                  ) : (
-                    <Zap className="w-4 h-4 text-amber-200" />
-                  )}
-                  <span>
-                    {'Derin Hukuki Muhakeme Analizini Başlat'}
-                  </span>
+                  <Brain className="w-4 h-4 text-sky-200" />
+                  <span>Derin Hukuki Muhakeme Analizini Başlat</span>
                 </>
               )}
             </button>
           </div>
         </div>
-
         {/* Right Column: AI-Generated Insights Display (7 Cols) */}
         <div className="lg:col-span-7">
           {analysisResult ? (

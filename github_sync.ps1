@@ -2,7 +2,7 @@
 Write-Host ">>> Ultra Hukuk AI GitHub Senkronizasyonu Başlatılıyor..." -ForegroundColor Cyan
 
 git add -A
-$commitMsg = "feat: AI model isimlerinin milli sistem terminolojisine revizyonu ve tam global taraf/dilekce senkronizasyonu (Gates 1-8 Tamamlandi)"
+$commitMsg = "feat: Evrak Analizi UI tam genislik, sol panel tasfiyesi, Pembe/Mavi/Mor alan entegrasyonu, dinamik sablonlar ve Gates 1-8 tam dogrulamasi"
 try {
     git commit -S -m $commitMsg
 } catch {

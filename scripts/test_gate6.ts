@@ -39,7 +39,14 @@ async function runGate6Test() {
   if (!derinAnalizCode.includes("isMobileApk")) {
     throw new Error('DavaDerinAnaliz içinde isMobileApk algılaması bulunamadı!');
   }
+  if (derinAnalizCode.includes("w-72 shrink-0 space-y-4") || derinAnalizCode.includes("Analiz Geçmişi Sidebar")) {
+    throw new Error('DavaDerinAnaliz içinde sol yapay zeka/geçmiş paneli UI dan kaldırılmamış!');
+  }
+  if (!derinAnalizCode.includes("Pembe Alan") || !derinAnalizCode.includes("Mavi Alan")) {
+    throw new Error('DavaDerinAnaliz içinde Pembe ve Mavi alanlar bulunamadı!');
+  }
   console.log('  ✅ DavaDerinAnaliz: Gemini Flash butonu kaldırıldı, Gemini 3.1 Pro zorunlu kılındı.');
+  console.log('  ✅ DavaDerinAnaliz: Sol bilgi paneli UI dan kaldırıldı, tam sayfa genişliği aktif edildi.');
   console.log('  ✅ DavaDerinAnaliz: Kamera (OCR) butonu Web ortamında gizlendi, yalnızca Mobil APK için kısıtlandı.');
 
   console.log('\n▶ TEST 3: App.tsx Web Başlık ve Kamera Rozeti Temizliği');
