@@ -20,6 +20,7 @@
     "cors": "^2.8.5",
     "d3": "^7.9.0",
     "express": "^4.21.2",
+    "googleapis": "^183.0.0",
     "jsonwebtoken": "^9.0.2",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.16.0",

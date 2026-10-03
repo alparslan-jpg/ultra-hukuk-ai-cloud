@@ -108,3 +108,102 @@ integrationsRouter.post('/webhook', (req: AuthenticatedRequest, res: Response) =
     status: 'PROCESSED'
   });
 });
+
+// ============================================================
+// MERKEZİ GOOGLE DRIVE & ZERO-KNOWLEDGE ŞİFRELEME ENDPOINTS
+// ============================================================
+
+// POST /api/v1/integrations/drive/upload — Şifreli Dosya Yükleme (Zero-Knowledge AES-256)
+integrationsRouter.post('/drive/upload', requireRole(['yonetici', 'avukat', 'stajyer']), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { fileName, fileContent, isBase64 } = req.body;
+    if (!fileName || !fileContent) {
+      return res.status(400).json({ success: false, message: 'fileName ve fileContent alanları zorunludur.' });
+    }
+
+    const userSicilNo = req.user?.sicilNo || '8109';
+    const buffer = Buffer.isBuffer(fileContent)
+      ? fileContent
+      : Buffer.from(fileContent, isBase64 || fileContent.startsWith('data:') ? 'base64' : 'utf-8');
+
+    const { centralDrive } = await import('../../src/services/centralDriveService');
+    const result = await centralDrive.uploadEncryptedFile(fileName, buffer, userSicilNo);
+
+    return res.json({
+      success: true,
+      message: 'Dosya AES-256 ile şifrelendi ve merkezi Drive izole klasörüne kaydedildi.',
+      fileId: result.fileId,
+      file: result
+    });
+  } catch (err: any) {
+    console.error('[Drive Upload Error]:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Drive yükleme hatası.' });
+  }
+});
+
+// GET /api/v1/integrations/drive/download/:fileId — Şifreli Dosyayı Çözüp İndirme
+integrationsRouter.get('/drive/download/:fileId', requireRole(['yonetici', 'avukat', 'stajyer']), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const fileId = req.params.fileId as string;
+    const userSicilNo = (req.query.userSicilNo as string) || req.user?.sicilNo || '8109';
+
+    const { centralDrive } = await import('../../src/services/centralDriveService');
+    const decrypted = await centralDrive.downloadAndDecryptFile(fileId, userSicilNo);
+
+    // Eğer istemci JSON talep ediyorsa JSON dön (Raporlarım modal önizleme için)
+    const acceptHeader = req.headers['accept'] || '';
+    if (acceptHeader.includes('application/json')) {
+      return res.json({
+        success: true,
+        fileName: decrypted.fileName,
+        content: decrypted.content.toString('utf-8'),
+        size: decrypted.size
+      });
+    }
+
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(decrypted.fileName)}"`);
+    res.setHeader('Content-Type', decrypted.fileName.endsWith('.udf') ? 'application/xml' : decrypted.fileName.endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream');
+    return res.send(decrypted.content);
+  } catch (err: any) {
+    console.error('[Drive Download Error]:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Drive dosya çözme hatası.' });
+  }
+});
+
+// GET /api/v1/integrations/drive/files — Kullanıcının İzole Drive Klasöründeki Dosyaları Listele
+integrationsRouter.get('/drive/files', requireRole(['yonetici', 'avukat', 'stajyer']), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userSicilNo = (req.query.userSicilNo as string) || req.user?.sicilNo || '8109';
+    const { centralDrive } = await import('../../src/services/centralDriveService');
+    const rawFiles = centralDrive.listUserFiles(userSicilNo);
+    const files = rawFiles.map(f => ({
+      id: f.fileId,
+      name: f.originalFileName,
+      originalFileName: f.originalFileName,
+      sizeBytes: f.size,
+      uploadedAt: (f as any).uploadedAt || new Date().toISOString(),
+      isEncrypted: true
+    }));
+
+    return res.json({
+      success: true,
+      userSicilNo,
+      count: files.length,
+      totalCount: files.length,
+      files
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/v1/integrations/drive/status — Merkezi Drive ve Şifreleme Durumu
+integrationsRouter.get('/drive/status', requireRole(['yonetici', 'avukat', 'stajyer']), async (_req: AuthenticatedRequest, res: Response) => {
+  const { centralDrive } = await import('../../src/services/centralDriveService');
+  return res.json({
+    success: true,
+    drive: centralDrive.getStatus()
+  });
+});
+
+export default integrationsRouter;

@@ -20,6 +20,8 @@ import {
   ChevronDown,
   Layers,
   FileCheck2,
+  FileCode,
+  Lock,
   FolderOpen,
   HelpCircle,
   Cpu,
@@ -43,6 +45,9 @@ import {
 } from 'lucide-react';
 import { CaseFileItem } from './MuvekkilDavaPortali';
 import { MuvekkilYonetimi } from './MuvekkilYonetimi';
+import { PartyContextService, SelectedPartyContext, PartySide } from '../services/partyContextService';
+import { DataExtractionAndSyncService } from '../services/dataExtractionAndSyncService';
+import { ReportExportService } from '../services/reportExportService';
 
 interface AjanKonseyiOdasiProps {
   lawyerName?: string;
@@ -75,8 +80,8 @@ export function AjanKonseyiOdasi({
   onSyncGit,
   onNavigateTo
 }: AjanKonseyiOdasiProps) {
-  // Model router selection: Gemini 3.1 Pro (Deep Legal Reasoning) vs Gemini 3.8 Flash (High Speed)
-  const [orchestratorModel, setOrchestratorModel] = useState<'pro' | 'flash'>('flash');
+  // Madde 6: Derin Analiz Zorunluluğu (Hızlı ve hafifletilmiş modeller tamamen tasfiye edilmiştir)
+  const orchestratorModel = 'pro';
   const [showMuvekkilPanel, setShowMuvekkilPanel] = useState(false);
   const [activeModule, setActiveModule] = useState<string>('musavir');
   const [archivedCases, setArchivedCases] = useState<any[]>(() => {
@@ -94,6 +99,21 @@ export function AjanKonseyiOdasi({
       ? `Müvekkil: ${initialCaseContext.clientName} | Dava: ${initialCaseContext.caseNumber} - ${initialCaseContext.subject}`
       : ''
   );
+
+  // Party Context & Client-Biased AI Engine State
+  const [partyContext, setPartyContext] = useState<SelectedPartyContext>(() => PartyContextService.get());
+
+  useEffect(() => {
+    const unsub = PartyContextService.subscribe((ctx) => {
+      setPartyContext(ctx);
+    });
+    return unsub;
+  }, []);
+
+  const handleSelectSide = (side: PartySide) => {
+    const updated = PartyContextService.selectSide(side);
+    setPartyContext(updated);
+  };
 
   // Audio / Speech-to-Text State
   const [isRecording, setIsRecording] = useState(false);
@@ -193,6 +213,28 @@ export function AjanKonseyiOdasi({
             type: file.type || 'Hukuki Belge'
           }
         ]);
+
+        // Arka Plan AI Veri Çıkarma Ekibi: Davacı, Davalı, Mahkeme ve Dava Bilgilerini Anında Çıkarır
+        try {
+          const extracted = DataExtractionAndSyncService.extractFromText(raw, file.name);
+          if (extracted.plaintiffs.length > 0 || extracted.defendants.length > 0) {
+            const current = PartyContextService.get();
+            const pName = extracted.plaintiffs[0]?.fullName || current.plaintiffName;
+            const dName = extracted.defendants[0]?.fullName || current.defendantName;
+            const side = current.side === 'none' ? 'Davacı' : current.side;
+            const updated = PartyContextService.set({
+              plaintiffName: pName,
+              defendantName: dName,
+              courtName: extracted.courtName,
+              esasNo: extracted.esasNo,
+              subject: extracted.subject,
+              side
+            });
+            setPartyContext(updated);
+          }
+        } catch (err) {
+          console.warn('Otomatik taraf çıkarımı:', err);
+        }
       };
       reader.readAsText(file);
     });
@@ -229,6 +271,10 @@ export function AjanKonseyiOdasi({
     setIsConsulting(true);
 
     try {
+      const activeLehine = partyContext.selectedPartyName
+        ? `${partyContext.side}: ${partyContext.selectedPartyName}`
+        : (lehineText || undefined);
+
       const response = await fetch('/api/ai/agent-council-consultation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -236,7 +282,8 @@ export function AjanKonseyiOdasi({
           query,
           contextFiles: sanitizeFilesForPayload(attachedFiles),
           activeCaseContext: selectedCaseNote,
-          lehine: lehineText || undefined,
+          lehine: activeLehine,
+          partyBiasDirective: partyContext.biasPromptDirective,
           orchestratorModel,
           inputMode: isRecording ? 'voice' : 'text'
         })
@@ -250,7 +297,7 @@ export function AjanKonseyiOdasi({
       }
       const cType = response.headers.get('content-type') || '';
       if (!cType.includes('application/json')) {
-        throw new Error('Sunucu yanıtı alınamadı (Ağ/Proxy zaman aşımı). Lütfen Hızlı modu seçip tekrar deneyin.');
+        throw new Error('Sunucu yanıtı alınamadı (Ağ/Proxy zaman aşımı). Lütfen internet bağlantınızı kontrol edip tekrar deneyiniz.');
       }
       const data = await response.json();
       if (data.success) {
@@ -313,6 +360,57 @@ export function AjanKonseyiOdasi({
   };
 
   // ── Dava dosyası oluştur & arşivle ────────────────────────────────────────
+  
+  const handleExportUdf = async (msg: MessageItem) => {
+    try {
+      const court = partyContext.courtName || 'İstanbul Nöbetçi Asliye Hukuk Mahkemesi';
+      const caseNo = partyContext.esasNo || '2026/Belirlenmedi Esas';
+      const filename = `${court.replace(/[^a-zA-Z0-9ÇĞİÖŞÜçğıöşü]/g, '_')}_${Date.now()}.udf`;
+      const res = await ReportExportService.exportAndBackupUdf(
+        filename,
+        msg.text + (msg.consultationData?.dilekceTavsiyesi?.dilekceTuru ? `\n\n${msg.consultationData.dilekceTavsiyesi.dilekceTuru}` : ''),
+        {
+          court,
+          caseNo,
+          plaintiff: partyContext.plaintiffName,
+          defendant: partyContext.defendantName,
+          lawyerName,
+          lawyerSicil: lawyerSicilNo,
+          documentTitle: msg.consultationData?.dilekceTavsiyesi?.dilekceTuru || 'Dava ve Savunma Strateji Raporu'
+        },
+        lawyerSicilNo
+      );
+      alert(res.message);
+    } catch (e: any) {
+      alert('UDF oluşturma hatası: ' + e.message);
+    }
+  };
+
+  const handleExportPdf = async (msg: MessageItem) => {
+    try {
+      const court = partyContext.courtName || 'İstanbul Nöbetçi Asliye Hukuk Mahkemesi';
+      const caseNo = partyContext.esasNo || '2026/Belirlenmedi Esas';
+      const filename = `${court.replace(/[^a-zA-Z0-9ÇĞİÖŞÜçğıöşü]/g, '_')}_${Date.now()}.pdf`;
+      const res = await ReportExportService.exportAndBackupPdf(
+        filename,
+        msg.text + (msg.consultationData?.dilekceTavsiyesi?.dilekceTuru ? `\n\n${msg.consultationData.dilekceTavsiyesi.dilekceTuru}` : ''),
+        {
+          court,
+          caseNo,
+          plaintiff: partyContext.plaintiffName,
+          defendant: partyContext.defendantName,
+          lawyerName,
+          lawyerSicil: lawyerSicilNo,
+          documentTitle: msg.consultationData?.dilekceTavsiyesi?.dilekceTuru || 'Dava ve Savunma Strateji Raporu'
+        },
+        lawyerSicilNo
+      );
+      alert(res.message);
+    } catch (e: any) {
+      alert('PDF oluşturma hatası: ' + e.message);
+    }
+  };
+
   const handleCreateCaseFile = async () => {
     const hasContent = inputText.trim() || attachedFiles.length > 0 || selectedCaseNote || consultationHistory.length > 1;
     if (!hasContent) { alert('Dava dosyası oluşturmak için önce dava bilgisi girin, evrak yükleyin veya danışma yapın.'); return; }
@@ -328,7 +426,7 @@ export function AjanKonseyiOdasi({
           contextFiles: sanitizeFilesForPayload(attachedFiles),
           activeCaseContext: selectedCaseNote,
           lehine: lehineText,
-          orchestratorModel: 'flash',
+          orchestratorModel: 'pro',
           inputMode: 'text'
         })
       });
@@ -434,32 +532,10 @@ export function AjanKonseyiOdasi({
               )}
             </div>
 
-            {/* Model Toggle: Pro vs Flash */}
-            <div className="flex items-center bg-slate-100 dark:bg-[#141d30] p-1 rounded-xl border border-slate-200 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => setOrchestratorModel('pro')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-                  orchestratorModel === 'pro'
-                    ? 'bg-indigo-600 text-white shadow-sm font-bold'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Derin Akıl</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setOrchestratorModel('flash')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-                  orchestratorModel === 'flash'
-                    ? 'bg-amber-600 text-white shadow-sm font-bold'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
-              >
-                <Cpu className="w-3.5 h-3.5" />
-                <span>Hızlı</span>
-              </button>
+            {/* Derin Akıl (Zorunlu Hukuki Muhakeme - Madde 6) */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/10 border border-indigo-500/30 text-indigo-700 dark:text-indigo-300 text-xs font-bold shadow-xs">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+              <span>Derin Analiz & Harp Odası (Zorunlu Aktif)</span>
             </div>
 
             {onSyncGit && (
@@ -511,6 +587,75 @@ export function AjanKonseyiOdasi({
           </div>
         </div>
       </div>{/* end Top Banner */}
+
+      {/* TARAF SEÇİMİ VE %100 MÜVEKKİL YANLISI SAVUNMA KALKANI */}
+      <div className="bg-gradient-to-r from-amber-500/10 via-slate-100 to-indigo-500/10 dark:from-amber-950/30 dark:via-[#111928] dark:to-indigo-950/30 border-b border-slate-200 dark:border-slate-800 px-5 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
+        <div className="flex items-center gap-2">
+          <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+          <span className="font-bold text-slate-800 dark:text-slate-200">
+            Taraf Seçimi & Savunma Kalkanı:
+          </span>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:inline">
+            (Hangi tarafı seçerseniz tüm sistem %100 o müvekkili savunacak şekilde kurgulanır)
+          </span>
+        </div>
+
+        <div className="flex items-center flex-wrap gap-2.5">
+          {/* Davacı Seçimi */}
+          <label className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border cursor-pointer select-none transition ${
+            partyContext.side === 'Davacı'
+              ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm font-bold'
+              : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-500'
+          }`}>
+            <input
+              type="checkbox"
+              checked={partyContext.side === 'Davacı'}
+              onChange={() => handleSelectSide(partyContext.side === 'Davacı' ? 'none' : 'Davacı')}
+              className="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500"
+            />
+            <span className="font-medium">Davacı:</span>
+            <span className="font-bold underline decoration-dotted">
+              {partyContext.plaintiffName || 'Belirlenmedi'}
+            </span>
+            {partyContext.side === 'Davacı' && (
+              <span className="text-[10px] bg-emerald-700 px-1.5 py-0.5 rounded-full font-bold ml-1">Müvekkil</span>
+            )}
+          </label>
+
+          {/* Davalı Seçimi */}
+          <label className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border cursor-pointer select-none transition ${
+            partyContext.side === 'Davalı'
+              ? 'bg-blue-600 text-white border-blue-500 shadow-sm font-bold'
+              : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-500'
+          }`}>
+            <input
+              type="checkbox"
+              checked={partyContext.side === 'Davalı'}
+              onChange={() => handleSelectSide(partyContext.side === 'Davalı' ? 'none' : 'Davalı')}
+              className="w-3.5 h-3.5 rounded text-blue-600 focus:ring-blue-500"
+            />
+            <span className="font-medium">Davalı:</span>
+            <span className="font-bold underline decoration-dotted">
+              {partyContext.defendantName || 'Belirlenmedi'}
+            </span>
+            {partyContext.side === 'Davalı' && (
+              <span className="text-[10px] bg-blue-700 px-1.5 py-0.5 rounded-full font-bold ml-1">Müvekkil</span>
+            )}
+          </label>
+
+          {/* Aktif Savunma Modu Rozeti */}
+          {partyContext.side !== 'none' ? (
+            <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-bold text-[11px] bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/30 shadow-xs animate-pulse">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>%100 {partyContext.side} ({partyContext.selectedPartyName || 'Müvekkil'}) Savunması Aktif</span>
+            </div>
+          ) : (
+            <div className="text-[11px] text-amber-600 dark:text-amber-400 italic">
+              (Lütfen müvekkilinizin tarafını işaretleyiniz)
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* BODY: Tam Genişlik Çalışma Alanı (Sol Menü Kaldırıldı) */}
       <div className="flex flex-1 overflow-hidden" style={{minHeight: 0}}>
@@ -869,6 +1014,36 @@ export function AjanKonseyiOdasi({
                         </div>
                       )}
 
+                      
+                      {/* UYAP UDF & PDF DIŞA AKTARMA VE GOOGLE DRIVE ŞİFRELİ YEDEKLEME */}
+                      <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1">
+                          <Lock className="w-3 h-3 text-emerald-500" />
+                          <span>Google Drive Zero-Knowledge Şifreli Yedekleme:</span>
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleExportUdf(msg)}
+                            className="px-2.5 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-[11px] font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+                            title="UYAP Editör uyumlu XML formatında UDF oluştur ve Drive'a şifreli yedekle"
+                          >
+                            <FileCode className="w-3.5 h-3.5 text-rose-600" />
+                            <span>UYAP UDF İndir & Yedekle</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleExportPdf(msg)}
+                            className="px-2.5 py-1.5 rounded-xl bg-sky-50 dark:bg-sky-950/40 hover:bg-sky-100 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 text-[11px] font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+                            title="Resmi mahkeme formatında A4 PDF raporu oluştur ve Drive'a şifreli yedekle"
+                          >
+                            <FileText className="w-3.5 h-3.5 text-sky-600" />
+                            <span>Resmi PDF İndir & Yedekle</span>
+                          </button>
+                        </div>
+                      </div>
+  
                       {/* Emsal Kararlar — Doktrin & Kaynak URL */}
                       {msg.consultationData.emsalKararlar && msg.consultationData.emsalKararlar.length > 0 && (
                         <div className="bg-white dark:bg-[#090d16] border border-slate-200 dark:border-slate-800 rounded-xl p-3 space-y-2">

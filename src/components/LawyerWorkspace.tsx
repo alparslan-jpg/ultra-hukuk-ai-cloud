@@ -54,7 +54,6 @@ import { CaseAnalytics } from './CaseAnalytics';
 import { MuvekkilDavaPortali, CaseFileItem } from './MuvekkilDavaPortali';
 import { AjanKonseyiOdasi } from './AjanKonseyiOdasi';
 import { SecmeliOzelliklerVeGitPaneli } from './SecmeliOzelliklerVeGitPaneli';
-import { ClientCaseExplorerSidebar } from './ClientCaseExplorerSidebar';
 import { AdliDelilVeSahitAjanPaneli } from './AdliDelilVeSahitAjanPaneli';
 import { KisiselApkIndirmePaneli } from './KisiselApkIndirmePaneli';
 import { ArchivedCasesTab } from './ArchivedCasesTab';
@@ -134,8 +133,6 @@ export function LawyerWorkspace({ user, initialTab, onNavigateHome }: LawyerWork
     }
   }, [user?.sicilNo]);
 
-  // Client & Case Explorer Sidebar state
-  const [isExplorerOpen, setIsExplorerOpen] = useState<boolean>(false);
 
   // Multi-agent consultation context passed from client case files
   const [councilCaseContext, setCouncilCaseContext] = useState<{
@@ -708,22 +705,6 @@ export function LawyerWorkspace({ user, initialTab, onNavigateHome }: LawyerWork
                 <span>Ana Sayfa</span>
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => setIsExplorerOpen(!isExplorerOpen)}
-              className={`text-xs px-3.5 py-1.5 rounded-xl border font-semibold transition flex items-center gap-1.5 shadow-sm ${
-                isExplorerOpen
-                  ? 'border-sky-500 bg-sky-500 text-white shadow-sky-500/25 ring-2 ring-sky-400/40'
-                  : 'border-sky-500/40 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/60'
-              }`}
-              title="Müvekkil, dava ve evrak hiyerarşisi kenar çubuğunu açar veya kapatır"
-            >
-              <FolderOpen className="w-3.5 h-3.5" />
-              <span>Müvekkil & Dava Gezgini</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${isExplorerOpen ? 'bg-white/20 text-white' : 'bg-sky-500/20 text-sky-600 dark:text-sky-300'}`}>
-                Sidebar
-              </span>
-            </button>
             <div className="text-[11px] font-mono bg-slate-100 dark:bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-400">
               Sicil: <strong className="text-amber-600 dark:text-amber-400">{user.sicilNo}</strong> ({user.baroAdi})
             </div>
@@ -3194,11 +3175,11 @@ export function LawyerWorkspace({ user, initialTab, onNavigateHome }: LawyerWork
       {/* TAB 21: ADLİ HAKİKAT, ŞAHİT ÇELİŞKİSİ & CIMBIZ AJANI LABORATUVARI */}
       {activeTab === 'forensic_audit' && (
         <AdliDelilVeSahitAjanPaneli
-          initialCaseNo={caseNo || '2024/782 Esas'}
-          initialCourt={court || procCourt || 'İstanbul 14. Asliye Ticaret Mahkemesi'}
-          initialSubject={davaOzeti || 'Ticari Fatura ve İrsaliyeye Dayalı İtirazın İptali Davası'}
-          initialPlaintiff={client || 'Atlas Tekstil Sanayi ve Dış Ticaret A.Ş.'}
-          initialDefendant={opponent || 'Bosphorus Lojistik Depolama Ltd. Şti.'}
+          initialCaseNo={caseNo || ''}
+          initialCourt={court || procCourt || ''}
+          initialSubject={davaOzeti || ''}
+          initialPlaintiff={client || ''}
+          initialDefendant={opponent || ''}
           onApplyToPetition={(text) => {
             setPetitionDetails((prev) => (prev ? `${prev}\n\n${text}` : text));
             setActiveTab('petition');
@@ -3217,20 +3198,6 @@ export function LawyerWorkspace({ user, initialTab, onNavigateHome }: LawyerWork
         />
       )}
 
-      {/* Müvekkil & Dava Gezgini (Client & Case Explorer Sidebar) */}
-      <ClientCaseExplorerSidebar
-        isOpen={isExplorerOpen}
-        onToggle={() => setIsExplorerOpen(!isExplorerOpen)}
-        onSelectCaseForWorkspace={handleSelectCaseFromExplorer}
-        onConsultCouncil={(context) => {
-          setCouncilCaseContext(context);
-          setActiveTab('council');
-        }}
-        onApplyToPetition={(text) => {
-          setPetitionDetails((prev) => (prev ? `${prev}\n\n${text}` : text));
-          setActiveTab('petition');
-        }}
-      />
     </div>
   );
 }

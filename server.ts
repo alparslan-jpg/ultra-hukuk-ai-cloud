@@ -1548,10 +1548,11 @@ function generateDynamicLegalConsultation(params: {
   clientInfo?: any;
   contextFiles?: any[];
   lehine?: string;
+  partyBiasDirective?: string;
   orchestratorModel?: string;
   todayStr: string;
 }) {
-  const { query, activeCaseContext, clientInfo, contextFiles = [], lehine, orchestratorModel, todayStr } = params;
+  const { query, activeCaseContext, clientInfo, contextFiles = [], lehine, partyBiasDirective, orchestratorModel, todayStr } = params;
   const cleanQ = (query || '').trim();
   const allText = `${cleanQ} ${activeCaseContext || ''} ${JSON.stringify(clientInfo || '')} ${contextFiles.map((f: any) => (f.name || '') + ' ' + (f.content || '')).join(' ')}`.toLowerCase();
 
@@ -1581,7 +1582,8 @@ function generateDynamicLegalConsultation(params: {
   let yetkiliMahkeme = 'HMK m. 6 (Davalının yerleşim yeri mahkemesi)';
   let arabuluculukSarti = 'Uyuşmazlığın niteliğine göre kanuni dava şartı arabuluculuk durumu denetlenmelidir.';
   let harcVeGiderAvansiTahmini = 'Harçlar Kanunu (1) Sayılı Tarife nispi/maktu harç ve HMK m. 120 Gider Avansı.';
-  let dilekceTuru = 'Dava / Cevap Dilekçesi';
+  const isDavaliBias = /davalı/i.test(lehine || '') || Boolean(partyBiasDirective?.includes('DAVALI (MÜVEKKİL)'));
+  let dilekceTuru = isDavaliBias ? 'Cevap ve İlk İtirazlar Dilekçesi (Davanın Reddi Talepli)' : 'Dava / Cevap Dilekçesi';
   let talepSonucuMaddeleri: string[] = [];
   let delilListesi: string[] = [];
   let tensipTalepleri: string[] = [];
@@ -1598,14 +1600,23 @@ function generateDynamicLegalConsultation(params: {
     yetkiliMahkeme = 'Taşınmazın Bulunduğu Yer Mahkemesi (HMK m. 12/1 gereğince KESİN YETKİ — kamu düzenindendir, taraflarca değiştirilemez)';
     arabuluculukSarti = 'Ayni hakka dayalı tapu iptal ve tescil davalarında doğrudan Asliye Hukuk Mahkemesinde dava açılır ve öncelikle HMK m. 389 uyarınca İHTİYATİ TEDBİR talep edilir. (7445 S.K. ile 6325 S.K. m. 18/B kapsamındaki ortaklığın giderilmesi uyuşmazlıkları haricinde mülkiyet tescilinde arabuluculuk dava şartı değildir).';
     harcVeGiderAvansiTahmini = 'Taşınmazın dava tarihindeki harca esas/keşfen saptanacak değeri üzerinden binde 68,31 nispi harcın 1/4\'ü peşin; HMK m. 120 ve Fen/Mahalli Bilirkişi Keşif Gider Avansı.';
-    dilekceTuru = 'Tapu İptal ve Tescil (Mülkiyet Hakkına Dayalı ve İhtiyati Tedbir Talepli) Dava Dilekçesi';
-    
-    talepSonucuMaddeleri = [
-      '1. Öncelikle dava konusu taşınmazın 3. kişilere devrinin ve ayni hak tesisinin önlenmesi amacıyla tapu kaydına HMK m. 389 uyarınca TEMİNATSIZ İHTİYATİ TEDBİR KONULMASINA,',
-      '2. Davalı adına haksız/yolsuz olarak tescil edilmiş bulunan tapu kaydının İPTALİ ile müvekkil adına tapuya TESCİLİNE,',
-      '3. Tescilin mümkün olmaması halinde taşınmazın dava tarihindeki rayiç bedelinin yasal faiziyle birlikte davalıdan tahsiline,',
-      '4. Yargılama giderleri ve vekalet ücretinin davalı tarafa tahmiline karar verilmesi.'
-    ];
+    if (isDavaliBias) {
+      dilekceTuru = 'Tapu İptal ve Tescil Davasına Karşı Cevap ve İtiraz Dilekçesi (Davanın Reddi Talepli)';
+      talepSonucuMaddeleri = [
+        '1. Haksız, mesnetsiz ve soyut iddialarla ikame edilen DAVANIN USULDEN VE ESASTAN TAMAMEN REDDİNE,',
+        '2. Tapu sicilindeki geçerli tescilin TMK m. 1023 ve m. 1024 uyarınca müvekkil davalı lehine KORUNMASINA,',
+        '3. Haksız dava ve kötü niyetli ihtiyati tedbir talepleri nedeniyle davacının tazminata mahkum edilmesine,',
+        '4. Yargılama giderleri ve vekalet ücretinin davacı tarafa yükletilmesine karar verilmesi.'
+      ];
+    } else {
+      dilekceTuru = 'Tapu İptal ve Tescil (Mülkiyet Hakkına Dayalı ve İhtiyati Tedbir Talepli) Dava Dilekçesi';
+      talepSonucuMaddeleri = [
+        '1. Öncelikle dava konusu taşınmazın 3. kişilere devrinin ve ayni hak tesisinin önlenmesi amacıyla tapu kaydına HMK m. 389 uyarınca TEMİNATSIZ İHTİYATİ TEDBİR KONULMASINA,',
+        '2. Davalı adına haksız/yolsuz olarak tescil edilmiş bulunan tapu kaydının İPTALİ ile müvekkil adına tapuya TESCİLİNE,',
+        '3. Tescilin mümkün olmaması halinde taşınmazın dava tarihindeki rayiç bedelinin yasal faiziyle birlikte davalıdan tahsiline,',
+        '4. Yargılama giderleri ve vekalet ücretinin davalı tarafa tahmiline karar verilmesi.'
+      ];
+    }
 
     delilListesi = [
       'İlgili Tapu Sicil Müdürlüğü tedavüllü tapu kütüğü kayıtları ve resmi akit tablosu',
@@ -1754,6 +1765,7 @@ app.post('/api/ai/agent-council-consultation', async (req: Request, res: Respons
     activeCaseContext,
     clientInfo,
     lehine,
+    partyBiasDirective,
     inputMode = 'text',
     orchestratorModel = 'pro',
     lawyerSicilNo
@@ -1771,7 +1783,7 @@ app.post('/api/ai/agent-council-consultation', async (req: Request, res: Respons
   const fullPrompt = `
 ${STRICT_LEGAL_GROUNDING_PROMPT}
 
-SİSTEM TALİMATI:
+${partyBiasDirective ? `\n${partyBiasDirective}\n\n` : ''}SİSTEM TALİMATI:
 Sen "Ultra Hukuk AI Baş Hukuk Müşaviri ve Çoklu Ajan Orkestratörüsün" (Model Seviyesi: ${orchestratorModel === 'pro' ? 'Gemini 3.1 Pro Derin Akıl Yürütme' : 'Gemini 3.8 Flash'}).
 Arka planda senin koordinasyonunda çalışan 4 alt uzman yapay zeka ajanı bulunmaktadır:
 1. Usul & Dava Şartları Ajanı (HMK/CMK/İYUK/Arabuluculuk)
@@ -1782,7 +1794,7 @@ Arka planda senin koordinasyonunda çalışan 4 alt uzman yapay zeka ajanı bulu
 === KRİTİK BİLGİ ===
 BUGÜNÜN TARİHİ: ${todayStr} (${todayISO})
 Bu tarihi tüm zamanaşımı, hak düşürücü süre, cevap süresi, istinaf/temyiz süresi hesaplamalarında MUTLAKA dikkate al.
-${lehine ? `İNCELEME/DİLEKÇE KİMİN LEHİNE: ${lehine}` : ''}
+${lehine ? `İNCELEME/DİLEKÇE KİMİN LEHİNE (%100 MÜVEKKİL SAVUNMASI): ${lehine}` : ''}
 
 Avukatın Mesajı:
 """
@@ -1995,6 +2007,7 @@ YALNIZCA GEÇERLİ JSON DÖNDÜR. Markdown kod bloğu kullanma.`;
     clientInfo,
     contextFiles,
     lehine,
+    partyBiasDirective,
     orchestratorModel,
     todayStr
   });

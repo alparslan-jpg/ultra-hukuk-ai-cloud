@@ -36,6 +36,8 @@ import {
   saveClientList,
   subscribeToClientUpdates
 } from '../services/clientCaseStore';
+import { PartyContextService, SelectedPartyContext, PartySide } from '../services/partyContextService';
+import { DataExtractionAndSyncService } from '../services/dataExtractionAndSyncService';
 
 export type { CaseFileItem, ClientCase, ClientItem };
 
@@ -82,6 +84,21 @@ export function MuvekkilDavaPortali({
   const [batchAnalyzing, setBatchAnalyzing] = useState(false);
   const [batchAnalysisModal, setBatchAnalysisModal] = useState<any | null>(null);
   const [singleAnalysisModal, setSingleAnalysisModal] = useState<CaseFileItem | null>(null);
+
+  // Party Context & 100% Client-Biased AI Engine State
+  const [partyContext, setPartyContext] = useState<SelectedPartyContext>(() => PartyContextService.get());
+
+  useEffect(() => {
+    const unsub = PartyContextService.subscribe((ctx) => {
+      setPartyContext(ctx);
+    });
+    return unsub;
+  }, []);
+
+  const handleSelectSide = (side: PartySide) => {
+    const updated = PartyContextService.selectSide(side);
+    setPartyContext(updated);
+  };
 
   // Modals for adding client / case / file
   const [showAddClientModal, setShowAddClientModal] = useState(false);
@@ -647,6 +664,49 @@ export function MuvekkilDavaPortali({
                     <span>Müşavire Danış</span>
                   </button>
                 )}
+              </div>
+            </div>
+
+            {/* TARAF SEÇİMİ VE %100 MÜVEKKİL YANLISI SAVUNMA KALKANI */}
+            <div className="bg-amber-500/10 dark:bg-amber-950/20 border border-amber-500/30 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+                <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span>Müvekkil Taraf Seçimi:</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border cursor-pointer text-xs select-none transition ${
+                  partyContext.side === 'Davacı'
+                    ? 'bg-emerald-600 text-white border-emerald-500 font-bold shadow-xs'
+                    : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-500'
+                }`}>
+                  <input
+                    type="checkbox"
+                    checked={partyContext.side === 'Davacı'}
+                    onChange={() => handleSelectSide(partyContext.side === 'Davacı' ? 'none' : 'Davacı')}
+                    className="rounded text-emerald-600 focus:ring-emerald-500 w-3 h-3"
+                  />
+                  <span>Davacı:</span>
+                  <span className="font-semibold underline">
+                    {partyContext.plaintiffName || selectedClient?.fullName || 'Belirlenmedi'}
+                  </span>
+                </label>
+
+                <label className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border cursor-pointer text-xs select-none transition ${
+                  partyContext.side === 'Davalı'
+                    ? 'bg-blue-600 text-white border-blue-500 font-bold shadow-xs'
+                    : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-500'
+                }`}>
+                  <input
+                    type="checkbox"
+                    checked={partyContext.side === 'Davalı'}
+                    onChange={() => handleSelectSide(partyContext.side === 'Davalı' ? 'none' : 'Davalı')}
+                    className="rounded text-blue-600 focus:ring-blue-500 w-3 h-3"
+                  />
+                  <span>Davalı:</span>
+                  <span className="font-semibold underline">
+                    {partyContext.defendantName || (selectedCase as any)?.opponent || (selectedCase as any)?.defendant || 'Belirlenmedi'}
+                  </span>
+                </label>
               </div>
             </div>
 

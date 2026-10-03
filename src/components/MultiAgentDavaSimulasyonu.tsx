@@ -28,6 +28,7 @@ import {
   MultiAgentSimulationRequest,
   MultiAgentSimulationResponse
 } from '../services/claudeService';
+import { PartyContextService, SelectedPartyContext } from '../services/partyContextService';
 
 export interface MultiAgentDavaSimulasyonuProps {
   onApplyToPetition?: (simulationSummary: string) => void;
@@ -76,6 +77,30 @@ export function MultiAgentDavaSimulasyonu({
   );
   const [clientPosition, setClientPosition] = useState<'Davacı' | 'Davalı' | 'Müşteki' | 'Sanık'>('Davacı');
   const [preferredModel, setPreferredModel] = useState<'claude-3-5-sonnet' | 'claude-3-opus' | 'gemini-3.1-pro'>('claude-3-5-sonnet');
+  const [partyContext, setPartyContext] = useState<SelectedPartyContext>(() => PartyContextService.get());
+
+  // Global Taraf Seçimi (Davacı/Davalı) ile Anında Senkronizasyon
+  React.useEffect(() => {
+    const unsub = PartyContextService.subscribe((ctx) => {
+      setPartyContext(ctx);
+      if (ctx.side === 'Davacı' || ctx.side === 'Davalı') {
+        setClientPosition(ctx.side);
+      }
+      if (ctx.subject) {
+        setCaseSubject(ctx.subject);
+      }
+    });
+
+    const current = PartyContextService.get();
+    if (current.side === 'Davacı' || current.side === 'Davalı') {
+      setClientPosition(current.side);
+    }
+    if (current.subject) {
+      setCaseSubject(current.subject);
+    }
+
+    return unsub;
+  }, []);
 
   // Simulation execution state
   const [loading, setLoading] = useState<boolean>(false);
@@ -88,9 +113,14 @@ export function MultiAgentDavaSimulasyonu({
     setLoading(true);
     setSimulationResult(null);
 
+    const currentParty = PartyContextService.get();
+    const finalDetails = currentParty.side !== 'none'
+      ? `${caseDetails}\n\n${currentParty.biasPromptDirective}`
+      : caseDetails;
+
     const request: MultiAgentSimulationRequest = {
       caseSubject,
-      caseDetails,
+      caseDetails: finalDetails,
       evidenceSummary,
       clientPosition,
       preferredModel

@@ -17,6 +17,8 @@ import { AgentCapabilitiesDrawer } from './components/AgentCapabilitiesDrawer';
 import { UniversalAiAssistantDrawer } from './components/UniversalAiAssistantDrawer';
 import { KurumsalBuroYonetimi } from './components/KurumsalBuroYonetimi';
 import { MultiAgentDavaSimulasyonu } from './components/MultiAgentDavaSimulasyonu';
+import { OzellestirDropdown, OZELLESTIR_FEATURES, CustomFeatureItem } from './components/OzellestirDropdown';
+import { RaporlarimBelgelerimModal } from './components/RaporlarimBelgelerimModal';
 import {
   getClientList,
   setActiveLawyerSicil,
@@ -49,7 +51,8 @@ import {
   Camera,
   Calculator,
   Building2,
-  Swords
+  Swords,
+  HardDrive
 } from 'lucide-react';
 
 export type AppPage =
@@ -105,6 +108,48 @@ export default function App() {
 
   // Hukuki Hesaplama Araçları Modal State
   const [hesaplamaModalOpen, setHesaplamaModalOpen] = useState<boolean>(false);
+  const [raporlarModalOpen, setRaporlarModalOpen] = useState<boolean>(false);
+
+  // Özelleştirilmiş Menü Sabitlenen Sekmeler (Pinned Tabs)
+  const [pinnedCustomFeatureIds, setPinnedCustomFeatureIds] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('ultra_pinned_custom_tabs') || '["agent_usul_sure", "agent_seytanin_avukati"]');
+    } catch {
+      return ['agent_usul_sure', 'agent_seytanin_avukati'];
+    }
+  });
+
+  const handleTogglePinFeature = (featureId: string) => {
+    setPinnedCustomFeatureIds((prev) => {
+      const updated = prev.includes(featureId)
+        ? prev.filter((id) => id !== featureId)
+        : [...prev, featureId];
+      localStorage.setItem('ultra_pinned_custom_tabs', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const handleSelectCustomFeature = (feature: CustomFeatureItem) => {
+    if (feature.pageTarget === 'raporlarim') {
+      setRaporlarModalOpen(true);
+      return;
+    }
+    if (feature.pageTarget === 'workspace_full') {
+      if (feature.tabTarget) {
+        setWorkspaceInitialTab(feature.tabTarget as any);
+      }
+      setCurrentPage('workspace_full');
+    } else if (feature.pageTarget === 'petitions') {
+      setCurrentPage('petitions');
+    } else if (feature.pageTarget === 'legislation') {
+      if (feature.tabTarget) {
+        setWorkspaceInitialTab(feature.tabTarget as any);
+      }
+      setCurrentPage('legislation');
+    } else {
+      setCurrentPage(feature.pageTarget as any);
+    }
+  };
 
   // Update scoped store and KVKK consent status when lawyer changes
   useEffect(() => {
@@ -535,6 +580,41 @@ export default function App() {
               >
                 Mevzuat
               </button>
+
+              {/* Sabitlenen Özel Sekmeler (Pinned Custom Tabs) */}
+              {pinnedCustomFeatureIds.map((featId) => {
+                const feat = OZELLESTIR_FEATURES.find((f) => f.id === featId);
+                if (!feat) return null;
+                const IconC = feat.icon;
+                const isCurrent =
+                  currentPage === feat.pageTarget &&
+                  (!feat.tabTarget || workspaceInitialTab === feat.tabTarget);
+
+                return (
+                  <button
+                    key={feat.id}
+                    type="button"
+                    onClick={() => handleSelectCustomFeature(feat)}
+                    className={`px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${
+                      isCurrent
+                        ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-300 shadow-sm font-bold'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                    }`}
+                    title={feat.description}
+                  >
+                    <IconC className="w-3.5 h-3.5 text-amber-500" />
+                    <span>{feat.title}</span>
+                  </button>
+                );
+              })}
+
+              {/* 9. ÖZELLEŞTİR Dropdown Menüsü */}
+              <OzellestirDropdown
+                onSelectFeature={handleSelectCustomFeature}
+                pinnedFeatureIds={pinnedCustomFeatureIds}
+                onTogglePin={handleTogglePinFeature}
+                activeFeatureId={workspaceInitialTab}
+              />
             </nav>
           </div>
 
@@ -727,11 +807,11 @@ export default function App() {
             </div>
 
             <AdliDelilVeSahitAjanPaneli
-              initialCaseNo="2024/782 Esas"
-              initialCourt="İstanbul 14. Asliye Ticaret Mahkemesi"
-              initialSubject="Ticari Fatura ve İrsaliyeye Dayalı İtirazın İptali Davası"
-              initialPlaintiff="Atlas Tekstil Sanayi ve Dış Ticaret A.Ş."
-              initialDefendant="Bosphorus Lojistik Depolama Ltd. Şti."
+              initialCaseNo=""
+              initialCourt=""
+              initialSubject=""
+              initialPlaintiff=""
+              initialDefendant=""
               onApplyToPetition={() => setCurrentPage('petitions')}
               onNavigateToTab={() => {}}
             />
@@ -753,12 +833,9 @@ export default function App() {
                 <span>Ana Sayfa'ya Dön</span>
               </button>
               <div className="flex items-center gap-2">
-                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[11px] font-semibold">
-                  <Camera className="w-3.5 h-3.5" />
-                  <span>Kamera ile Evrak Tarama (OCR) Aktif</span>
-                </span>
+                
                 <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                  Alt Sayfa: <strong className="text-emerald-600 dark:text-emerald-400">Dava Evrak Analizörü (Gemini Flash & Pro)</strong>
+                  Alt Sayfa: <strong className="text-emerald-600 dark:text-emerald-400">Dava Evrak Analizörü & Harp Odası (Gemini 3.1 Pro Derin Muhakeme)</strong>
                 </div>
               </div>
             </div>
@@ -928,6 +1005,12 @@ export default function App() {
       />
 
       {/* Hukuki Hesaplama Araçları Modal (AAÜT, Faiz, SMM, HMK 200) */}
+      <RaporlarimBelgelerimModal
+        isOpen={raporlarModalOpen}
+        onClose={() => setRaporlarModalOpen(false)}
+        userSicilNo={currentLawyer?.sicilNo}
+        lawyerName={currentLawyer?.fullName}
+      />
       <HukukiHesaplamaAraclariModal
         isOpen={hesaplamaModalOpen}
         onClose={() => setHesaplamaModalOpen(false)}

@@ -37,3 +37,50 @@ aiRouter.get('/status', (_req: Request, res: Response) => {
     }
   });
 });
+
+// POST /api/v1/ai/extract-and-sync-case-data — Baş Hukuk Müşaviri Veri Çıkarma ve Senkronizasyon Ekibi
+aiRouter.post('/extract-and-sync-case-data', async (req: Request, res: Response) => {
+  try {
+    const { text, fileName, caseId } = req.body;
+    if (!text && !fileName) {
+      return res.status(400).json({ success: false, message: 'Ayrıştırılacak evrak metni veya dosya adı bulunamadı.' });
+    }
+
+    const { DataExtractionAndSyncService } = await import('../../src/services/dataExtractionAndSyncService');
+    const extracted = DataExtractionAndSyncService.extractFromText(text || '', fileName);
+
+    // Eğer caseId varsa Neon SQL cases_extended tablosunda güncelle
+    if (caseId) {
+      try {
+        const { db } = await import('../../src/services/persistentDatabaseService');
+        const sql = db.getSql();
+        if (sql) {
+          const davaci = extracted.plaintiffs.map(p => p.fullName).join(', ');
+          const davali = extracted.defendants.map(d => d.fullName).join(', ');
+          await sql`
+            UPDATE cases_extended
+            SET plaintiff = COALESCE(NULLIF(${davaci}, ''), plaintiff),
+                defendant = COALESCE(NULLIF(${davali}, ''), defendant),
+                court_name = COALESCE(NULLIF(${extracted.courtName}, ''), court_name),
+                esas_no = COALESCE(NULLIF(${extracted.esasNo}, ''), esas_no),
+                updated_at = NOW()
+            WHERE id = ${caseId}
+          `;
+        }
+      } catch (dbErr: any) {
+        console.warn('[AI Extract & Sync] SQL senkronizasyon uyarısı:', dbErr?.message);
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: 'Veri Çıkarma ve Senkronizasyon Ekibi evrak analizini tamamladı.',
+      team: 'Baş Hukuk Müşaviri - Veri Çıkarma ve Senkronizasyon Ekibi (Arka Plan AI)',
+      data: extracted
+    });
+  } catch (err: any) {
+    console.error('[AI Extract & Sync Error]:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Veri çıkarma hatası.' });
+  }
+});
+

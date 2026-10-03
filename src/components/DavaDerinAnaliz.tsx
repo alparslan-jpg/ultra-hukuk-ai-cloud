@@ -197,6 +197,14 @@ export function DavaDerinAnaliz({
   const [uploadedFiles, setUploadedFiles] = useState<UploadedCaseFile[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [scannerModalOpen, setScannerModalOpen] = useState(false);
+
+  // Madde 6: Kamera yalnızca Mobil APK ortamında aktif edilir (Web'de gizlenir)
+  const isMobileApk = typeof window !== 'undefined' && Boolean(
+    (window as any).isAndroidApk === true ||
+    (window as any).Capacitor !== undefined ||
+    (window as any).cordova !== undefined ||
+    /UltraHukukMobile|Android.*wv/i.test(navigator.userAgent)
+  );
   const [viewingScannedFile, setViewingScannedFile] = useState<UploadedCaseFile | null>(null);
 
   // Analysis result and execution states
@@ -475,19 +483,11 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
         {/* Model Feature Explainer Banner */}
         <div className="mt-4 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 text-slate-400">
-            {modelMode === 'flash' ? (
-              <>
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                <span className="text-slate-300 font-medium">Gemini 3.8 Flash Aktif:</span>
-                <span>Düşük gecikme süresiyle dava türü sınıflandırması, delil özetleri ve ilk bakış değerlendirmesi sağlar.</span>
-              </>
-            ) : (
-              <>
+            <>
                 <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
-                <span className="text-slate-300 font-medium">Gemini 3.1 Pro Aktif:</span>
-                <span>HMK 200 senetle ispat sınırları, tebliğ şerhi mikro-ayrıntıları, zamanaşımı tuzakları ve harp odası karşı hücum stratejisi geliştirir.</span>
+                <span className="text-slate-300 font-medium">Gemini 3.1 Pro Derin Akıl Aktif:</span>
+                <span>HMK 200 senetle ispat sınırları, tebliğ şerhi mikro-ayrıntıları, zamanaşımı tuzakları ve harp odası karşı hücum stratejisi tavizsiz derinlikle yürütülür.</span>
               </>
-            )}
           </div>
         </div>
       </div>
@@ -509,7 +509,8 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
               </span>
             </div>
 
-            {/* Document Scanning Utility Action Banner */}
+            {/* Document Scanning Utility Action Banner - Sadece Mobil APK */}
+            {isMobileApk && (
             <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-950/80 via-slate-900 to-teal-950/50 border border-emerald-500/40 shadow-lg relative overflow-hidden group">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
                 <div className="flex items-center gap-3">
@@ -541,6 +542,7 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
                 </button>
               </div>
             </div>
+            )}
 
             {/* Drag & Drop Zone */}
             <label
@@ -754,7 +756,7 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
                           : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
                       }`}
                     >
-                      {analysisResult.modelMode === 'pro' ? '🧠 Gemini Pro (Derin Muhakeme)' : '⚡ Gemini Flash (Hızlı Özet)'}
+                      🧠 Gemini 3.1 Pro (Derin Muhakeme)
                     </span>
                     {auditReport && (
                       <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold border bg-indigo-500/10 text-indigo-400 border-indigo-500/30 flex items-center gap-1">
@@ -1026,7 +1028,7 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
                   Sol panelden dava evraklarını (PDF, UDF, fatura, tensip zaptı) ekleyin veya dava özetini girin. 
-                  Yukarıdaki model geçişi ile <strong>Gemini Flash</strong> (hızlı ön inceleme) ya da <strong>Gemini Pro</strong> (derin usul ve harp odası) seçeneklerinden birini seçerek kapsamlı analizi başlatın.
+                  Sistem varsayılan ve zorunlu olarak <strong>Gemini 3.1 Pro Derin Hukuki Muhakeme</strong> ile kapsamlı analizi başlatır.
                 </p>
                 <div className="pt-2">
                   <button
