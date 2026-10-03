@@ -1,21 +1,33 @@
 import { Router, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
-import { requireRole, AuthenticatedRequest } from '../middleware/rbac';
-import { db } from '../../src/services/persistentDatabaseService';
+import crypto from 'crypto';
+import { requireRole, AuthenticatedRequest } from '../middleware/rbac.ts';
+import { db } from '../../src/services/persistentDatabaseService.ts';
+import { centralDrive } from '../../src/services/centralDriveService.ts';
+import { SecureExportService } from '../../src/services/secureExportService.ts';
+import { writeAudit } from '../../src/services/auditService.ts';
 
 export const casesRouter = Router();
 
-// Uploads directory configuration for chunked storage
-const UPLOADS_DIR = path.resolve(process.cwd(), 'uploads');
-const CHUNK_TEMP_DIR = path.join(UPLOADS_DIR, 'chunks');
-
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-}
+// Parçalı yükleme geçici alanı: parçalar DİSKE DAİMA ŞİFRELİ yazılır, düz metin kalmaz.
+const CHUNK_TEMP_DIR = path.resolve(process.cwd(), 'uploads', 'chunks');
 if (!fs.existsSync(CHUNK_TEMP_DIR)) {
   fs.mkdirSync(CHUNK_TEMP_DIR, { recursive: true });
 }
+
+const MAX_TOTAL_BYTES = 100 * 1024 * 1024; // 100MB
+const MAX_CHUNKS = 400;
+const UPLOAD_ID_RE = /^upl-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+interface UploadSession {
+  owner: string;
+  fileName: string;
+  totalChunks: number;
+  totalSize: number;
+  caseId?: string;
+}
+const uploadSessions = new Map<string, UploadSession>();
 
 export interface ExtendedCase {
   id: string;
@@ -46,107 +58,22 @@ export interface ExtendedCase {
   updatedAt: string;
 }
 
-const mockCasesStore: ExtendedCase[] = [
-  {
-    id: 'case-101',
-    clientId: 'cli-1',
-    clientName: 'Atlas Tekstil San. Tic. A.Ş.',
-    lawyerSicilNo: '8109',
-    caseTitle: 'Ticari Faturaya Dayalı İtirazın İptali',
-    caseType: 'Ticari Alacak & İtirazın İptali',
-    courtName: 'İstanbul 14. Asliye Ticaret Mahkemesi',
-    esasNo: '2024/782 Esas',
-    plaintiff: 'Atlas Tekstil San. Tic. A.Ş.',
-    defendant: 'Bosphorus Lojistik Depolama Ltd. Şti.',
-    assignedLawyer: 'Av. Osman Turgut',
-    roleInCase: 'Davacı Vekili',
-    stage: 'Bilirkişi İncelemesi',
-    claimAmount: 850000,
-    currency: 'TRY',
-    nextHearingDate: '2026-10-08',
-    nextHearingTime: '10:30',
-    criticalDeadlineDate: '2026-10-12',
-    criticalDeadlineDescription: 'Bilirkişi raporuna 2 haftalık kesin itiraz süresi',
-    status: 'Derdest',
-    riskScore: 22,
-    winningProbability: 84,
-    isArchived: false,
-    createdAt: '2024-04-12T09:00:00Z',
-    updatedAt: '2026-10-02T11:00:00Z'
-  },
-  {
-    id: 'case-102',
-    clientId: 'cli-2',
-    clientName: 'Bosphorus Lojistik Ltd.',
-    lawyerSicilNo: '8109',
-    caseTitle: 'Tapu İptali ve Tescil (TMK 713 Zilyetlik)',
-    caseType: 'Gayrimenkul & Mülkiyet',
-    courtName: 'Bakırköy 3. Asliye Hukuk Mahkemesi',
-    esasNo: '2025/1104 Esas',
-    plaintiff: 'Kaya Mimarlık Ltd. Şti.',
-    defendant: 'Hazine ve Maliye Bakanlığı',
-    assignedLawyer: 'Av. Osman Turgut',
-    roleInCase: 'Davacı Vekili',
-    stage: 'Tahkikat & Keşif',
-    claimAmount: 4200000,
-    currency: 'TRY',
-    nextHearingDate: '2026-10-14',
-    nextHearingTime: '11:15',
-    criticalDeadlineDate: '2026-10-10',
-    criticalDeadlineDescription: 'Keşif harcı ve bilirkişi yolluğunun mahkeme veznesine depo edilmesi',
-    status: 'Derdest',
-    riskScore: 35,
-    winningProbability: 72,
-    isArchived: false,
-    createdAt: '2025-02-18T14:00:00Z',
-    updatedAt: '2026-09-29T16:00:00Z'
-  },
-  {
-    id: 'case-103',
-    clientId: 'cli-3',
-    clientName: 'Mert Aksoy',
-    lawyerSicilNo: '8109',
-    caseTitle: 'İşçilik Haklı Fesih & Kıdem Tazminatı',
-    caseType: 'İş Hukuku',
-    courtName: 'İstanbul 8. İş Mahkemesi',
-    esasNo: '2026/301 Esas',
-    plaintiff: 'Mert Aksoy',
-    defendant: 'Global Lojistik A.Ş.',
-    assignedLawyer: 'Av. Osman Turgut',
-    roleInCase: 'Davacı Vekili',
-    stage: 'Ön İnceleme',
-    claimAmount: 340000,
-    currency: 'TRY',
-    nextHearingDate: '2026-10-22',
-    nextHearingTime: '14:00',
-    criticalDeadlineDate: '2026-10-18',
-    criticalDeadlineDescription: 'Delil listesi ve tanık isimlerinin sunulması için kesin süre',
-    status: 'Açık',
-    riskScore: 18,
-    winningProbability: 88,
-    isArchived: false,
-    createdAt: '2026-06-01T10:00:00Z',
-    updatedAt: '2026-09-28T09:30:00Z'
-  }
-];
-
-// Helper to map DB row to ExtendedCase
 function mapDbRowToCase(r: any): ExtendedCase {
   return {
     id: r.id,
     clientId: r.client_id || '',
-    clientName: r.plaintiff || 'Müvekkil',
-    lawyerSicilNo: r.lawyer_sicil_no || '8109',
+    clientName: r.plaintiff || '',
+    lawyerSicilNo: r.lawyer_sicil_no || '',
     caseTitle: r.case_title,
-    caseType: r.case_type || 'Genel Hukuk',
+    caseType: r.case_type || '',
     courtName: r.court_name,
     esasNo: r.esas_no,
     kararNo: r.karar_no || undefined,
     plaintiff: r.plaintiff || '',
     defendant: r.defendant || '',
-    assignedLawyer: r.assigned_lawyer || 'Av. Osman Turgut',
-    roleInCase: r.role_in_case || 'Davacı Vekili',
-    stage: r.stage || 'Dava Açılışı',
+    assignedLawyer: r.assigned_lawyer || '',
+    roleInCase: r.role_in_case || '',
+    stage: r.stage || '',
     claimAmount: parseFloat(r.claim_amount || '0'),
     currency: r.currency || 'TRY',
     nextHearingDate: r.next_hearing_date ? new Date(r.next_hearing_date).toISOString().split('T')[0] : undefined,
@@ -154,206 +81,186 @@ function mapDbRowToCase(r: any): ExtendedCase {
     criticalDeadlineDate: r.critical_deadline_date ? new Date(r.critical_deadline_date).toISOString().split('T')[0] : undefined,
     criticalDeadlineDescription: r.critical_deadline_description || undefined,
     status: (r.status as any) || 'Açık',
-    riskScore: r.risk_score || 20,
-    winningProbability: r.winning_probability || 80,
+    riskScore: r.risk_score ?? 0,
+    winningProbability: r.winning_probability ?? 0,
     isArchived: r.is_archived || false,
     createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
     updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString()
   };
 }
 
+function dbUnavailable(res: Response) {
+  return res.status(503).json({
+    success: false,
+    message: 'Veritabanı bağlantısı aktif değil (DATABASE_URL). Dava verileri yalnızca kalıcı veritabanında tutulur.'
+  });
+}
+
 // ============================================================
-// CHUNKED UPLOAD ENDPOINTS (50MB+ Payload & Zero-Timeout API)
+// CHUNKED UPLOAD (50MB+ Payload & Zero-Timeout) — şifreli, sahibe bağlı
 // ============================================================
 
-// 1. POST /api/v1/cases/upload-chunk/init — Parçalı Yükleme Başlat
+async function resolveSession(uploadId: string, owner: string): Promise<UploadSession | null> {
+  if (!UPLOAD_ID_RE.test(uploadId)) return null;
+  const s = uploadSessions.get(uploadId);
+  if (s) return s.owner === owner ? s : null;
+  return null;
+}
+
+function chunkPath(uploadId: string, idx: number): string {
+  return path.join(CHUNK_TEMP_DIR, uploadId, `chunk_${idx}.enc`);
+}
+
+// 1. POST /api/v1/cases/upload-chunk/init
 casesRouter.post('/upload-chunk/init', requireRole(['yonetici', 'avukat', 'stajyer']), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { fileName, fileType, totalSize, totalChunks, caseId } = req.body;
-    if (!fileName || !totalSize || !totalChunks) {
+    const size = Number(totalSize);
+    const chunks = Number(totalChunks);
+    if (!fileName || !Number.isFinite(size) || !Number.isInteger(chunks) || chunks < 1 || size < 1) {
       return res.status(400).json({ success: false, message: 'fileName, totalSize ve totalChunks parametreleri zorunludur.' });
     }
-
-    const uploadId = `upl-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-    const lawyerSicilNo = req.user?.sicilNo || '8109';
-
-    // Create session temp directory
-    const sessionDir = path.join(CHUNK_TEMP_DIR, uploadId);
-    if (!fs.existsSync(sessionDir)) {
-      fs.mkdirSync(sessionDir, { recursive: true });
+    if (size > MAX_TOTAL_BYTES || chunks > MAX_CHUNKS) {
+      return res.status(413).json({ success: false, message: `Dosya sınırı aşıldı (en fazla ${MAX_TOTAL_BYTES / 1024 / 1024}MB, ${MAX_CHUNKS} parça).` });
     }
 
-    // Save record in Neon SQL
+    const owner = req.user!.sicilNo;
+    const uploadId = `upl-${crypto.randomUUID()}`;
+    fs.mkdirSync(path.join(CHUNK_TEMP_DIR, uploadId), { recursive: true });
+    uploadSessions.set(uploadId, {
+      owner,
+      fileName: path.basename(String(fileName)),
+      totalChunks: chunks,
+      totalSize: size,
+      caseId: typeof caseId === 'string' ? caseId : undefined
+    });
+
     const sql = db.getSql();
     if (sql) {
       await sql`
         INSERT INTO chunked_uploads (id, file_name, file_type, total_size, total_chunks, uploaded_chunks, status, case_id, lawyer_sicil_no, created_at, updated_at)
-        VALUES (${uploadId}, ${fileName}, ${fileType || 'application/octet-stream'}, ${totalSize}, ${totalChunks}, 0, 'uploading', ${caseId || null}, ${lawyerSicilNo}, NOW(), NOW())
+        VALUES (${uploadId}, ${path.basename(String(fileName))}, ${fileType || 'application/octet-stream'}, ${size}, ${chunks}, 0, 'uploading', ${caseId || null}, ${owner}, NOW(), NOW())
       `;
     }
 
-    return res.json({
-      success: true,
-      message: 'Parçalı yükleme oturumu başarıyla oluşturuldu.',
-      uploadId,
-      totalChunks,
-      totalSize
+    await writeAudit(req, {
+      action: 'Parçalı Evrak Yükleme Başlatıldı',
+      details: `${path.basename(String(fileName))} (${size} bayt, ${chunks} parça)`,
+      actionType: 'File_Upload',
+      resourceId: uploadId
     });
+
+    return res.json({ success: true, message: 'Parçalı yükleme oturumu oluşturuldu.', uploadId, totalChunks: chunks, totalSize: size });
   } catch (err: any) {
     console.error('[Upload Chunk Init Error]:', err);
     return res.status(500).json({ success: false, message: err.message || 'Parçalı yükleme başlatılamadı.' });
   }
 });
 
-// 2. POST /api/v1/cases/upload-chunk — Tek Bir Parçayı Yükle
+// 2. POST /api/v1/cases/upload-chunk
 casesRouter.post('/upload-chunk', requireRole(['yonetici', 'avukat', 'stajyer']), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { uploadId, chunkIndex, chunkData, chunkSize, isBase64 } = req.body;
-    if (!uploadId || chunkIndex === undefined || !chunkData) {
-      return res.status(400).json({ success: false, message: 'uploadId, chunkIndex ve chunkData zorunludur.' });
+    const { uploadId, chunkIndex, chunkData } = req.body;
+    const owner = req.user!.sicilNo;
+    const idx = Number(chunkIndex);
+
+    const session = await resolveSession(String(uploadId || ''), owner);
+    if (!session) {
+      return res.status(404).json({ success: false, message: 'Yükleme oturumu bulunamadı.' });
+    }
+    if (!Number.isInteger(idx) || idx < 0 || idx >= session.totalChunks || chunkData === undefined || chunkData === null) {
+      return res.status(400).json({ success: false, message: 'Geçerli chunkIndex ve chunkData zorunludur.' });
     }
 
-    const sessionDir = path.join(CHUNK_TEMP_DIR, uploadId);
-    if (!fs.existsSync(sessionDir)) {
-      fs.mkdirSync(sessionDir, { recursive: true });
-    }
-
-    // Write chunk data to disk as buffer
-    const chunkPath = path.join(sessionDir, `chunk_${chunkIndex}`);
     let buffer: Buffer;
-    if (Buffer.isBuffer(chunkData)) {
-      buffer = chunkData;
-    } else if (typeof chunkData === 'string') {
-      if (chunkData.startsWith('data:')) {
-        const base64Content = chunkData.split(',')[1] || '';
-        buffer = Buffer.from(base64Content, 'base64');
-      } else if (isBase64) {
-        buffer = Buffer.from(chunkData, 'base64');
-      } else {
-        const b64Buf = Buffer.from(chunkData, 'base64');
-        if (chunkSize && b64Buf.length === chunkSize) {
-          buffer = b64Buf;
-        } else {
-          buffer = Buffer.from(chunkData, 'utf-8');
-        }
-      }
+    if (typeof chunkData === 'string') {
+      const b64 = chunkData.startsWith('data:') ? (chunkData.split(',')[1] || '') : chunkData;
+      buffer = Buffer.from(b64, 'base64');
     } else {
       buffer = Buffer.from(chunkData);
     }
-    fs.writeFileSync(chunkPath, buffer);
 
-    const actualChunkSize = chunkSize || buffer.length;
+    // Parça diskte şifreli saklanır (sahip anahtarı + uploadId:idx AAD)
+    const enc = SecureExportService.encrypt(buffer, owner, `${uploadId}:${idx}`);
+    fs.writeFileSync(chunkPath(uploadId, idx), JSON.stringify(enc), 'utf-8');
 
-    // Record chunk in Neon SQL
+    const uploaded = fs.readdirSync(path.join(CHUNK_TEMP_DIR, uploadId)).length;
+
     const sql = db.getSql();
     if (sql) {
-      const chunkId = `${uploadId}-${chunkIndex}`;
       await sql`
         INSERT INTO upload_chunks (id, upload_id, chunk_index, chunk_size, chunk_data, created_at)
-        VALUES (${chunkId}, ${uploadId}, ${chunkIndex}, ${actualChunkSize}, ${buffer.toString('base64').slice(0, 1000) + '...'}, NOW())
+        VALUES (${`${uploadId}-${idx}`}, ${uploadId}, ${idx}, ${buffer.length}, ${''}, NOW())
         ON CONFLICT (upload_id, chunk_index) DO UPDATE SET chunk_size = EXCLUDED.chunk_size
       `;
-
-      // Update uploaded_chunks count
-      await sql`
-        UPDATE chunked_uploads
-        SET uploaded_chunks = (SELECT COUNT(*)::int FROM upload_chunks WHERE upload_id = ${uploadId}),
-            updated_at = NOW()
-        WHERE id = ${uploadId}
-      `;
+      await sql`UPDATE chunked_uploads SET uploaded_chunks = ${uploaded}, updated_at = NOW() WHERE id = ${uploadId} AND lawyer_sicil_no = ${owner}`;
     }
 
-    // Count chunks on disk
-    const diskChunkCount = fs.readdirSync(sessionDir).length;
-
-    return res.json({
-      success: true,
-      message: `Parça ${chunkIndex} başarıyla kaydedildi.`,
-      uploadId,
-      chunkIndex,
-      uploadedChunks: diskChunkCount
-    });
+    return res.json({ success: true, message: `Parça ${idx} kaydedildi.`, uploadId, chunkIndex: idx, uploadedChunks: uploaded });
   } catch (err: any) {
     console.error('[Upload Chunk Error]:', err);
     return res.status(500).json({ success: false, message: err.message || 'Parça yüklenemedi.' });
   }
 });
 
-// 3. POST /api/v1/cases/upload-chunk/complete — Yüklemeyi Doğrula ve Birleştir
+// 3. POST /api/v1/cases/upload-chunk/complete — birleştir, şifreli kasaya aktar, geçici parçaları sil
 casesRouter.post('/upload-chunk/complete', requireRole(['yonetici', 'avukat', 'stajyer']), async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { uploadId, caseId, fileName } = req.body;
-    if (!uploadId) {
-      return res.status(400).json({ success: false, message: 'uploadId parametresi zorunludur.' });
-    }
+  const { uploadId, caseId } = req.body;
+  const owner = req.user!.sicilNo;
+  const sessionDir = path.join(CHUNK_TEMP_DIR, String(uploadId || ''));
 
-    const sessionDir = path.join(CHUNK_TEMP_DIR, uploadId);
-    if (!fs.existsSync(sessionDir)) {
+  try {
+    const session = await resolveSession(String(uploadId || ''), owner);
+    if (!session || !fs.existsSync(sessionDir)) {
       return res.status(404).json({ success: false, message: 'Yükleme oturumu bulunamadı.' });
     }
 
-    const chunkFiles = fs.readdirSync(sessionDir).sort((a, b) => {
-      const numA = parseInt(a.replace('chunk_', ''), 10);
-      const numB = parseInt(b.replace('chunk_', ''), 10);
-      return numA - numB;
-    });
-
-    const finalFileName = fileName || `file_${uploadId}.bin`;
-    const finalFilePath = path.join(UPLOADS_DIR, `${uploadId}_${finalFileName}`);
-    const writeStream = fs.createWriteStream(finalFilePath);
-
-    for (const chunkFile of chunkFiles) {
-      const chunkBuffer = fs.readFileSync(path.join(sessionDir, chunkFile));
-      writeStream.write(chunkBuffer);
+    const parts: Buffer[] = [];
+    for (let i = 0; i < session.totalChunks; i++) {
+      const p = chunkPath(uploadId, i);
+      if (!fs.existsSync(p)) {
+        return res.status(409).json({ success: false, message: `Eksik parça: ${i}. Yükleme tamamlanamadı.` });
+      }
+      const enc = JSON.parse(fs.readFileSync(p, 'utf-8'));
+      parts.push(SecureExportService.decrypt(enc, owner, `${uploadId}:${i}`));
     }
-    await new Promise<void>((resolve, reject) => {
-      writeStream.on('finish', () => resolve());
-      writeStream.on('error', (err) => reject(err));
-      writeStream.end();
-    });
+    const whole = Buffer.concat(parts);
 
-    // Clean up temporary chunks
-    for (const chunkFile of chunkFiles) {
-      try { fs.unlinkSync(path.join(sessionDir, chunkFile)); } catch {}
+    if (whole.length !== session.totalSize) {
+      return res.status(422).json({
+        success: false,
+        message: `Boyut uyuşmazlığı: beklenen ${session.totalSize}, alınan ${whole.length} bayt.`
+      });
     }
-    try { fs.rmdirSync(sessionDir); } catch {}
 
-    const stats = fs.statSync(finalFilePath);
-    const fileId = `file-${Date.now()}`;
+    const stored = await centralDrive.uploadEncryptedFile(session.fileName, whole, owner);
 
-    // Update status in Neon SQL & record in case_files
+    // Geçici şifreli parçaları temizle
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+    uploadSessions.delete(uploadId);
+
     const sql = db.getSql();
     if (sql) {
-      await sql`
-        UPDATE chunked_uploads
-        SET status = 'completed', file_path = ${finalFilePath}, updated_at = NOW()
-        WHERE id = ${uploadId}
-      `;
-
-      if (caseId) {
-        try {
-          const caseCheck = await sql`SELECT id FROM cases WHERE id = ${caseId}`;
-          if (caseCheck.length > 0) {
-            await sql`
-              INSERT INTO case_files (id, case_id, file_name, file_type, file_size, file_data, uploaded_at)
-              VALUES (${fileId}, ${caseId}, ${finalFileName}, 'application/octet-stream', ${stats.size}, ${finalFilePath}, NOW())
-              ON CONFLICT (id) DO NOTHING
-            `;
-          }
-        } catch (fkErr: any) {
-          console.warn('[Upload Complete] Case files ilişkilendirme atlandı:', fkErr?.message);
-        }
-      }
+      await sql`UPDATE chunked_uploads SET status = 'completed', file_path = ${`vault://${stored.fileId}`}, updated_at = NOW() WHERE id = ${uploadId} AND lawyer_sicil_no = ${owner}`;
     }
+
+    await writeAudit(req, {
+      action: 'Evrak Yüklendi ve AES-256 ile Şifrelendi',
+      details: `${stored.originalFileName} (${stored.size} bayt) -> ${stored.cloudProvider}, sha256=${stored.sha256}`,
+      actionType: 'File_Upload',
+      resourceId: stored.fileId,
+      meta: { caseId: caseId || session.caseId || null }
+    });
 
     return res.json({
       success: true,
-      message: 'Dosya parçaları başarıyla birleştirildi ve doğrulandı.',
-      fileId,
+      message: 'Dosya birleştirildi, doğrulandı ve size özel şifreli kasaya kaydedildi.',
+      fileId: stored.fileId,
       uploadId,
-      fileName: finalFileName,
-      totalSize: stats.size,
-      filePath: finalFilePath
+      fileName: stored.originalFileName,
+      totalSize: stored.size,
+      sha256: stored.sha256,
+      filePath: `vault://${stored.fileId}`
     });
   } catch (err: any) {
     console.error('[Upload Chunk Complete Error]:', err);
@@ -361,13 +268,18 @@ casesRouter.post('/upload-chunk/complete', requireRole(['yonetici', 'avukat', 's
   }
 });
 
-// 4. GET /api/v1/cases/upload-chunk/status/:uploadId — Yükleme Durumu
+// 4. GET /api/v1/cases/upload-chunk/status/:uploadId
 casesRouter.get('/upload-chunk/status/:uploadId', requireRole(['yonetici', 'avukat', 'stajyer']), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const uploadId = req.params.uploadId as string;
+    const owner = req.user!.sicilNo;
+    if (!UPLOAD_ID_RE.test(uploadId)) {
+      return res.status(404).json({ success: false, message: 'Yükleme oturumu bulunamadı.' });
+    }
+
     const sql = db.getSql();
     if (sql) {
-      const rows = await sql`SELECT * FROM chunked_uploads WHERE id = ${uploadId}`;
+      const rows = await sql`SELECT * FROM chunked_uploads WHERE id = ${uploadId} AND lawyer_sicil_no = ${owner}`;
       if (rows.length > 0) {
         const u = rows[0];
         return res.json({
@@ -382,17 +294,17 @@ casesRouter.get('/upload-chunk/status/:uploadId', requireRole(['yonetici', 'avuk
       }
     }
 
-    const sessionDir = path.join(CHUNK_TEMP_DIR, uploadId);
-    if (fs.existsSync(sessionDir)) {
-      const count = fs.readdirSync(sessionDir).length;
+    const session = await resolveSession(uploadId, owner);
+    const dir = path.join(CHUNK_TEMP_DIR, uploadId);
+    if (session && fs.existsSync(dir)) {
       return res.json({
         success: true,
         uploadId,
-        uploadedChunks: count,
+        totalChunks: session.totalChunks,
+        uploadedChunks: fs.readdirSync(dir).length,
         status: 'uploading'
       });
     }
-
     return res.status(404).json({ success: false, message: 'Yükleme oturumu bulunamadı.' });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
@@ -400,228 +312,168 @@ casesRouter.get('/upload-chunk/status/:uploadId', requireRole(['yonetici', 'avuk
 });
 
 // ============================================================
-// DAVA CRUD ENDPOINTS (Neon PostgreSQL Entegrasyonu)
+// DAVA CRUD (Neon PostgreSQL) — her sorgu oturumdaki avukatın sicil numarasıyla kısıtlıdır
 // ============================================================
+
+// GET /api/v1/cases/audit-logs — kullanıcının kendi denetim kayıtları
+casesRouter.get('/audit-logs', requireRole(['yonetici', 'avukat', 'stajyer']), (req: AuthenticatedRequest, res: Response) => {
+  const limit = Math.min(Number(req.query.limit) || 20, 200);
+  const owner = req.user!.sicilNo;
+  const { logs } = db.getFilteredAuditLogs({ limit: 1000 });
+  const mine = logs.filter(l => l.userId === owner || l.adminUsername === owner).slice(0, limit);
+  return res.json({
+    success: true,
+    logs: mine.map(l => ({ ...l, action: l.action }))
+  });
+});
 
 // GET /api/v1/cases — Dava Listesi
 casesRouter.get('/', requireRole(['yonetici', 'avukat', 'stajyer']), async (req: AuthenticatedRequest, res: Response) => {
   const { search, status, caseType } = req.query;
+  const owner = req.user!.sicilNo;
+  const sql = db.getSql();
+  if (!sql) return dbUnavailable(res);
 
   try {
-    const sql = db.getSql();
-    if (sql) {
-      const rows = await sql`
-        SELECT * FROM cases_extended 
-        WHERE is_archived = false 
-        ORDER BY created_at DESC
-      `;
-      let results: ExtendedCase[] = rows.map(mapDbRowToCase);
+    const rows = await sql`
+      SELECT * FROM cases_extended
+      WHERE is_archived = false AND lawyer_sicil_no = ${owner}
+      ORDER BY created_at DESC
+    `;
+    let results: ExtendedCase[] = rows.map(mapDbRowToCase);
 
-      if (results.length === 0) {
-        // Fallback to mock seed if db is brand new
-        results = [...mockCasesStore];
-      }
-
-      if (search && typeof search === 'string') {
-        const q = search.toLowerCase();
-        results = results.filter(
-          (c) =>
-            c.caseTitle.toLowerCase().includes(q) ||
-            c.esasNo.toLowerCase().includes(q) ||
-            c.clientName.toLowerCase().includes(q) ||
-            c.courtName.toLowerCase().includes(q)
-        );
-      }
-
-      if (status && typeof status === 'string') {
-        results = results.filter((c) => c.status === status);
-      }
-
-      if (caseType && typeof caseType === 'string') {
-        results = results.filter((c) => c.caseType === caseType);
-      }
-
-      return res.json({
-        success: true,
-        totalCount: results.length,
-        cases: results,
-        source: 'Neon PostgreSQL (Merkezi Bulut SQL)'
-      });
+    if (search && typeof search === 'string') {
+      const q = search.toLowerCase();
+      results = results.filter(
+        (c) =>
+          c.caseTitle.toLowerCase().includes(q) ||
+          c.esasNo.toLowerCase().includes(q) ||
+          c.clientName.toLowerCase().includes(q) ||
+          c.courtName.toLowerCase().includes(q)
+      );
     }
-  } catch (dbErr: any) {
-    console.warn('[Cases] Neon SQL okuma uyarısı, bellek yedeği kullanılıyor:', dbErr?.message);
-  }
+    if (status && typeof status === 'string') results = results.filter((c) => c.status === status);
+    if (caseType && typeof caseType === 'string') results = results.filter((c) => c.caseType === caseType);
 
-  // Fallback to memory
-  return res.json({
-    success: true,
-    totalCount: mockCasesStore.length,
-    cases: mockCasesStore,
-    source: 'Memory Cache'
-  });
+    return res.json({ success: true, totalCount: results.length, cases: results, source: 'Neon PostgreSQL' });
+  } catch (err: any) {
+    console.error('[Cases GET] Neon SQL hatası:', err?.message);
+    return res.status(500).json({ success: false, message: 'Dava listesi okunamadı.' });
+  }
 });
 
-// GET /api/v1/cases/analytics/summary — KPI ve İstatistik Özeti
-casesRouter.get('/analytics/summary', requireRole(['yonetici', 'avukat', 'stajyer']), async (_req: AuthenticatedRequest, res: Response) => {
+// GET /api/v1/cases/analytics/summary — KPI özeti (yalnızca kendi davaları)
+casesRouter.get('/analytics/summary', requireRole(['yonetici', 'avukat', 'stajyer']), async (req: AuthenticatedRequest, res: Response) => {
+  const owner = req.user!.sicilNo;
+  const sql = db.getSql();
+  if (!sql) return dbUnavailable(res);
   try {
-    const sql = db.getSql();
-    if (sql) {
-      const rows = await sql`SELECT * FROM cases_extended`;
-      const allCases = rows.map(mapDbRowToCase);
-      const dataSet = allCases.length > 0 ? allCases : mockCasesStore;
-
-      const total = dataSet.length;
-      const active = dataSet.filter((c) => !c.isArchived).length;
-      const totalClaim = dataSet.reduce((sum, c) => sum + c.claimAmount, 0);
-      const avgWinningProb = Math.round(
-        dataSet.reduce((sum, c) => sum + c.winningProbability, 0) / (total || 1)
-      );
-
-      return res.json({
-        success: true,
-        summary: {
-          totalCases: total,
-          activeCases: active,
-          totalClaimAmountTRY: totalClaim,
-          averageWinningProbability: avgWinningProb,
-          upcomingHearingsCount: dataSet.filter((c) => c.nextHearingDate).length
-        }
-      });
-    }
+    const rows = await sql`SELECT * FROM cases_extended WHERE lawyer_sicil_no = ${owner}`;
+    const all = rows.map(mapDbRowToCase);
+    const total = all.length;
+    return res.json({
+      success: true,
+      summary: {
+        totalCases: total,
+        activeCases: all.filter((c) => !c.isArchived).length,
+        totalClaimAmountTRY: all.reduce((sum, c) => sum + c.claimAmount, 0),
+        averageWinningProbability: total ? Math.round(all.reduce((s, c) => s + c.winningProbability, 0) / total) : 0,
+        upcomingHearingsCount: all.filter((c) => c.nextHearingDate).length
+      }
+    });
   } catch (err: any) {
-    console.warn('[Cases Analytics] Neon SQL uyarısı:', err?.message);
+    return res.status(500).json({ success: false, message: 'Özet okunamadı.' });
   }
-
-  const total = mockCasesStore.length;
-  const active = mockCasesStore.filter((c) => !c.isArchived).length;
-  const totalClaim = mockCasesStore.reduce((sum, c) => sum + c.claimAmount, 0);
-  const avgWinningProb = Math.round(
-    mockCasesStore.reduce((sum, c) => sum + c.winningProbability, 0) / (total || 1)
-  );
-
-  return res.json({
-    success: true,
-    summary: {
-      totalCases: total,
-      activeCases: active,
-      totalClaimAmountTRY: totalClaim,
-      averageWinningProbability: avgWinningProb,
-      upcomingHearingsCount: mockCasesStore.filter((c) => c.nextHearingDate).length
-    }
-  });
 });
 
 // GET /api/v1/cases/:id — Dava Detayı
 casesRouter.get('/:id', requireRole(['yonetici', 'avukat', 'stajyer']), async (req: AuthenticatedRequest, res: Response) => {
   const caseId = req.params.id as string;
+  const owner = req.user!.sicilNo;
+  const sql = db.getSql();
+  if (!sql) return dbUnavailable(res);
   try {
-    const sql = db.getSql();
-    if (sql) {
-      const rows = await sql`SELECT * FROM cases_extended WHERE id = ${caseId}`;
-      if (rows.length > 0) {
-        return res.json({ success: true, case: mapDbRowToCase(rows[0]) });
-      }
+    const rows = await sql`SELECT * FROM cases_extended WHERE id = ${caseId} AND lawyer_sicil_no = ${owner}`;
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Dava dosyası bulunamadı.' });
     }
+    return res.json({ success: true, case: mapDbRowToCase(rows[0]) });
   } catch (err: any) {
-    console.warn('[Cases Details] Neon SQL uyarısı:', err?.message);
+    return res.status(500).json({ success: false, message: 'Dava okunamadı.' });
   }
-
-  const found = mockCasesStore.find((c) => c.id === req.params.id);
-  if (!found) {
-    return res.status(404).json({ success: false, message: 'Dava dosyası bulunamadı.' });
-  }
-  return res.json({ success: true, case: found });
 });
 
 // POST /api/v1/cases — Yeni Dava Açma
 casesRouter.post('/', requireRole(['yonetici', 'avukat']), async (req: AuthenticatedRequest, res: Response) => {
   const { caseTitle, caseType, courtName, esasNo, clientName, plaintiff, defendant, claimAmount } = req.body;
-
   if (!caseTitle || !esasNo) {
     return res.status(400).json({ success: false, message: 'Dava başlığı ve Esas No zorunludur.' });
   }
+  const sql = db.getSql();
+  if (!sql) return dbUnavailable(res);
 
-  const newId = `case-${Date.now()}`;
-  const newCase: ExtendedCase = {
-    id: newId,
-    clientId: `cli-${Date.now()}`,
-    clientName: clientName || 'Müvekkil',
-    lawyerSicilNo: req.user?.sicilNo || '8109',
-    caseTitle,
-    caseType: caseType || 'Genel Hukuk Davası',
-    courtName: courtName || 'İstanbul Nöbetçi Asliye Hukuk Mahkemesi',
-    esasNo,
-    plaintiff: plaintiff || clientName || 'Müvekkil',
-    defendant: defendant || 'Davalı Taraf',
-    assignedLawyer: req.user?.fullName || 'Av. Osman Turgut',
-    roleInCase: 'Davacı Vekili',
-    stage: 'Dava Açılışı & Tensip',
-    claimAmount: parseFloat(claimAmount) || 0,
-    currency: 'TRY',
-    status: 'Açık',
-    riskScore: 25,
-    winningProbability: 75,
-    isArchived: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-
+  const owner = req.user!.sicilNo;
+  const id = `case-${crypto.randomUUID()}`;
+  const clientId = `cli-${crypto.randomUUID()}`;
   try {
-    const sql = db.getSql();
-    if (sql) {
-      await sql`
-        INSERT INTO cases_extended (
-          id, client_id, lawyer_sicil_no, case_title, case_type, court_name, esas_no, 
-          plaintiff, defendant, assigned_lawyer, role_in_case, stage, claim_amount, 
-          currency, status, risk_score, winning_probability, is_archived, created_at, updated_at
-        ) VALUES (
-          ${newCase.id}, ${newCase.clientId}, ${newCase.lawyerSicilNo}, ${newCase.caseTitle}, 
-          ${newCase.caseType}, ${newCase.courtName}, ${newCase.esasNo}, ${newCase.plaintiff}, 
-          ${newCase.defendant}, ${newCase.assignedLawyer}, ${newCase.roleInCase}, ${newCase.stage}, 
-          ${newCase.claimAmount}, ${newCase.currency}, ${newCase.status}, ${newCase.riskScore}, 
-          ${newCase.winningProbability}, ${newCase.isArchived}, NOW(), NOW()
-        )
-      `;
-    }
-  } catch (dbErr: any) {
-    console.error('[Cases POST] Neon SQL kayıt hatası:', dbErr?.message);
+    await sql`
+      INSERT INTO cases_extended (
+        id, client_id, lawyer_sicil_no, case_title, case_type, court_name, esas_no,
+        plaintiff, defendant, assigned_lawyer, role_in_case, stage, claim_amount,
+        currency, status, risk_score, winning_probability, is_archived, created_at, updated_at
+      ) VALUES (
+        ${id}, ${clientId}, ${owner}, ${caseTitle}, ${caseType || ''}, ${courtName || ''}, ${esasNo},
+        ${plaintiff || clientName || ''}, ${defendant || ''}, ${req.user!.fullName}, ${''}, ${'Dava Açılışı'},
+        ${parseFloat(claimAmount) || 0}, ${'TRY'}, ${'Açık'}, ${0}, ${0}, false, NOW(), NOW()
+      )`;
+    const rows = await sql`SELECT * FROM cases_extended WHERE id = ${id} AND lawyer_sicil_no = ${owner}`;
+    await writeAudit(req, { action: 'Dava Dosyası Açıldı', details: `${caseTitle} (${esasNo})`, actionType: 'Case_Create', resourceId: id });
+    return res.status(201).json({ success: true, message: 'Dava dosyası açıldı.', case: mapDbRowToCase(rows[0]) });
+  } catch (err: any) {
+    console.error('[Cases POST] Neon SQL kayıt hatası:', err?.message);
+    return res.status(500).json({ success: false, message: 'Dava kaydedilemedi.' });
   }
-
-  mockCasesStore.unshift(newCase);
-  return res.status(201).json({ success: true, message: 'Dava dosyası başarıyla açıldı.', case: newCase });
 });
 
-// PUT /api/v1/cases/:id — Dava Güncelleme
+// PUT /api/v1/cases/:id — Dava Güncelleme (alan beyaz listesi + sahip kontrolü)
+const UPDATABLE_COLUMNS: Record<string, string> = {
+  caseTitle: 'case_title', caseType: 'case_type', courtName: 'court_name', esasNo: 'esas_no',
+  plaintiff: 'plaintiff', defendant: 'defendant', stage: 'stage', status: 'status',
+  claimAmount: 'claim_amount', nextHearingDate: 'next_hearing_date', nextHearingTime: 'next_hearing_time',
+  criticalDeadlineDate: 'critical_deadline_date', criticalDeadlineDescription: 'critical_deadline_description',
+  riskScore: 'risk_score', winningProbability: 'winning_probability', isArchived: 'is_archived'
+};
+
 casesRouter.put('/:id', requireRole(['yonetici', 'avukat']), async (req: AuthenticatedRequest, res: Response) => {
   const caseId = req.params.id as string;
+  const owner = req.user!.sicilNo;
+  if (!db.getSql()) return dbUnavailable(res);
+
+  const sets: string[] = [];
+  const params: any[] = [];
+  for (const [key, col] of Object.entries(UPDATABLE_COLUMNS)) {
+    if (req.body[key] !== undefined) {
+      params.push(key === 'claimAmount' ? parseFloat(req.body[key]) || 0 : req.body[key]);
+      sets.push(`${col} = $${params.length}`);
+    }
+  }
+  if (sets.length === 0) {
+    return res.status(400).json({ success: false, message: 'Güncellenecek geçerli alan bulunamadı.' });
+  }
 
   try {
-    const sql = db.getSql();
-    if (sql) {
-      const updates = req.body;
-      if (updates.status) {
-        await sql`UPDATE cases_extended SET status = ${updates.status}, updated_at = NOW() WHERE id = ${caseId}`;
-      }
-      if (updates.stage) {
-        await sql`UPDATE cases_extended SET stage = ${updates.stage}, updated_at = NOW() WHERE id = ${caseId}`;
-      }
-      if (updates.claimAmount !== undefined) {
-        await sql`UPDATE cases_extended SET claim_amount = ${parseFloat(updates.claimAmount)}, updated_at = NOW() WHERE id = ${caseId}`;
-      }
+    params.push(caseId, owner);
+    const rows = await db.query(
+      `UPDATE cases_extended SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${params.length - 1} AND lawyer_sicil_no = $${params.length} RETURNING *`,
+      params
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Dava dosyası bulunamadı.' });
     }
-  } catch (dbErr: any) {
-    console.warn('[Cases PUT] Neon SQL güncelleme uyarısı:', dbErr?.message);
+    await writeAudit(req, { action: 'Dava Dosyası Güncellendi', details: `Alanlar: ${Object.keys(req.body).filter(k => k in UPDATABLE_COLUMNS).join(', ')}`, actionType: 'Case_Update', resourceId: caseId });
+    return res.json({ success: true, message: 'Dava dosyası güncellendi.', case: mapDbRowToCase(rows[0]) });
+  } catch (err: any) {
+    console.error('[Cases PUT] hata:', err?.message);
+    return res.status(500).json({ success: false, message: 'Dava güncellenemedi.' });
   }
-
-  const index = mockCasesStore.findIndex((c) => c.id === caseId);
-  if (index !== -1) {
-    mockCasesStore[index] = {
-      ...mockCasesStore[index],
-      ...req.body,
-      updatedAt: new Date().toISOString()
-    };
-    return res.json({ success: true, message: 'Dava dosyası güncellendi.', case: mockCasesStore[index] });
-  }
-
-  return res.json({ success: true, message: 'Dava dosyası güncellendi.', id: caseId });
 });

@@ -98,6 +98,43 @@ export const AGENT_GROUPS: AgentGroup[] = [
         pageTarget: 'workspace_full',
         tabTarget: 'briefing',
         color: 'blue'
+      },
+      {
+        id: 'veri-cikarim-enjeksiyon',
+        name: 'Veri Çıkarım ve Enjeksiyon Ajanı',
+        badge: 'Otonom Veri Köprüsü',
+        model: 'Gemini-3.8-Flash & Regex Hibrit Motoru',
+        description: 'Yüklenen dava evraklarından davacı/davalı tarafları, vekilleri, TCKN/VKN, mahkeme adı, esas no ve delil listesini otomatik çıkarıp tüm modüllere (Dilekçe, Cımbız, Mevzuat, Analizör) anında enjekte eder.',
+        skills: [
+          'Evraklardan davacı ve davalı şahıs/şirket unvanlarını eksiksiz ayrıştırma',
+          'Mahkeme adı ve esas numarası formatlarını normalize etme',
+          'Çıkarılan verileri PartyContext ve oturum hafızasına otomatik enjekte etme',
+          'Sayfalar arası geçişte veri kaybını ve mükerrer girişi sıfırlama'
+        ],
+        legalBasis: ['HMK m. 119 (Dava Dilekçesinin Unsurları)', 'HMK m. 126 (Cevap Dilekçesi Unsurları)'],
+        inputSource: 'PDF, UDF, taranmış evrak ve metin girdileri',
+        outputTarget: 'Tüm Sayfalara Otomatik Veri Dağıtımı & Dava Kartı Enjeksiyonu',
+        pageTarget: 'analyzer',
+        color: 'emerald'
+      },
+      {
+        id: 'hukuki-tasnif-ajani',
+        name: 'Hukuki Tasnif Ajanı',
+        badge: 'Dava & Görev Tasnifçisi',
+        model: 'Gemini-3.1-pro-preview',
+        description: 'Dava vakıalarından uyuşmazlığın hukuki niteliğini belirler; görevli/yetkili mahkemeyi, zorunlu arabuluculuk şartını, zamanaşımı türünü ve ispat yükünü HMK/TTK/TBK çerçevesinde kesin olarak saptar.',
+        skills: [
+          'Uyuşmazlığın hukuki niteliğini ve dava türünü kesin teşhis etme',
+          'Görevli mahkemeyi (Ticaret, İş, Tüketici, Asliye Hukuk) kanun maddesiyle belirleme',
+          'Zorunlu dava şartı arabuluculuğu (TTK 5/A, İMK 3, TKHK 73/A) denetleme',
+          'İspat yükü (HMK m. 190) ve HMK m. 200 senetle ispat eşiğini saptama'
+        ],
+        legalBasis: ['6100 S.K. HMK m. 1-4 & m. 190-200', '6102 S.K. TTK m. 4-5 & m. 5/A', '7036 S.K. İMK m. 3 & m. 5'],
+        inputSource: 'Dava vakıaları, olay özeti ve dilekçe taslakları',
+        outputTarget: 'Görev, Yetki, Arabuluculuk ve İspat Yükü Tasnif Belgesi',
+        pageTarget: 'workspace_full',
+        tabTarget: 'procedural_check',
+        color: 'cyan'
       }
     ]
   },

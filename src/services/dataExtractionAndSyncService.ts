@@ -374,4 +374,45 @@ export class DataExtractionAndSyncService {
       return [];
     }
   }
+
+  /**
+   * Yapay Zeka Destekli Derin Veri Çıkarım ve Enjeksiyon (Veri Çıkarım ve Enjeksiyon Ajanı)
+   * OCR veya karmaşık dava evraklarında doğrudan LLM ile tarafları, esas noyu, delilleri ve iddiaları süzer.
+   */
+  public static async extractWithAiEnhancement(
+    rawText: string,
+    fileName?: string,
+    lawyerSicil: string = '8109'
+  ): Promise<ExtractedCaseData> {
+    const baseExtracted = this.extractFromText(rawText, fileName);
+
+    // Temel çıkarım zaten %90+ güvenilirse ve iki taraf da tespit edildiyse hızlıca dönebilir
+    if (baseExtracted.plaintiffs.length > 0 && baseExtracted.defendants.length > 0 && baseExtracted.esasNo.includes('/')) {
+      this.autoSyncExtractedDataToClients(baseExtracted);
+      return baseExtracted;
+    }
+
+    try {
+      const res = await fetch('/api/v1/ai/extract-and-inject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: rawText, fileName, lawyerSicil })
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        if (json.extractedData) {
+          this.autoSyncExtractedDataToClients(json.extractedData);
+          return json.extractedData;
+        }
+      }
+    } catch (err: any) {
+      console.warn('[DataExtractionAndSyncService API Fallback to Regex]:', err?.message);
+    }
+
+    this.autoSyncExtractedDataToClients(baseExtracted);
+    return baseExtracted;
+  }
 }
+
+

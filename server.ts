@@ -2584,20 +2584,12 @@ app.post('/api/ai/document-ocr', async (req: Request, res: Response) => {
       modelUsed = resOCR.modelUsed;
       note = `Gemini OCR (${modelUsed}) ile görsel başarıyla işlendi.`;
     } catch (e) {
-      console.warn('OCR error, using simulated output:', e);
+      console.warn('OCR error occurred during document processing:', e);
     }
   }
 
-  if (!extractedText) {
-    extractedText = `T.C. İSTANBUL 14. ASLİYE TİCARET MAHKEMESİ BAŞKANLIĞI'NA
-DOSYA NO: 2025/481 Esas
-DAVACI  : Anadolu Lojistik ve Taşımacılık A.Ş.
-VEKİLİ  : ${lawyerSicilNo ? `Avukat (Sicil: ${lawyerSicilNo})` : 'Av. Osman Turgut'}
-DAVALI  : Boğaziçi Sanayi ve Dış Ticaret Ltd. Şti.
-TALEP   : Cari hesap ve fatura alacağından kaynaklanan 450.000,00 TL'nin temerrüt faiziyle tahsili.
-DELİLLER: Fatura suretleri (FT-2024/091), irsaliyeli teslim tutanakları, cari hesap ekstresi.
-DİPNOT  : Fatura 12.03.2024 tarihinde elden teslim edilmiş olup karşı taraf kaşesi mevcuttur; ancak imzanın şirket imza sirkülerindeki temsile yetkili kişiye ait olup olmadığı teyit edilmemiştir.`;
-    note = 'Örnek adli evrak şablonu yüklendi.';
+  if (!extractedText || extractedText.trim().length === 0) {
+    return res.status(400).json({ success: false, message: 'İşlenecek adli evrak metni veya taranmış belge bulunamadı.' });
   }
 
   // Deep Micro-Detail & AI Watermark Detection

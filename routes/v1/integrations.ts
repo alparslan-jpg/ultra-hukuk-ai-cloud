@@ -1,5 +1,7 @@
 import { Router, Response } from 'express';
-import { requireRole, AuthenticatedRequest } from '../middleware/rbac';
+import { requireRole, AuthenticatedRequest } from '../middleware/rbac.ts';
+import { centralDrive } from '../../src/services/centralDriveService.ts';
+import { writeAudit } from '../../src/services/auditService.ts';
 
 export const integrationsRouter = Router();
 
@@ -99,6 +101,13 @@ ${bodyText}
 
 // POST /api/v1/integrations/webhook — Adli Bildirim Webhook'u (e-Tebligat vb.)
 integrationsRouter.post('/webhook', (req: AuthenticatedRequest, res: Response) => {
+  const expected = process.env.WEBHOOK_SECRET;
+  if (!expected) {
+    return res.status(503).json({ success: false, message: 'Webhook devre dışı (WEBHOOK_SECRET tanımlı değil).' });
+  }
+  if (req.headers['x-webhook-secret'] !== expected) {
+    return res.status(401).json({ success: false, message: 'Geçersiz webhook imzası.' });
+  }
   const event = req.body;
   console.log('[INTEGRATIONS WEBHOOK] Adli bildirim alındı:', event);
 
@@ -114,46 +123,34 @@ integrationsRouter.post('/webhook', (req: AuthenticatedRequest, res: Response) =
 // ============================================================
 
 // POST /api/v1/integrations/drive/upload — Şifreli Dosya Yükleme (Zero-Knowledge AES-256)
+// Sahip kimliği YALNIZCA doğrulanmış JWT'den gelir; istemci parametresi dikkate alınmaz.
 integrationsRouter.post('/drive/upload', requireRole(['yonetici', 'avukat', 'stajyer']), async (req: AuthenticatedRequest, res: Response) => {
+  const owner = req.user!.sicilNo;
   try {
     const { fileName, fileContent, isBase64 } = req.body;
     if (!fileName || !fileContent) {
       return res.status(400).json({ success: false, message: 'fileName ve fileContent alanları zorunludur.' });
     }
 
-    const userSicilNo = req.user?.sicilNo || '8109';
-    const buffer = Buffer.isBuffer(fileContent)
-      ? fileContent
-      : Buffer.from(fileContent, isBase64 || fileContent.startsWith('data:') ? 'base64' : 'utf-8');
+    const raw = typeof fileContent === 'string' && fileContent.startsWith('data:') ? (fileContent.split(',')[1] || '') : fileContent;
+    const buffer = Buffer.isBuffer(raw)
+      ? raw
+      : Buffer.from(String(raw), isBase64 || (typeof fileContent === 'string' && fileContent.startsWith('data:')) ? 'base64' : 'utf-8');
 
-    const { centralDrive } = await import('../../src/services/centralDriveService');
-    const result = await centralDrive.uploadEncryptedFile(fileName, buffer, userSicilNo);
+    const result = await centralDrive.uploadEncryptedFile(fileName, buffer, owner);
 
-    // Adli Bilişim Denetim Kaydı (Audit Log)
-    try {
-      const { db } = await import('../../src/services/persistentDatabaseService');
-      const forwardedHeader = req.headers['x-forwarded-for'];
-      const clientIp = (req.headers['cf-connecting-ip'] as string) || (typeof forwardedHeader === 'string' ? forwardedHeader.split(',')[0].trim() : req.ip || '127.0.0.1');
-      const userAgent = (req.headers['user-agent'] as string) || 'Bilinmeyen İstemci';
-      db.addAuditLog({
-        id: `aud-zk-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        timestamp: new Date().toISOString(),
-        adminUsername: userSicilNo,
-        action: 'Zero-Knowledge Dosya Şifreleme ve Drive Yedekleme',
-        details: `${fileName} dosyası AES-256-GCM ile şifrelendi, usr_${userSicilNo} klasörüne kaydedildi.`,
-        ipAddress: clientIp,
-        userAgent,
-        userId: userSicilNo,
-        actionType: 'ZK_Encrypt',
-        resourceId: result.fileId,
-        statusCode: 200,
-        status: 'Başarılı'
-      }).catch(() => {});
-    } catch (_) {}
+    await writeAudit(req, {
+      action: 'Zero-Knowledge Dosya Şifreleme ve Kasa Kaydı',
+      details: `${result.originalFileName} AES-256-GCM ile şifrelendi (${result.cloudProvider}), sha256=${result.sha256}.`,
+      actionType: 'ZK_Encrypt',
+      resourceId: result.fileId,
+      statusCode: 200,
+      status: 'Başarılı'
+    });
 
     return res.json({
       success: true,
-      message: 'Dosya AES-256 ile şifrelendi ve merkezi Drive izole klasörüne kaydedildi.',
+      message: 'Dosya AES-256 ile şifrelendi ve size özel izole kasaya kaydedildi.',
       fileId: result.fileId,
       file: result
     });
@@ -163,38 +160,23 @@ integrationsRouter.post('/drive/upload', requireRole(['yonetici', 'avukat', 'sta
   }
 });
 
-// GET /api/v1/integrations/drive/download/:fileId — Şifreli Dosyayı Çözüp İndirme
+// GET /api/v1/integrations/drive/download/:fileId — Şifreli Dosyayı Çözüp İndirme (yalnızca sahibi)
 integrationsRouter.get('/drive/download/:fileId', requireRole(['yonetici', 'avukat', 'stajyer']), async (req: AuthenticatedRequest, res: Response) => {
   const fileId = req.params.fileId as string;
-  const userSicilNo = (req.query.userSicilNo as string) || req.user?.sicilNo || '8109';
-  const forwardedHeader = req.headers['x-forwarded-for'];
-  const clientIp = (req.headers['cf-connecting-ip'] as string) || (typeof forwardedHeader === 'string' ? forwardedHeader.split(',')[0].trim() : req.ip || '127.0.0.1');
-  const userAgent = (req.headers['user-agent'] as string) || 'Bilinmeyen İstemci';
+  const owner = req.user!.sicilNo;
 
   try {
-    const { centralDrive } = await import('../../src/services/centralDriveService');
-    const decrypted = await centralDrive.downloadAndDecryptFile(fileId, userSicilNo);
+    const decrypted = await centralDrive.downloadAndDecryptFile(fileId, owner);
 
-    // Adli Bilişim Başarılı İndirme Kaydı
-    try {
-      const { db } = await import('../../src/services/persistentDatabaseService');
-      db.addAuditLog({
-        id: `aud-zk-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        timestamp: new Date().toISOString(),
-        adminUsername: userSicilNo,
-        action: 'Zero-Knowledge Şifre Çözme ve İndirme',
-        details: `${decrypted.fileName} dosyası AES-256-GCM şifresi çözülerek yetkili kullanıcıya iletildi.`,
-        ipAddress: clientIp,
-        userAgent,
-        userId: userSicilNo,
-        actionType: 'ZK_Decrypt',
-        resourceId: fileId,
-        statusCode: 200,
-        status: 'Başarılı'
-      }).catch(() => {});
-    } catch (_) {}
+    await writeAudit(req, {
+      action: 'Zero-Knowledge Şifre Çözme ve İndirme',
+      details: `${decrypted.fileName} şifresi çözülerek sahibine iletildi.`,
+      actionType: 'ZK_Decrypt',
+      resourceId: fileId,
+      statusCode: 200,
+      status: 'Başarılı'
+    });
 
-    // Eğer istemci JSON talep ediyorsa JSON dön (Raporlarım modal önizleme için)
     const acceptHeader = req.headers['accept'] || '';
     if (acceptHeader.includes('application/json')) {
       return res.json({
@@ -209,66 +191,65 @@ integrationsRouter.get('/drive/download/:fileId', requireRole(['yonetici', 'avuk
     res.setHeader('Content-Type', decrypted.fileName.endsWith('.udf') ? 'application/xml' : decrypted.fileName.endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream');
     return res.send(decrypted.content);
   } catch (err: any) {
-    console.error('[Drive Download Error]:', err);
-
-    // Adli Bilişim Engellenen/Hatalı Erişim Kaydı
-    try {
-      const { db } = await import('../../src/services/persistentDatabaseService');
-      db.addAuditLog({
-        id: `aud-zk-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        timestamp: new Date().toISOString(),
-        adminUsername: userSicilNo,
-        action: 'Yetkisiz Zero-Knowledge Dosya Erişim Denemesi Engellendi',
-        details: `Yetkisiz kullanıcı (${userSicilNo}) dosya (${fileId}) çözme teşebbüsünde bulundu: ${err?.message || ''}`,
-        ipAddress: clientIp,
-        userAgent,
-        userId: userSicilNo,
-        actionType: 'ZK_Decrypt',
-        resourceId: fileId,
-        statusCode: 403,
-        status: 'Engellendi',
-        errorDetails: err?.message || 'Yetkisiz erişim'
-      }).catch(() => {});
-    } catch (_) {}
-
-    return res.status(500).json({ success: false, message: err.message || 'Drive dosya çözme hatası.' });
+    // Başkasına ait / var olmayan dosya aynı yanıtı verir (dosya varlığı sızdırılmaz)
+    await writeAudit(req, {
+      action: 'Zero-Knowledge Dosya Erişimi Reddedildi',
+      details: `Kullanıcı (${owner}) dosya (${fileId}) çözme teşebbüsü başarısız: ${err?.message || ''}`,
+      actionType: 'ZK_Decrypt',
+      resourceId: fileId,
+      statusCode: 404,
+      status: 'Engellendi',
+      errorDetails: err?.message || 'Erişim reddedildi'
+    });
+    return res.status(404).json({ success: false, message: 'Dosya bulunamadı veya erişim yetkiniz yok.' });
   }
 });
 
-// GET /api/v1/integrations/drive/files — Kullanıcının İzole Drive Klasöründeki Dosyaları Listele
+// DELETE /api/v1/integrations/drive/:fileId — Yumuşak silme (yalnızca sahibi)
+integrationsRouter.delete('/drive/:fileId', requireRole(['yonetici', 'avukat']), async (req: AuthenticatedRequest, res: Response) => {
+  const fileId = req.params.fileId as string;
+  try {
+    const ok = await centralDrive.deleteFile(fileId, req.user!.sicilNo);
+    await writeAudit(req, {
+      action: 'Kasa Dosyası Silindi',
+      details: `Dosya ${fileId} sahibi tarafından silindi (yumuşak silme).`,
+      actionType: 'File_Delete',
+      resourceId: fileId,
+      statusCode: ok ? 200 : 404,
+      status: ok ? 'Başarılı' : 'Hata'
+    });
+    return ok
+      ? res.json({ success: true })
+      : res.status(404).json({ success: false, message: 'Dosya bulunamadı veya erişim yetkiniz yok.' });
+  } catch (err: any) {
+    return res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/v1/integrations/drive/files — Kullanıcının İzole Kasasındaki Dosyalar
 integrationsRouter.get('/drive/files', requireRole(['yonetici', 'avukat', 'stajyer']), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const userSicilNo = (req.query.userSicilNo as string) || req.user?.sicilNo || '8109';
-    const { centralDrive } = await import('../../src/services/centralDriveService');
-    const rawFiles = centralDrive.listUserFiles(userSicilNo);
+    const owner = req.user!.sicilNo;
+    const rawFiles = await centralDrive.listUserFiles(owner);
     const files = rawFiles.map(f => ({
       id: f.fileId,
       name: f.originalFileName,
       originalFileName: f.originalFileName,
       sizeBytes: f.size,
-      uploadedAt: (f as any).uploadedAt || new Date().toISOString(),
+      sha256: f.sha256,
+      uploadedAt: f.uploadedAt,
       isEncrypted: true
     }));
 
-    return res.json({
-      success: true,
-      userSicilNo,
-      count: files.length,
-      totalCount: files.length,
-      files
-    });
+    return res.json({ success: true, userSicilNo: owner, count: files.length, totalCount: files.length, files });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// GET /api/v1/integrations/drive/status — Merkezi Drive ve Şifreleme Durumu
+// GET /api/v1/integrations/drive/status — Kasa ve Şifreleme Durumu
 integrationsRouter.get('/drive/status', requireRole(['yonetici', 'avukat', 'stajyer']), async (_req: AuthenticatedRequest, res: Response) => {
-  const { centralDrive } = await import('../../src/services/centralDriveService');
-  return res.json({
-    success: true,
-    drive: centralDrive.getStatus()
-  });
+  return res.json({ success: true, drive: await centralDrive.getStatus() });
 });
 
 export default integrationsRouter;

@@ -353,3 +353,38 @@ CREATE TABLE IF NOT EXISTS upload_chunks (
 );
 
 CREATE INDEX IF NOT EXISTS idx_upload_chunks_id ON upload_chunks(upload_id, chunk_index);
+
+-- 8. Asenkron İş Kuyruğu Avukat İzolasyonu
+ALTER TABLE async_jobs ADD COLUMN IF NOT EXISTS lawyer_sicil_no TEXT;
+CREATE INDEX IF NOT EXISTS idx_async_jobs_lawyer ON async_jobs(lawyer_sicil_no);
+
+-- 9. AES-256-GCM Şifreli Güvenli Dosya Depolama Tabloları (Merkezi Drive Kasası)
+CREATE TABLE IF NOT EXISTS secure_files (
+  id TEXT PRIMARY KEY,
+  owner_sicil TEXT NOT NULL,
+  original_name TEXT NOT NULL,
+  mime_type TEXT NOT NULL,
+  total_bytes BIGINT NOT NULL,
+  total_chunks INTEGER NOT NULL,
+  sha256 TEXT NOT NULL,
+  iv_hex TEXT NOT NULL,
+  auth_tag_hex TEXT NOT NULL,
+  is_gdrive_synced BOOLEAN DEFAULT FALSE,
+  gdrive_file_id TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS secure_file_chunks (
+  id TEXT PRIMARY KEY,
+  file_id TEXT NOT NULL REFERENCES secure_files(id) ON DELETE CASCADE,
+  chunk_index INTEGER NOT NULL,
+  chunk_bytes INTEGER NOT NULL,
+  ciphertext_b64 TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(file_id, chunk_index)
+);
+
+CREATE INDEX IF NOT EXISTS idx_secure_files_owner ON secure_files(owner_sicil);
+CREATE INDEX IF NOT EXISTS idx_secure_file_chunks_file ON secure_file_chunks(file_id, chunk_index);
+
