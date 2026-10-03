@@ -129,6 +129,28 @@ integrationsRouter.post('/drive/upload', requireRole(['yonetici', 'avukat', 'sta
     const { centralDrive } = await import('../../src/services/centralDriveService');
     const result = await centralDrive.uploadEncryptedFile(fileName, buffer, userSicilNo);
 
+    // Adli Bilişim Denetim Kaydı (Audit Log)
+    try {
+      const { db } = await import('../../src/services/persistentDatabaseService');
+      const forwardedHeader = req.headers['x-forwarded-for'];
+      const clientIp = (req.headers['cf-connecting-ip'] as string) || (typeof forwardedHeader === 'string' ? forwardedHeader.split(',')[0].trim() : req.ip || '127.0.0.1');
+      const userAgent = (req.headers['user-agent'] as string) || 'Bilinmeyen İstemci';
+      db.addAuditLog({
+        id: `aud-zk-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        timestamp: new Date().toISOString(),
+        adminUsername: userSicilNo,
+        action: 'Zero-Knowledge Dosya Şifreleme ve Drive Yedekleme',
+        details: `${fileName} dosyası AES-256-GCM ile şifrelendi, usr_${userSicilNo} klasörüne kaydedildi.`,
+        ipAddress: clientIp,
+        userAgent,
+        userId: userSicilNo,
+        actionType: 'ZK_Encrypt',
+        resourceId: result.fileId,
+        statusCode: 200,
+        status: 'Başarılı'
+      }).catch(() => {});
+    } catch (_) {}
+
     return res.json({
       success: true,
       message: 'Dosya AES-256 ile şifrelendi ve merkezi Drive izole klasörüne kaydedildi.',
@@ -143,12 +165,34 @@ integrationsRouter.post('/drive/upload', requireRole(['yonetici', 'avukat', 'sta
 
 // GET /api/v1/integrations/drive/download/:fileId — Şifreli Dosyayı Çözüp İndirme
 integrationsRouter.get('/drive/download/:fileId', requireRole(['yonetici', 'avukat', 'stajyer']), async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const fileId = req.params.fileId as string;
-    const userSicilNo = (req.query.userSicilNo as string) || req.user?.sicilNo || '8109';
+  const fileId = req.params.fileId as string;
+  const userSicilNo = (req.query.userSicilNo as string) || req.user?.sicilNo || '8109';
+  const forwardedHeader = req.headers['x-forwarded-for'];
+  const clientIp = (req.headers['cf-connecting-ip'] as string) || (typeof forwardedHeader === 'string' ? forwardedHeader.split(',')[0].trim() : req.ip || '127.0.0.1');
+  const userAgent = (req.headers['user-agent'] as string) || 'Bilinmeyen İstemci';
 
+  try {
     const { centralDrive } = await import('../../src/services/centralDriveService');
     const decrypted = await centralDrive.downloadAndDecryptFile(fileId, userSicilNo);
+
+    // Adli Bilişim Başarılı İndirme Kaydı
+    try {
+      const { db } = await import('../../src/services/persistentDatabaseService');
+      db.addAuditLog({
+        id: `aud-zk-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        timestamp: new Date().toISOString(),
+        adminUsername: userSicilNo,
+        action: 'Zero-Knowledge Şifre Çözme ve İndirme',
+        details: `${decrypted.fileName} dosyası AES-256-GCM şifresi çözülerek yetkili kullanıcıya iletildi.`,
+        ipAddress: clientIp,
+        userAgent,
+        userId: userSicilNo,
+        actionType: 'ZK_Decrypt',
+        resourceId: fileId,
+        statusCode: 200,
+        status: 'Başarılı'
+      }).catch(() => {});
+    } catch (_) {}
 
     // Eğer istemci JSON talep ediyorsa JSON dön (Raporlarım modal önizleme için)
     const acceptHeader = req.headers['accept'] || '';
@@ -166,6 +210,27 @@ integrationsRouter.get('/drive/download/:fileId', requireRole(['yonetici', 'avuk
     return res.send(decrypted.content);
   } catch (err: any) {
     console.error('[Drive Download Error]:', err);
+
+    // Adli Bilişim Engellenen/Hatalı Erişim Kaydı
+    try {
+      const { db } = await import('../../src/services/persistentDatabaseService');
+      db.addAuditLog({
+        id: `aud-zk-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        timestamp: new Date().toISOString(),
+        adminUsername: userSicilNo,
+        action: 'Yetkisiz Zero-Knowledge Dosya Erişim Denemesi Engellendi',
+        details: `Yetkisiz kullanıcı (${userSicilNo}) dosya (${fileId}) çözme teşebbüsünde bulundu: ${err?.message || ''}`,
+        ipAddress: clientIp,
+        userAgent,
+        userId: userSicilNo,
+        actionType: 'ZK_Decrypt',
+        resourceId: fileId,
+        statusCode: 403,
+        status: 'Engellendi',
+        errorDetails: err?.message || 'Yetkisiz erişim'
+      }).catch(() => {});
+    } catch (_) {}
+
     return res.status(500).json({ success: false, message: err.message || 'Drive dosya çözme hatası.' });
   }
 });

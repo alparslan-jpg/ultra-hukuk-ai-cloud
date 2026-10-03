@@ -22,6 +22,8 @@ import { financeRouter } from './routes/v1/finance.ts';
 import { integrationsRouter } from './routes/v1/integrations.ts';
 import { queueRouter } from './routes/v1/queue.ts';
 import { aiRouter } from './routes/v1/ai.ts';
+import { forensicAuditMiddleware } from './src/middleware/forensicAuditMiddleware.ts';
+import type { AuditLogRecord } from './src/services/persistentDatabaseService.ts';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -193,6 +195,7 @@ export async function callRoutedGemini(
 app.use(cors());
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+app.use(forensicAuditMiddleware);
 
 // ==========================================
 // IN-MEMORY DATA STORE (Zero-loss migration)
@@ -401,18 +404,42 @@ const featureFlags = [
 ];
 
 // Helper: Add audit log
-function recordAudit(username: string, action: string, details: string, req: Request) {
-  const ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '127.0.0.1';
-  auditLogs.unshift({
-    id: `log-${Date.now()}`,
+function recordAudit(username: string, action: string, details: string, req: Request, extra?: any) {
+  const forwardedHeader = req.headers['x-forwarded-for'];
+  let ip = '127.0.0.1';
+  if (typeof req.headers['cf-connecting-ip'] === 'string') {
+    ip = req.headers['cf-connecting-ip'];
+  } else if (typeof forwardedHeader === 'string') {
+    ip = forwardedHeader.split(',')[0].trim();
+  } else if (typeof req.headers['x-real-ip'] === 'string') {
+    ip = req.headers['x-real-ip'];
+  } else if (req.ip) {
+    ip = req.ip;
+  } else if (req.socket?.remoteAddress) {
+    ip = req.socket.remoteAddress;
+  }
+  if (ip.startsWith('::ffff:')) ip = ip.substring(7);
+
+  const userAgent = (req.headers['user-agent'] as string) || 'Bilinmeyen İstemci / API Client';
+  const newLog: AuditLogRecord = {
+    id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
     timestamp: new Date().toISOString(),
     adminUsername: username,
     action,
     details,
     ipAddress: ip,
-  });
-  if (auditLogs.length > 200) auditLogs.pop();
-  db.persist();
+    userAgent,
+    userId: username,
+    sessionId: (req.headers['x-session-id'] as string) || `sess_${ip.replace(/[^a-zA-Z0-9]/g, '_')}`,
+    actionType: extra?.actionType || 'Genel',
+    resourceId: extra?.resourceId,
+    statusCode: extra?.statusCode ?? 200,
+    status: extra?.status || 'Başarılı',
+    errorDetails: extra?.errorDetails || null
+  };
+  auditLogs.unshift(newLog as any);
+  if (auditLogs.length > 500) auditLogs.pop();
+  db.addAuditLog(newLog);
 }
 
 // Authentication middleware for /api/admin/*
@@ -797,8 +824,23 @@ app.put('/api/admin/data-breach-incidents/:id/mark-reported', authenticateAdmin,
   return res.json({ success: true, message: 'Olay KVKK\'ya bildirildi olarak güncellendi.' });
 });
 
-app.get('/api/admin/audit-log', authenticateAdmin, (_req: Request, res: Response) => {
-  return res.json(auditLogs);
+app.get('/api/admin/audit-log', authenticateAdmin, (req: Request, res: Response) => {
+  const search = req.query.search as string;
+  const actionType = req.query.actionType as string;
+  const status = req.query.status as string;
+  const limit = req.query.limit ? parseInt(req.query.limit as string) : 500;
+  const data = db.getFilteredAuditLogs({ search, actionType, status, limit });
+  return res.json(data.logs);
+});
+
+app.get('/api/v1/admin/audit-logs', authenticateAdmin, (req: Request, res: Response) => {
+  const search = req.query.search as string;
+  const actionType = req.query.actionType as string;
+  const status = req.query.status as string;
+  const limit = req.query.limit ? parseInt(req.query.limit as string) : 200;
+  const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
+  const result = db.getFilteredAuditLogs({ search, actionType, status, limit, offset });
+  return res.json({ success: true, total: result.total, logs: result.logs });
 });
 
 app.post('/api/admin/reissue-download/:userId', authenticateAdmin, (req: Request, res: Response) => {

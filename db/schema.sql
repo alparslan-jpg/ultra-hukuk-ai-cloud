@@ -52,15 +52,33 @@ CREATE TABLE IF NOT EXISTS whitelist (
   added_via TEXT NOT NULL DEFAULT 'Sistem Yöneticisi'
 );
 
--- Denetim Günlüğü (Audit Log)
+-- Denetim Günlüğü & Adli Bilişim Log Şeması (Audit Trail & Forensic Logs)
 CREATE TABLE IF NOT EXISTS audit_logs (
   id TEXT PRIMARY KEY,
   timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  admin_username TEXT NOT NULL,
+  admin_username TEXT DEFAULT 'Sistem / Anonim',
   action TEXT NOT NULL,
   details TEXT,
-  ip_address TEXT
+  ip_address TEXT,
+  user_agent TEXT,
+  user_id TEXT,
+  session_id TEXT,
+  action_type TEXT DEFAULT 'Genel',
+  resource_id TEXT,
+  status_code INTEGER DEFAULT 200,
+  status TEXT DEFAULT 'Başarılı',
+  error_details TEXT
 );
+
+-- Var olan veritabanları için geriye dönük uyumlu kolon eklemeleri
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS user_agent TEXT;
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS user_id TEXT;
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS session_id TEXT;
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS action_type TEXT DEFAULT 'Genel';
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS resource_id TEXT;
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS status_code INTEGER DEFAULT 200;
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Başarılı';
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS error_details TEXT;
 
 -- Veri İhlali Kayıtları (KVKK)
 CREATE TABLE IF NOT EXISTS data_breach_incidents (

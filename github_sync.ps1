@@ -2,7 +2,7 @@
 Write-Host ">>> Ultra Hukuk AI GitHub Senkronizasyonu Başlatılıyor..." -ForegroundColor Cyan
 
 git add -A
-$commitMsg = "feat: Kirmizi alanlarin (Ana Sayfa ve Muvekkil Ekle butonlari) tasfiyesi, AI evraktan otonom muvekkil/taraf cikarimi ve Gates 1-8 tam dogrulamasi"
+$commitMsg = "feat: Adli bilisim audit logging altyapisi, IP/User-Agent/Session middleware, Adminator Audit Trail sekmesi ve Gates 1-8 tam dogrulamasi"
 try {
     git commit -S -m $commitMsg
 } catch {

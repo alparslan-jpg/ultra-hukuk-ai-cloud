@@ -83,6 +83,14 @@ export interface AuditLogRecord {
   action: string;
   details: string;
   ipAddress: string;
+  userAgent?: string;
+  userId?: string;
+  sessionId?: string;
+  actionType?: string;
+  resourceId?: string;
+  statusCode?: number;
+  status?: string;
+  errorDetails?: string | null;
 }
 
 export interface DataBreachIncidentRecord {
@@ -228,10 +236,18 @@ class NeonDatabaseService {
       this.cachedAuditLogs = auditRows.map((r: any) => ({
         id: r.id,
         timestamp: r.timestamp ? new Date(r.timestamp).toISOString() : new Date().toISOString(),
-        adminUsername: r.admin_username,
+        adminUsername: r.admin_username || 'Sistem / Anonim',
         action: r.action,
         details: r.details || '',
         ipAddress: r.ip_address || '',
+        userAgent: r.user_agent || '',
+        userId: r.user_id || '',
+        sessionId: r.session_id || '',
+        actionType: r.action_type || 'Genel',
+        resourceId: r.resource_id || '',
+        statusCode: r.status_code ?? 200,
+        status: r.status || 'Başarılı',
+        errorDetails: r.error_details || null,
       }));
 
       // 5. Breaches
@@ -359,16 +375,80 @@ class NeonDatabaseService {
     return [...this.cachedAuditLogs];
   }
 
+  getFilteredAuditLogs(filter?: {
+    search?: string;
+    actionType?: string;
+    status?: string;
+    limit?: number;
+    offset?: number;
+  }): { total: number; logs: AuditLogRecord[] } {
+    let result = [...this.cachedAuditLogs];
+
+    if (filter?.search) {
+      const q = filter.search.toLowerCase();
+      result = result.filter(
+        l =>
+          l.ipAddress?.toLowerCase().includes(q) ||
+          l.adminUsername?.toLowerCase().includes(q) ||
+          l.userId?.toLowerCase().includes(q) ||
+          l.action?.toLowerCase().includes(q) ||
+          l.details?.toLowerCase().includes(q) ||
+          l.resourceId?.toLowerCase().includes(q) ||
+          l.userAgent?.toLowerCase().includes(q)
+      );
+    }
+
+    if (filter?.actionType && filter.actionType !== 'TÜMÜ') {
+      result = result.filter(l => l.actionType?.toLowerCase() === filter.actionType?.toLowerCase());
+    }
+
+    if (filter?.status && filter.status !== 'TÜMÜ') {
+      result = result.filter(l => l.status?.toLowerCase() === filter.status?.toLowerCase());
+    }
+
+    const total = result.length;
+    const offset = filter?.offset || 0;
+    const limit = filter?.limit || 200;
+
+    return {
+      total,
+      logs: result.slice(offset, offset + limit)
+    };
+  }
+
   async addAuditLog(log: AuditLogRecord): Promise<void> {
     this.cachedAuditLogs.unshift(log);
-    if (this.cachedAuditLogs.length > 500) this.cachedAuditLogs.pop();
+    if (this.cachedAuditLogs.length > 1000) this.cachedAuditLogs.pop();
 
     if (this.neonSql) {
-      await this.neonSql`
-        INSERT INTO audit_logs (id, timestamp, admin_username, action, details, ip_address)
-        VALUES (${log.id}, ${log.timestamp}, ${log.adminUsername}, ${log.action}, ${log.details}, ${log.ipAddress})
-        ON CONFLICT (id) DO NOTHING
-      `;
+      try {
+        await this.neonSql`
+          INSERT INTO audit_logs (
+            id, timestamp, admin_username, action, details, ip_address,
+            user_agent, user_id, session_id, action_type, resource_id,
+            status_code, status, error_details
+          )
+          VALUES (
+            ${log.id},
+            ${log.timestamp},
+            ${log.adminUsername || 'Sistem / Anonim'},
+            ${log.action},
+            ${log.details || ''},
+            ${log.ipAddress || '127.0.0.1'},
+            ${log.userAgent || null},
+            ${log.userId || null},
+            ${log.sessionId || null},
+            ${log.actionType || 'Genel'},
+            ${log.resourceId || null},
+            ${log.statusCode ?? 200},
+            ${log.status || 'Başarılı'},
+            ${log.errorDetails || null}
+          )
+          ON CONFLICT (id) DO NOTHING
+        `;
+      } catch (err: any) {
+        console.warn('[DB] ⚠️ Audit log SQL yazma uyarısı:', err?.message || err);
+      }
     }
   }
 

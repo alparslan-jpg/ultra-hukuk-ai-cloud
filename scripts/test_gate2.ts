@@ -119,6 +119,31 @@ async function runGate2Test() {
       throw new Error('GÜVENLİK AÇIĞI! Farklı kullanıcı ID yetkisiz dosyaya erişebildi!');
     }
 
+    // ADIM 5: ZK İşlemlerinin IP ve Kullanıcı Bilgisiyle Loglanması Doğrulaması
+    console.log('▶ ADIM 5: Zero-Knowledge İşlemlerinin IP ve Kullanıcı Bilgisiyle Loglanması (Audit Trail)');
+    const { db } = await import('../src/services/persistentDatabaseService.ts');
+    await new Promise(r => setTimeout(r, 300));
+    const allLogs = db.getAuditLogs();
+
+    const encryptLog = allLogs.find(l => l.actionType === 'ZK_Encrypt' && l.resourceId === fileId);
+    const decryptLog = allLogs.find(l => l.actionType === 'ZK_Decrypt' && l.resourceId === fileId && l.status === 'Başarılı');
+    const blockedLog = allLogs.find(l => l.actionType === 'ZK_Decrypt' && l.userId === '9999_HACKER' && l.status === 'Engellendi');
+
+    if (!encryptLog) {
+      throw new Error(`ZK_Encrypt işlemi için audit log bulunamadı (FileId: ${fileId})`);
+    }
+    console.log(`  ✅ Şifreleme Loglandı: [${encryptLog.actionType}] IP: ${encryptLog.ipAddress}, Kullanıcı: ${encryptLog.userId}, Durum: ${encryptLog.status}`);
+
+    if (!decryptLog) {
+      throw new Error(`ZK_Decrypt başarılı işlem için audit log bulunamadı (FileId: ${fileId})`);
+    }
+    console.log(`  ✅ Başarılı Çözme Loglandı: [${decryptLog.actionType}] IP: ${decryptLog.ipAddress}, Kullanıcı: ${decryptLog.userId}, Durum: ${decryptLog.status}`);
+
+    if (!blockedLog) {
+      throw new Error(`Hacker erişim denemesi için Engellendi audit log bulunamadı.`);
+    }
+    console.log(`  ✅ Yetkisiz Erişim Engelleme Loglandı: [${blockedLog.actionType}] IP: ${blockedLog.ipAddress}, Kullanıcı: ${blockedLog.userId}, Durum: ${blockedLog.status}`);
+
     // Temizlik
     fs.unlinkSync(path.join(localDir, targetDiskFile));
     console.log('  ✅ Test dosyası temizlendi.');
@@ -129,6 +154,7 @@ async function runGate2Test() {
     console.log('   - Kullanıcı İzolasyonu: Klasörler kullanıcı bazında izole');
     console.log('   - Zero-Knowledge Şifreleme: AES-256-GCM / 0 Ham Veri Sızıntısı');
     console.log('   - Çözme ve İndirme: %100 Başarılı');
+    console.log('   - Adli Log Kaydı: IP, Kullanıcı ve İşlem Tipi ile Doğrulandı');
     console.log('============================================================\n');
   } finally {
     server.close();

@@ -36,3 +36,5 @@ Thumbs.db
 .idea/
 uploads/
 scratch/
+storage/*
+!storage/.gitkeep
