@@ -527,17 +527,7 @@ export function AjanKonseyiOdasi({
               <span>Derin Analiz & Harp Odası (Zorunlu Aktif)</span>
             </div>
 
-            {onSyncGit && (
-              <button
-                type="button"
-                onClick={onSyncGit}
-                className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
-                title="Değişiklikleri ve analizleri GitHub'a senkronize et"
-              >
-                <RefreshCw className="w-3.5 h-3.5 text-emerald-500" />
-                <span>GitHub Senkronize</span>
-              </button>
-            )}
+            
           </div>
         </div>
 

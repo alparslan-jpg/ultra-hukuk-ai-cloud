@@ -450,19 +450,14 @@ export function MuvekkilDavaPortali({
 
           {/* Quick Action Buttons */}
           <div className="flex flex-wrap items-center gap-2">
-            
-
-            {onSyncGit && (
-              <button
-                type="button"
-                onClick={onSyncGit}
-                className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-sm font-semibold flex items-center gap-1.5 transition"
-                title="Değişiklikleri GitHub ile senkronize et"
-              >
-                <RefreshCw className="w-4 h-4 text-emerald-500" />
-                <span>GitHub Senkronize</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => setShowAddClientModal(true)}
+              className="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Yeni Müvekkil Oluştur</span>
+            </button>
           </div>
         </div>
       </div>
@@ -476,7 +471,14 @@ export function MuvekkilDavaPortali({
               <Users className="w-3.5 h-3.5 text-sky-500 shrink-0" />
               <span>Müvekkiller ({filteredClients.length})</span>
             </h3>
-            
+            <button
+              type="button"
+              onClick={() => setShowAddClientModal(true)}
+              className="px-2.5 py-1 bg-sky-600/10 hover:bg-sky-600/20 text-sky-600 dark:text-sky-400 border border-sky-500/20 rounded-lg text-xs font-bold flex items-center gap-1 shrink-0 transition-all cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5"/>
+              <span>Müvekkil Oluştur</span>
+            </button>
           </div>
 
           {/* Search & Filter */}
@@ -534,9 +536,16 @@ export function MuvekkilDavaPortali({
                   Kayıtlı Müvekkil Bulunmuyor
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-[190px] mx-auto">
-                  Dava evrakı yüklediğinizde müvekkil ve taraflar yapay zeka tarafından otomatik oluşturulur.
+                  Dava evrakı yüklediğinizde müvekkil ve taraflar yapay zeka tarafından otomatik oluşturulur veya manuel ekleyebilirsiniz.
                 </p>
-                
+                <button
+                  type="button"
+                  onClick={() => setShowAddClientModal(true)}
+                  className="px-2.5 py-1 rounded-lg bg-sky-600 text-white text-xs font-semibold hover:bg-sky-500 transition shadow-xs inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Müvekkil Oluştur</span>
+                </button>
               </div>
             ) : (
             filteredClients.map((client) => {
@@ -1269,8 +1278,114 @@ export function MuvekkilDavaPortali({
         </div>
       )}
 
-      
+      {/* Modal: Yeni Müvekkil Ekle */}
+      {showAddClientModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                <Users className="w-4 h-4 text-sky-400" />
+                Portföye Yeni Müvekkil Ekle
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowAddClientModal(false)}
+                className="text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
+            <form onSubmit={handleAddClientSubmit} className="space-y-3 text-sm">
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Müvekkil Adı / Şirket Ünvanı *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Örn: Anadolu Dış Ticaret A.Ş. veya Ahmet Yılmaz"
+                  value={newClientName}
+                  onChange={(e) => setNewClientName(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Müvekkil Türü</label>
+                  <select
+                    value={newClientType}
+                    onChange={(e) => setNewClientType(e.target.value as any)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-sky-500"
+                  >
+                    <option value="Tüzel Kişi / Şirket">Tüzel Kişi / Şirket</option>
+                    <option value="Gerçek Kişi">Gerçek Kişi</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">TCKN / VKN</label>
+                  <input
+                    type="text"
+                    placeholder="11 haneli TCKN veya 10 haneli VKN"
+                    value={newClientIdNumber}
+                    onChange={(e) => setNewClientIdNumber(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Telefon</label>
+                  <input
+                    type="text"
+                    placeholder="+90 5..."
+                    value={newClientPhone}
+                    onChange={(e) => setNewClientPhone(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">E-Posta</label>
+                  <input
+                    type="email"
+                    placeholder="ornek@muvekkil.com"
+                    value={newClientEmail}
+                    onChange={(e) => setNewClientEmail(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Avukat Notları</label>
+                <textarea
+                  rows={2}
+                  placeholder="Vekaletname bilgileri, özel anlaşmalar veya iletişim notları..."
+                  value={newClientNotes}
+                  onChange={(e) => setNewClientNotes(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowAddClientModal(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold cursor-pointer"
+                >
+                  Vazgeç
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold shadow-md shadow-sky-900/30 cursor-pointer"
+                >
+                  Müvekkili Kaydet
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       {/* Modal: Yeni Dava Ekle */}
       {showAddCaseModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
