@@ -10,26 +10,39 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-async function migrate() {
+// .env dosyasını otomatik yükle
+const envPath = path.resolve(process.cwd(), '.env');
+if (fs.existsSync(envPath)) {
+  try {
+    if (typeof (process as any).loadEnvFile === 'function') {
+      (process as any).loadEnvFile(envPath);
+    } else {
+      const envContent = fs.readFileSync(envPath, 'utf-8');
+      envContent.split(/\r?\n/).forEach((line) => {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#')) {
+          const eqIdx = trimmed.indexOf('=');
+          if (eqIdx !== -1) {
+            const key = trimmed.slice(0, eqIdx).trim();
+            const val = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, '');
+            if (!process.env[key]) {
+              process.env[key] = val;
+            }
+          }
+        }
+      });
+    }
+  } catch (err) {
+    console.warn('⚠️ .env yüklenirken uyarı:', err);
+  }
+}
+
+export async function runMigration() {
   const DATABASE_URL = process.env.DATABASE_URL;
   if (!DATABASE_URL) {
     console.error('❌ DATABASE_URL ortam değişkeni tanımlanmamış.');
     console.error('   Neon Dashboard\'dan bağlantı URL\'sini alıp .env dosyasına ekleyin.');
     process.exit(1);
-  }
-
-  // Dynamic import for pg (postgres client)
-  let pg;
-  try {
-    pg = await import('@neondatabase/serverless');
-  } catch {
-    try {
-      pg = await import('pg');
-    } catch {
-      console.error('❌ PostgreSQL istemcisi bulunamadı. Şu komutu çalıştırın:');
-      console.error('   npm install @neondatabase/serverless');
-      process.exit(1);
-    }
   }
 
   const schemaPath = path.join(__dirname, 'schema.sql');
@@ -43,27 +56,59 @@ async function migrate() {
   console.log('🔄 Neon PostgreSQL migration başlatılıyor...');
   console.log(`   Hedef: ${DATABASE_URL.replace(/\/\/[^@]+@/, '//***@')}`);
 
+  let pg: any;
   try {
-    const { neon } = pg;
-    if (neon) {
-      // Neon serverless driver
-      const sql = neon(DATABASE_URL);
-      await sql(schemaSql);
-    } else {
-      // Standard pg driver
-      const { Pool } = pg;
-      const pool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } });
+    pg = await import('@neondatabase/serverless');
+  } catch {
+    try {
+      pg = await import('pg');
+    } catch {
+      console.error('❌ PostgreSQL istemcisi bulunamadı (@neondatabase/serverless veya pg)');
+      process.exit(1);
+    }
+  }
+
+  try {
+    // Client.query supports multiple statements in standard PostgreSQL simple query protocol
+    if (pg.Client) {
+      const client = new pg.Client({ connectionString: DATABASE_URL });
+      await client.connect();
+      await client.query(schemaSql);
+      await client.end();
+    } else if (pg.Pool) {
+      const pool = new pg.Pool({ connectionString: DATABASE_URL });
       await pool.query(schemaSql);
       await pool.end();
+    } else {
+      // Split statements and execute individually with neon tagged template or function
+      const { neon } = pg;
+      const sql = neon(DATABASE_URL);
+      const cleaned = schemaSql
+        .split('\n')
+        .filter(l => !l.trim().startsWith('--'))
+        .join('\n');
+      const statements = cleaned
+        .split(';')
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+
+      for (const statement of statements) {
+        await sql(statement);
+      }
     }
 
-    console.log('✅ Migration başarılı! Tüm tablolar oluşturuldu.');
-    console.log('   📋 admin_users, lawyers, whitelist, audit_logs,');
-    console.log('      data_breach_incidents, gemini_usage, clients, cases, case_files');
-  } catch (err) {
+    console.log('✅ Migration başarılı! Tüm tablolar oluşturuldu ve güncellendi.');
+    console.log('   📋 admin_users, lawyers, whitelist, audit_logs, data_breach_incidents,');
+    console.log('      gemini_usage, clients, cases, case_files, crm_clients, cases_extended,');
+    console.log('      case_hearings, finance_records, uyap_sync_logs, async_jobs,');
+    console.log('      chunked_uploads, upload_chunks');
+  } catch (err: any) {
     console.error('❌ Migration hatası:', err.message || err);
     process.exit(1);
   }
 }
 
-migrate();
+// Directly invoked
+if (process.argv[1] && (process.argv[1].endsWith('migrate.ts') || process.argv[1].endsWith('migrate.js'))) {
+  runMigration();
+}

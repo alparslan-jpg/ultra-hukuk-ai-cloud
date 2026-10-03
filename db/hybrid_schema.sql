@@ -132,3 +132,32 @@ CREATE INDEX IF NOT EXISTS idx_finance_lawyer ON finance_records(lawyer_sicil_no
 CREATE INDEX IF NOT EXISTS idx_finance_case ON finance_records(case_id);
 CREATE INDEX IF NOT EXISTS idx_finance_date ON finance_records(transaction_date DESC);
 CREATE INDEX IF NOT EXISTS idx_async_jobs_status ON async_jobs(status, priority DESC);
+
+
+-- 7. Parçalı Dosya Yükleme Tabloları (Chunked Uploads - 50MB+ Payload & Zaman Aşımı Çözümü)
+CREATE TABLE IF NOT EXISTS chunked_uploads (
+  id TEXT PRIMARY KEY,
+  file_name TEXT NOT NULL,
+  file_type TEXT,
+  total_size BIGINT NOT NULL,
+  total_chunks INTEGER NOT NULL,
+  uploaded_chunks INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'uploading',
+  case_id TEXT,
+  lawyer_sicil_no TEXT NOT NULL DEFAULT '8109',
+  file_path TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS upload_chunks (
+  id TEXT PRIMARY KEY,
+  upload_id TEXT NOT NULL REFERENCES chunked_uploads(id) ON DELETE CASCADE,
+  chunk_index INTEGER NOT NULL,
+  chunk_size INTEGER NOT NULL,
+  chunk_data TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(upload_id, chunk_index)
+);
+
+CREATE INDEX IF NOT EXISTS idx_upload_chunks_id ON upload_chunks(upload_id, chunk_index);

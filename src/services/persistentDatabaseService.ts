@@ -2,10 +2,37 @@ import fs from 'fs';
 import path from 'path';
 
 // ============================================================
-// ULTRA HUKUK AI — Hybrid Persistent Database Service
-// DATABASE_URL varsa → Neon PostgreSQL (bulut kalıcı veri)
-// DATABASE_URL yoksa → JSON dosya (yerel geliştirme)
+// ULTRA HUKUK AI — Central Neon PostgreSQL Database Service
+// Tüm kalıcı veri akışı merkezi SQL (Neon) veritabanına bağlıdır.
+// ultrahukuk_store.json yerel depolaması tamamen kaldırılmıştır.
 // ============================================================
+
+// .env dosyasını ortam değişkenlerine yükle
+const envPath = path.resolve(process.cwd(), '.env');
+if (fs.existsSync(envPath)) {
+  try {
+    if (typeof (process as any).loadEnvFile === 'function') {
+      (process as any).loadEnvFile(envPath);
+    } else {
+      const envContent = fs.readFileSync(envPath, 'utf-8');
+      envContent.split(/\r?\n/).forEach((line) => {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#')) {
+          const eqIdx = trimmed.indexOf('=');
+          if (eqIdx !== -1) {
+            const key = trimmed.slice(0, eqIdx).trim();
+            const val = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, '');
+            if (!process.env[key]) {
+              process.env[key] = val;
+            }
+          }
+        }
+      });
+    }
+  } catch (err) {
+    console.warn('⚠️ .env yüklenirken uyarı:', err);
+  }
+}
 
 export interface AdminUserRecord {
   id: string;
@@ -87,420 +114,324 @@ export interface DatabaseSchema {
   settings: Record<string, any>;
 }
 
-// ============================================================
-// NEON POSTGRESQL ADAPTER
-// ============================================================
-
-let neonSql: any = null;
 const DATABASE_URL = process.env.DATABASE_URL || '';
 
-async function initNeon() {
-  if (!DATABASE_URL) return false;
-  try {
-    const { neon } = await import('@neondatabase/serverless');
-    neonSql = neon(DATABASE_URL);
-    // Test connection
-    await neonSql`SELECT 1`;
-    console.log('[DB] ✅ Neon PostgreSQL bağlantısı başarılı');
-    return true;
-  } catch (err: any) {
-    console.warn('[DB] ⚠️ Neon PostgreSQL bağlantısı kurulamadı, JSON fallback kullanılacak:', err?.message);
-    neonSql = null;
-    return false;
-  }
-}
+class NeonDatabaseService {
+  private neonSql: any = null;
+  private isConnected = false;
+  private initPromise: Promise<void>;
 
-class NeonDatabaseAdapter {
+  // Fast in-memory synced cache for synchronous accessors
+  private cachedAdmins: AdminUserRecord[] = [];
+  private cachedLawyers: LawyerUserRecord[] = [];
+  private cachedWhitelist: WhitelistRecord[] = [];
+  private cachedAuditLogs: AuditLogRecord[] = [];
+  private cachedBreaches: DataBreachIncidentRecord[] = [];
+  private cachedGeminiUsage: GeminiUsageRecord[] = [];
+
+  constructor() {
+    this.initPromise = this.init();
+  }
+
+  private async init() {
+    if (!DATABASE_URL) {
+      console.warn('[DB] ⚠️ DATABASE_URL tanımlanmamış. Neon SQL bağlantısı kurulamadı.');
+      return;
+    }
+
+    try {
+      const { neon } = await import('@neondatabase/serverless');
+      this.neonSql = neon(DATABASE_URL);
+
+      // Test connection
+      await this.neonSql`SELECT 1`;
+      this.isConnected = true;
+      console.log('[DB] 🟢 Neon PostgreSQL veritabanına başarıyla bağlanıldı (Merkezi Bulut SQL).');
+
+      // Hydrate in-memory cache directly from Neon SQL
+      await this.syncFromNeon();
+    } catch (err: any) {
+      console.error('[DB] 🔴 Neon PostgreSQL bağlantı hatası:', err?.message || err);
+    }
+  }
+
+  public async ready(): Promise<void> {
+    await this.initPromise;
+  }
+
+  public getSql(): any {
+    return this.neonSql;
+  }
+
+  public async query<T = any>(queryText: string, params: any[] = []): Promise<T[]> {
+    if (!this.neonSql) {
+      throw new Error('Neon SQL veritabanı bağlantısı aktif değil.');
+    }
+    const rows = await this.neonSql(queryText, params);
+    return rows as T[];
+  }
+
+  public async syncFromNeon(): Promise<void> {
+    if (!this.neonSql) return;
+
+    try {
+      // 1. Admins
+      const adminRows = await this.neonSql`SELECT * FROM admin_users ORDER BY created_at`;
+      this.cachedAdmins = adminRows.map((r: any) => ({
+        id: r.id,
+        username: r.username,
+        passwordHash: r.password_hash,
+        role: r.role,
+        isActive: r.is_active,
+        failedLoginCount: r.failed_login_count,
+        lockedUntil: r.locked_until,
+        lastLoginAt: r.last_login_at,
+        boundDeviceId: r.bound_device_id,
+        isDeviceLocked: r.is_device_locked,
+        mustChangePassword: r.must_change_password,
+      }));
+
+      // 2. Lawyers
+      const lawyerRows = await this.neonSql`SELECT * FROM lawyers ORDER BY created_at`;
+      this.cachedLawyers = lawyerRows.map((r: any) => ({
+        id: r.id,
+        fullName: r.full_name,
+        sicilNo: r.sicil_no,
+        baroAdi: r.baro_adi,
+        email: r.email || '',
+        tcKimlik: r.tc_kimlik || '',
+        subscriptionStartDate: r.subscription_start_date ? new Date(r.subscription_start_date).toISOString() : new Date().toISOString(),
+        subscriptionEndDate: r.subscription_end_date ? new Date(r.subscription_end_date).toISOString() : new Date().toISOString(),
+        daysRemaining: r.days_remaining ?? 365,
+        isActive: r.is_active ?? true,
+        isHardwareLocked: r.is_hardware_locked ?? false,
+        boundHardwareId: r.bound_hardware_id || null,
+        status: r.status || 'AKTİF',
+      }));
+
+      // 3. Whitelist
+      const wlRows = await this.neonSql`SELECT * FROM whitelist ORDER BY added_at DESC`;
+      this.cachedWhitelist = wlRows.map((r: any) => ({
+        id: r.id,
+        tcKimlikNo: r.tc_kimlik_no,
+        sicilNo: r.sicil_no,
+        baroAdi: r.baro_adi,
+        fullName: r.full_name,
+        email: r.email || '',
+        isUsed: r.is_used,
+        addedAt: r.added_at ? new Date(r.added_at).toISOString() : new Date().toISOString(),
+        addedVia: r.added_via || 'Sistem Yöneticisi',
+      }));
+
+      // 4. Audit Logs
+      const auditRows = await this.neonSql`SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 500`;
+      this.cachedAuditLogs = auditRows.map((r: any) => ({
+        id: r.id,
+        timestamp: r.timestamp ? new Date(r.timestamp).toISOString() : new Date().toISOString(),
+        adminUsername: r.admin_username,
+        action: r.action,
+        details: r.details || '',
+        ipAddress: r.ip_address || '',
+      }));
+
+      // 5. Breaches
+      const breachRows = await this.neonSql`SELECT * FROM data_breach_incidents ORDER BY detected_at DESC`;
+      this.cachedBreaches = breachRows.map((r: any) => ({
+        id: r.id,
+        detectedAt: r.detected_at ? new Date(r.detected_at).toISOString() : new Date().toISOString(),
+        description: r.description,
+        severity: r.severity,
+        kvkkReportedAt: r.kvkk_reported_at ? new Date(r.kvkk_reported_at).toISOString() : null,
+        notes: r.notes || null,
+      }));
+
+      // 6. Gemini Usage
+      const usageRows = await this.neonSql`SELECT * FROM gemini_usage ORDER BY last_used_at DESC`;
+      this.cachedGeminiUsage = usageRows.map((r: any) => ({
+        id: r.id,
+        lawyerSicilNo: r.lawyer_sicil_no,
+        queryCount: r.query_count || 0,
+        inputTokens: r.input_tokens || 0,
+        outputTokens: r.output_tokens || 0,
+        estimatedCostUsd: parseFloat(r.estimated_cost_usd || '0'),
+        lastUsedAt: r.last_used_at ? new Date(r.last_used_at).toISOString() : new Date().toISOString(),
+      }));
+
+      console.log(`[DB] 📦 Neon veritabanı önbelleği senkronize edildi: ${this.cachedLawyers.length} avukat, ${this.cachedAdmins.length} admin, ${this.cachedWhitelist.length} whitelist.`);
+    } catch (err: any) {
+      console.error('[DB] ⚠️ Neon senkronizasyon hatası:', err?.message || err);
+    }
+  }
+
   // --- Admin Users ---
-  async getAdmins(): Promise<AdminUserRecord[]> {
-    const rows = await neonSql`SELECT * FROM admin_users ORDER BY created_at`;
-    return rows.map((r: any) => ({
-      id: r.id,
-      username: r.username,
-      passwordHash: r.password_hash,
-      role: r.role,
-      isActive: r.is_active,
-      failedLoginCount: r.failed_login_count,
-      lockedUntil: r.locked_until,
-      lastLoginAt: r.last_login_at,
-      boundDeviceId: r.bound_device_id,
-      isDeviceLocked: r.is_device_locked,
-      mustChangePassword: r.must_change_password,
-    }));
+  getAdmins(): AdminUserRecord[] {
+    return [...this.cachedAdmins];
   }
 
-  async saveAdmin(admin: AdminUserRecord) {
-    await neonSql`
-      INSERT INTO admin_users (id, username, password_hash, role, is_active, failed_login_count, locked_until, last_login_at, bound_device_id, is_device_locked, must_change_password, updated_at)
-      VALUES (${admin.id}, ${admin.username}, ${admin.passwordHash}, ${admin.role}, ${admin.isActive}, ${admin.failedLoginCount}, ${admin.lockedUntil}, ${admin.lastLoginAt}, ${admin.boundDeviceId}, ${admin.isDeviceLocked}, ${admin.mustChangePassword}, NOW())
-      ON CONFLICT (id) DO UPDATE SET
-        username = EXCLUDED.username,
-        password_hash = EXCLUDED.password_hash,
-        role = EXCLUDED.role,
-        is_active = EXCLUDED.is_active,
-        failed_login_count = EXCLUDED.failed_login_count,
-        locked_until = EXCLUDED.locked_until,
-        last_login_at = EXCLUDED.last_login_at,
-        bound_device_id = EXCLUDED.bound_device_id,
-        is_device_locked = EXCLUDED.is_device_locked,
-        must_change_password = EXCLUDED.must_change_password,
-        updated_at = NOW()
-    `;
+  async saveAdmin(admin: AdminUserRecord): Promise<void> {
+    const idx = this.cachedAdmins.findIndex(a => a.id === admin.id);
+    if (idx >= 0) this.cachedAdmins[idx] = admin;
+    else this.cachedAdmins.push(admin);
+
+    if (this.neonSql) {
+      await this.neonSql`
+        INSERT INTO admin_users (id, username, password_hash, role, is_active, failed_login_count, locked_until, last_login_at, bound_device_id, is_device_locked, must_change_password, updated_at)
+        VALUES (${admin.id}, ${admin.username}, ${admin.passwordHash}, ${admin.role}, ${admin.isActive}, ${admin.failedLoginCount}, ${admin.lockedUntil}, ${admin.lastLoginAt}, ${admin.boundDeviceId}, ${admin.isDeviceLocked}, ${admin.mustChangePassword}, NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          username = EXCLUDED.username,
+          password_hash = EXCLUDED.password_hash,
+          role = EXCLUDED.role,
+          is_active = EXCLUDED.is_active,
+          failed_login_count = EXCLUDED.failed_login_count,
+          locked_until = EXCLUDED.locked_until,
+          last_login_at = EXCLUDED.last_login_at,
+          bound_device_id = EXCLUDED.bound_device_id,
+          is_device_locked = EXCLUDED.is_device_locked,
+          must_change_password = EXCLUDED.must_change_password,
+          updated_at = NOW()
+      `;
+    }
   }
 
   // --- Lawyer Users ---
-  async getLawyers(): Promise<LawyerUserRecord[]> {
-    const rows = await neonSql`SELECT * FROM lawyers ORDER BY created_at`;
-    return rows.map((r: any) => ({
-      id: r.id,
-      fullName: r.full_name,
-      sicilNo: r.sicil_no,
-      baroAdi: r.baro_adi,
-      email: r.email || '',
-      tcKimlik: r.tc_kimlik || '',
-      subscriptionStartDate: r.subscription_start_date,
-      subscriptionEndDate: r.subscription_end_date,
-      daysRemaining: r.days_remaining,
-      isActive: r.is_active,
-      isHardwareLocked: r.is_hardware_locked,
-      boundHardwareId: r.bound_hardware_id,
-      status: r.status,
-    }));
+  getLawyers(): LawyerUserRecord[] {
+    return [...this.cachedLawyers];
   }
 
-  async saveLawyer(lawyer: LawyerUserRecord) {
-    await neonSql`
-      INSERT INTO lawyers (id, full_name, sicil_no, baro_adi, email, tc_kimlik, subscription_start_date, subscription_end_date, days_remaining, is_active, is_hardware_locked, bound_hardware_id, status, updated_at)
-      VALUES (${lawyer.id}, ${lawyer.fullName}, ${lawyer.sicilNo}, ${lawyer.baroAdi}, ${lawyer.email}, ${lawyer.tcKimlik}, ${lawyer.subscriptionStartDate}, ${lawyer.subscriptionEndDate}, ${lawyer.daysRemaining}, ${lawyer.isActive}, ${lawyer.isHardwareLocked}, ${lawyer.boundHardwareId}, ${lawyer.status}, NOW())
-      ON CONFLICT (id) DO UPDATE SET
-        full_name = EXCLUDED.full_name,
-        sicil_no = EXCLUDED.sicil_no,
-        baro_adi = EXCLUDED.baro_adi,
-        email = EXCLUDED.email,
-        tc_kimlik = EXCLUDED.tc_kimlik,
-        subscription_start_date = EXCLUDED.subscription_start_date,
-        subscription_end_date = EXCLUDED.subscription_end_date,
-        days_remaining = EXCLUDED.days_remaining,
-        is_active = EXCLUDED.is_active,
-        is_hardware_locked = EXCLUDED.is_hardware_locked,
-        bound_hardware_id = EXCLUDED.bound_hardware_id,
-        status = EXCLUDED.status,
-        updated_at = NOW()
-    `;
+  async saveLawyer(lawyer: LawyerUserRecord): Promise<void> {
+    const idx = this.cachedLawyers.findIndex(u => u.id === lawyer.id || u.sicilNo === lawyer.sicilNo);
+    if (idx >= 0) this.cachedLawyers[idx] = lawyer;
+    else this.cachedLawyers.push(lawyer);
+
+    if (this.neonSql) {
+      await this.neonSql`
+        INSERT INTO lawyers (id, full_name, sicil_no, baro_adi, email, tc_kimlik, subscription_start_date, subscription_end_date, days_remaining, is_active, is_hardware_locked, bound_hardware_id, status, updated_at)
+        VALUES (${lawyer.id}, ${lawyer.fullName}, ${lawyer.sicilNo}, ${lawyer.baroAdi}, ${lawyer.email}, ${lawyer.tcKimlik}, ${lawyer.subscriptionStartDate}, ${lawyer.subscriptionEndDate}, ${lawyer.daysRemaining}, ${lawyer.isActive}, ${lawyer.isHardwareLocked}, ${lawyer.boundHardwareId}, ${lawyer.status}, NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          full_name = EXCLUDED.full_name,
+          sicil_no = EXCLUDED.sicil_no,
+          baro_adi = EXCLUDED.baro_adi,
+          email = EXCLUDED.email,
+          tc_kimlik = EXCLUDED.tc_kimlik,
+          subscription_start_date = EXCLUDED.subscription_start_date,
+          subscription_end_date = EXCLUDED.subscription_end_date,
+          days_remaining = EXCLUDED.days_remaining,
+          is_active = EXCLUDED.is_active,
+          is_hardware_locked = EXCLUDED.is_hardware_locked,
+          bound_hardware_id = EXCLUDED.bound_hardware_id,
+          status = EXCLUDED.status,
+          updated_at = NOW()
+      `;
+    }
   }
 
   // --- Whitelist ---
-  async getWhitelist(): Promise<WhitelistRecord[]> {
-    const rows = await neonSql`SELECT * FROM whitelist ORDER BY added_at DESC`;
-    return rows.map((r: any) => ({
-      id: r.id,
-      tcKimlikNo: r.tc_kimlik_no,
-      sicilNo: r.sicil_no,
-      baroAdi: r.baro_adi,
-      fullName: r.full_name,
-      email: r.email || '',
-      isUsed: r.is_used,
-      addedAt: r.added_at,
-      addedVia: r.added_via,
-    }));
+  getWhitelist(): WhitelistRecord[] {
+    return [...this.cachedWhitelist];
   }
 
-  async addWhitelist(item: WhitelistRecord) {
-    await neonSql`
-      INSERT INTO whitelist (id, tc_kimlik_no, sicil_no, baro_adi, full_name, email, is_used, added_at, added_via)
-      VALUES (${item.id}, ${item.tcKimlikNo}, ${item.sicilNo}, ${item.baroAdi}, ${item.fullName}, ${item.email}, ${item.isUsed}, ${item.addedAt}, ${item.addedVia})
-      ON CONFLICT (id) DO NOTHING
-    `;
+  async addWhitelist(item: WhitelistRecord): Promise<void> {
+    this.cachedWhitelist.unshift(item);
+    if (this.neonSql) {
+      await this.neonSql`
+        INSERT INTO whitelist (id, tc_kimlik_no, sicil_no, baro_adi, full_name, email, is_used, added_at, added_via)
+        VALUES (${item.id}, ${item.tcKimlikNo}, ${item.sicilNo}, ${item.baroAdi}, ${item.fullName}, ${item.email}, ${item.isUsed}, ${item.addedAt}, ${item.addedVia})
+        ON CONFLICT (id) DO UPDATE SET
+          is_used = EXCLUDED.is_used,
+          email = EXCLUDED.email,
+          full_name = EXCLUDED.full_name
+      `;
+    }
   }
 
   async removeWhitelist(id: string): Promise<boolean> {
-    const res = await neonSql`DELETE FROM whitelist WHERE id = ${id}`;
-    return (res?.length ?? 0) > 0 || true;
+    const idx = this.cachedWhitelist.findIndex(w => w.id === id);
+    if (idx >= 0) this.cachedWhitelist.splice(idx, 1);
+    if (this.neonSql) {
+      await this.neonSql`DELETE FROM whitelist WHERE id = ${id}`;
+      return true;
+    }
+    return idx >= 0;
   }
 
   // --- Audit Logs ---
-  async getAuditLogs(): Promise<AuditLogRecord[]> {
-    const rows = await neonSql`SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 500`;
-    return rows.map((r: any) => ({
-      id: r.id,
-      timestamp: r.timestamp,
-      adminUsername: r.admin_username,
-      action: r.action,
-      details: r.details || '',
-      ipAddress: r.ip_address || '',
-    }));
+  getAuditLogs(): AuditLogRecord[] {
+    return [...this.cachedAuditLogs];
   }
 
-  async addAuditLog(log: AuditLogRecord) {
-    await neonSql`
-      INSERT INTO audit_logs (id, timestamp, admin_username, action, details, ip_address)
-      VALUES (${log.id}, ${log.timestamp}, ${log.adminUsername}, ${log.action}, ${log.details}, ${log.ipAddress})
-    `;
+  async addAuditLog(log: AuditLogRecord): Promise<void> {
+    this.cachedAuditLogs.unshift(log);
+    if (this.cachedAuditLogs.length > 500) this.cachedAuditLogs.pop();
+
+    if (this.neonSql) {
+      await this.neonSql`
+        INSERT INTO audit_logs (id, timestamp, admin_username, action, details, ip_address)
+        VALUES (${log.id}, ${log.timestamp}, ${log.adminUsername}, ${log.action}, ${log.details}, ${log.ipAddress})
+        ON CONFLICT (id) DO NOTHING
+      `;
+    }
   }
 
   // --- Breaches ---
-  async getBreaches(): Promise<DataBreachIncidentRecord[]> {
-    const rows = await neonSql`SELECT * FROM data_breach_incidents ORDER BY detected_at DESC`;
-    return rows.map((r: any) => ({
-      id: r.id,
-      detectedAt: r.detected_at,
-      description: r.description,
-      severity: r.severity,
-      kvkkReportedAt: r.kvkk_reported_at,
-      notes: r.notes,
-    }));
+  getBreaches(): DataBreachIncidentRecord[] {
+    return [...this.cachedBreaches];
   }
 
-  async addBreach(incident: DataBreachIncidentRecord) {
-    await neonSql`
-      INSERT INTO data_breach_incidents (id, detected_at, description, severity, kvkk_reported_at, notes)
-      VALUES (${incident.id}, ${incident.detectedAt}, ${incident.description}, ${incident.severity}, ${incident.kvkkReportedAt}, ${incident.notes})
-    `;
+  async addBreach(incident: DataBreachIncidentRecord): Promise<void> {
+    this.cachedBreaches.unshift(incident);
+    if (this.neonSql) {
+      await this.neonSql`
+        INSERT INTO data_breach_incidents (id, detected_at, description, severity, kvkk_reported_at, notes)
+        VALUES (${incident.id}, ${incident.detectedAt}, ${incident.description}, ${incident.severity}, ${incident.kvkkReportedAt}, ${incident.notes})
+        ON CONFLICT (id) DO NOTHING
+      `;
+    }
   }
 
   async updateBreach(id: string, updates: Partial<DataBreachIncidentRecord>): Promise<boolean> {
-    if (updates.kvkkReportedAt !== undefined) {
-      await neonSql`UPDATE data_breach_incidents SET kvkk_reported_at = ${updates.kvkkReportedAt} WHERE id = ${id}`;
+    const item = this.cachedBreaches.find(b => b.id === id);
+    if (item) Object.assign(item, updates);
+
+    if (this.neonSql) {
+      if (updates.kvkkReportedAt !== undefined) {
+        await this.neonSql`UPDATE data_breach_incidents SET kvkk_reported_at = ${updates.kvkkReportedAt} WHERE id = ${id}`;
+      }
+      if (updates.notes !== undefined) {
+        await this.neonSql`UPDATE data_breach_incidents SET notes = ${updates.notes} WHERE id = ${id}`;
+      }
+      return true;
     }
-    if (updates.notes !== undefined) {
-      await neonSql`UPDATE data_breach_incidents SET notes = ${updates.notes} WHERE id = ${id}`;
-    }
-    return true;
+    return !!item;
   }
 
   // --- Gemini Usage ---
-  async getGeminiUsage(): Promise<GeminiUsageRecord[]> {
-    const rows = await neonSql`SELECT * FROM gemini_usage ORDER BY last_used_at DESC`;
-    return rows.map((r: any) => ({
-      id: r.id,
-      lawyerSicilNo: r.lawyer_sicil_no,
-      queryCount: r.query_count,
-      inputTokens: r.input_tokens,
-      outputTokens: r.output_tokens,
-      estimatedCostUsd: parseFloat(r.estimated_cost_usd),
-      lastUsedAt: r.last_used_at,
-    }));
+  getGeminiUsage(): GeminiUsageRecord[] {
+    return [...this.cachedGeminiUsage];
   }
 
-  async updateGeminiUsage(record: GeminiUsageRecord) {
-    await neonSql`
-      INSERT INTO gemini_usage (id, lawyer_sicil_no, query_count, input_tokens, output_tokens, estimated_cost_usd, last_used_at)
-      VALUES (${record.id}, ${record.lawyerSicilNo}, ${record.queryCount}, ${record.inputTokens}, ${record.outputTokens}, ${record.estimatedCostUsd}, ${record.lastUsedAt})
-      ON CONFLICT (id) DO UPDATE SET
-        query_count = EXCLUDED.query_count,
-        input_tokens = EXCLUDED.input_tokens,
-        output_tokens = EXCLUDED.output_tokens,
-        estimated_cost_usd = EXCLUDED.estimated_cost_usd,
-        last_used_at = EXCLUDED.last_used_at
-    `;
-  }
+  async updateGeminiUsage(record: GeminiUsageRecord): Promise<void> {
+    const idx = this.cachedGeminiUsage.findIndex(g => g.lawyerSicilNo === record.lawyerSicilNo);
+    if (idx >= 0) this.cachedGeminiUsage[idx] = record;
+    else this.cachedGeminiUsage.push(record);
 
-  async persist() { /* no-op: Neon commits automatically */ }
-}
-
-// ============================================================
-// JSON FILE ADAPTER (Fallback)
-// ============================================================
-
-const DATA_DIR = path.resolve(process.cwd(), 'data');
-const DB_FILE = path.join(DATA_DIR, 'ultrahukuk_store.json');
-
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
-class JsonDatabaseAdapter {
-  private data: DatabaseSchema;
-  private saveTimeout: NodeJS.Timeout | null = null;
-
-  constructor() {
-    this.data = this.loadDatabase();
-  }
-
-  private loadDatabase(): DatabaseSchema {
-    if (fs.existsSync(DB_FILE)) {
-      try {
-        const content = fs.readFileSync(DB_FILE, 'utf-8');
-        return JSON.parse(content) as DatabaseSchema;
-      } catch (err) {
-        console.error('[DB] Veritabanı dosyası okunamadı, yeniden oluşturuluyor:', err);
-      }
-    }
-    const defaultData: DatabaseSchema = {
-      adminUsers: [], lawyerUsers: [], whitelist: [],
-      auditLogs: [], dataBreachIncidents: [], geminiUsage: [],
-      settings: { createdAt: new Date().toISOString(), version: '2.6.4' }
-    };
-    this.saveImmediate(defaultData);
-    return defaultData;
-  }
-
-  private saveImmediate(state: DatabaseSchema) {
-    try {
-      const tempPath = `${DB_FILE}.tmp`;
-      fs.writeFileSync(tempPath, JSON.stringify(state, null, 2), 'utf-8');
-      fs.renameSync(tempPath, DB_FILE);
-    } catch (err) {
-      console.error('[DB] Disk kaydı hatası:', err);
+    if (this.neonSql) {
+      await this.neonSql`
+        INSERT INTO gemini_usage (id, lawyer_sicil_no, query_count, input_tokens, output_tokens, estimated_cost_usd, last_used_at)
+        VALUES (${record.id}, ${record.lawyerSicilNo}, ${record.queryCount}, ${record.inputTokens}, ${record.outputTokens}, ${record.estimatedCostUsd}, ${record.lastUsedAt})
+        ON CONFLICT (id) DO UPDATE SET
+          query_count = EXCLUDED.query_count,
+          input_tokens = EXCLUDED.input_tokens,
+          output_tokens = EXCLUDED.output_tokens,
+          estimated_cost_usd = EXCLUDED.estimated_cost_usd,
+          last_used_at = EXCLUDED.last_used_at
+      `;
     }
   }
 
-  persist() {
-    if (this.saveTimeout) clearTimeout(this.saveTimeout);
-    this.saveTimeout = setTimeout(() => { this.saveImmediate(this.data); }, 100);
-  }
-
-  getAdmins(): AdminUserRecord[] { return this.data.adminUsers; }
-  saveAdmin(admin: AdminUserRecord) {
-    const idx = this.data.adminUsers.findIndex(a => a.id === admin.id);
-    if (idx >= 0) this.data.adminUsers[idx] = admin;
-    else this.data.adminUsers.push(admin);
-    this.persist();
-  }
-
-  getLawyers(): LawyerUserRecord[] { return this.data.lawyerUsers; }
-  saveLawyer(lawyer: LawyerUserRecord) {
-    const idx = this.data.lawyerUsers.findIndex(u => u.id === lawyer.id || u.sicilNo === lawyer.sicilNo);
-    if (idx >= 0) this.data.lawyerUsers[idx] = lawyer;
-    else this.data.lawyerUsers.push(lawyer);
-    this.persist();
-  }
-
-  getWhitelist(): WhitelistRecord[] { return this.data.whitelist; }
-  addWhitelist(item: WhitelistRecord) { this.data.whitelist.unshift(item); this.persist(); }
-  removeWhitelist(id: string): boolean {
-    const idx = this.data.whitelist.findIndex(w => w.id === id);
-    if (idx >= 0) { this.data.whitelist.splice(idx, 1); this.persist(); return true; }
-    return false;
-  }
-
-  getAuditLogs(): AuditLogRecord[] { return this.data.auditLogs; }
-  addAuditLog(log: AuditLogRecord) {
-    this.data.auditLogs.unshift(log);
-    if (this.data.auditLogs.length > 500) this.data.auditLogs.pop();
-    this.persist();
-  }
-
-  getBreaches(): DataBreachIncidentRecord[] { return this.data.dataBreachIncidents; }
-  addBreach(incident: DataBreachIncidentRecord) { this.data.dataBreachIncidents.unshift(incident); this.persist(); }
-  updateBreach(id: string, updates: Partial<DataBreachIncidentRecord>): boolean {
-    const item = this.data.dataBreachIncidents.find(b => b.id === id);
-    if (item) { Object.assign(item, updates); this.persist(); return true; }
-    return false;
-  }
-
-  getGeminiUsage(): GeminiUsageRecord[] { return this.data.geminiUsage; }
-  updateGeminiUsage(record: GeminiUsageRecord) {
-    const idx = this.data.geminiUsage.findIndex(g => g.lawyerSicilNo === record.lawyerSicilNo);
-    if (idx >= 0) this.data.geminiUsage[idx] = record;
-    else this.data.geminiUsage.push(record);
-    this.persist();
+  public persist() {
+    // Neon commits automatically for each statement.
+    // ultrahukuk_store.json disk kaydı devre dışı bırakılmıştır.
   }
 }
 
-// ============================================================
-// HYBRID DATABASE — Auto-select Neon or JSON
-// ============================================================
-
-class HybridDatabase {
-  private neonAdapter: NeonDatabaseAdapter | null = null;
-  private jsonAdapter: JsonDatabaseAdapter;
-  private useNeon = false;
-  private initPromise: Promise<void>;
-
-  constructor() {
-    this.jsonAdapter = new JsonDatabaseAdapter();
-    this.initPromise = this.initialize();
-  }
-
-  private async initialize() {
-    if (DATABASE_URL) {
-      const ok = await initNeon();
-      if (ok) {
-        this.neonAdapter = new NeonDatabaseAdapter();
-        this.useNeon = true;
-        console.log('[DB] 🟢 Neon PostgreSQL aktif (bulut kalıcı veri)');
-      } else {
-        console.log('[DB] 🟡 JSON dosya fallback aktif (yerel geliştirme)');
-      }
-    } else {
-      console.log('[DB] 🟡 DATABASE_URL tanımlanmamış — JSON dosya modu');
-    }
-  }
-
-  async ready() { await this.initPromise; }
-
-  // Sync wrappers that return cached JSON data immediately,
-  // while async Neon calls run in background for writes
-  getAdmins(): AdminUserRecord[] { return this.jsonAdapter.getAdmins(); }
-  getLawyers(): LawyerUserRecord[] { return this.jsonAdapter.getLawyers(); }
-  getWhitelist(): WhitelistRecord[] { return this.jsonAdapter.getWhitelist(); }
-  getAuditLogs(): AuditLogRecord[] { return this.jsonAdapter.getAuditLogs(); }
-  getBreaches(): DataBreachIncidentRecord[] { return this.jsonAdapter.getBreaches(); }
-  getGeminiUsage(): GeminiUsageRecord[] { return this.jsonAdapter.getGeminiUsage(); }
-
-  saveAdmin(admin: AdminUserRecord) {
-    this.jsonAdapter.saveAdmin(admin);
-    if (this.useNeon && this.neonAdapter) {
-      this.neonAdapter.saveAdmin(admin).catch(e => console.error('[Neon] saveAdmin error:', e?.message));
-    }
-  }
-
-  saveLawyer(lawyer: LawyerUserRecord) {
-    this.jsonAdapter.saveLawyer(lawyer);
-    if (this.useNeon && this.neonAdapter) {
-      this.neonAdapter.saveLawyer(lawyer).catch(e => console.error('[Neon] saveLawyer error:', e?.message));
-    }
-  }
-
-  addWhitelist(item: WhitelistRecord) {
-    this.jsonAdapter.addWhitelist(item);
-    if (this.useNeon && this.neonAdapter) {
-      this.neonAdapter.addWhitelist(item).catch(e => console.error('[Neon] addWhitelist error:', e?.message));
-    }
-  }
-
-  removeWhitelist(id: string): boolean {
-    const result = this.jsonAdapter.removeWhitelist(id);
-    if (this.useNeon && this.neonAdapter) {
-      this.neonAdapter.removeWhitelist(id).catch(e => console.error('[Neon] removeWhitelist error:', e?.message));
-    }
-    return result;
-  }
-
-  addAuditLog(log: AuditLogRecord) {
-    this.jsonAdapter.addAuditLog(log);
-    if (this.useNeon && this.neonAdapter) {
-      this.neonAdapter.addAuditLog(log).catch(e => console.error('[Neon] addAuditLog error:', e?.message));
-    }
-  }
-
-  addBreach(incident: DataBreachIncidentRecord) {
-    this.jsonAdapter.addBreach(incident);
-    if (this.useNeon && this.neonAdapter) {
-      this.neonAdapter.addBreach(incident).catch(e => console.error('[Neon] addBreach error:', e?.message));
-    }
-  }
-
-  updateBreach(id: string, updates: Partial<DataBreachIncidentRecord>): boolean {
-    const result = this.jsonAdapter.updateBreach(id, updates);
-    if (this.useNeon && this.neonAdapter) {
-      this.neonAdapter.updateBreach(id, updates).catch(e => console.error('[Neon] updateBreach error:', e?.message));
-    }
-    return result;
-  }
-
-  updateGeminiUsage(record: GeminiUsageRecord) {
-    this.jsonAdapter.updateGeminiUsage(record);
-    if (this.useNeon && this.neonAdapter) {
-      this.neonAdapter.updateGeminiUsage(record).catch(e => console.error('[Neon] updateGeminiUsage error:', e?.message));
-    }
-  }
-
-  persist() {
-    this.jsonAdapter.persist();
-    // Neon auto-commits, no explicit persist needed
-  }
-}
-
-export const db = new HybridDatabase();
+export const db = new NeonDatabaseService();

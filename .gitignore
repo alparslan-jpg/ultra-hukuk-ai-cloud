@@ -34,3 +34,5 @@ tsconfig.tsbuildinfo
 Thumbs.db
 .vscode/
 .idea/
+uploads/
+scratch/

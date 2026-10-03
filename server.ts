@@ -191,8 +191,8 @@ export async function callRoutedGemini(
 
 
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 
 // ==========================================
 // IN-MEMORY DATA STORE (Zero-loss migration)
@@ -5090,9 +5090,16 @@ async function startServer() {
     }
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  await db.ready();
+
+  const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`[ULTRA HUKUK AI] Sunucu port ${PORT} üzerinde hazır. http://0.0.0.0:${PORT}`);
   });
+
+  // 413 Payload ve Zaman Asimi Optimizasyonu (50MB+ Yukleme & LLM Korumasi)
+  server.timeout = 300000;
+  server.keepAliveTimeout = 120000;
+  server.headersTimeout = 125000;
 }
 
 startServer().catch((err) => {
