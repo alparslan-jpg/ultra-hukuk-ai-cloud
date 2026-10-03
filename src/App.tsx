@@ -743,19 +743,7 @@ export default function App() {
             ======================================================== */}
         {currentPage === 'buro_yonetimi' && (
           <div className="w-full px-3 sm:px-6 py-3 space-y-4">
-            <div className="flex items-center justify-between bg-white dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => setCurrentPage('home')}
-                className="text-xs px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 font-bold transition flex items-center gap-1.5 shadow-sm"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Ana Sayfa'ya Dön</span>
-              </button>
-              <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                Alt Sayfa: <strong className="text-amber-600 dark:text-amber-400">Kurumsal Büro & Finans Yönetimi (Apilex Hibrit)</strong>
-              </div>
-            </div>
+
 
             <KurumsalBuroYonetimi
               lawyerName={currentLawyer.fullName}
@@ -770,19 +758,7 @@ export default function App() {
             ======================================================== */}
         {currentPage === 'dava_simulasyonu' && (
           <div className="w-full px-3 sm:px-6 py-3 space-y-4">
-            <div className="flex items-center justify-between bg-white dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => setCurrentPage('home')}
-                className="text-xs px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 font-bold transition flex items-center gap-1.5 shadow-sm"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Ana Sayfa'ya Dön</span>
-              </button>
-              <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                Alt Sayfa: <strong className="text-purple-600 dark:text-purple-400">Claude Destekli Multi-Agent Dava Risk Simülasyonu</strong>
-              </div>
-            </div>
+
 
             <MultiAgentDavaSimulasyonu
               onApplyToPetition={() => setCurrentPage('petitions')}
@@ -792,19 +768,7 @@ export default function App() {
 
         {currentPage === 'forensic' && (
           <div className="w-full px-3 sm:px-6 py-3 space-y-4">
-            <div className="flex items-center justify-between bg-white dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => setCurrentPage('home')}
-                className="text-xs px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 font-bold transition flex items-center gap-1.5 shadow-sm"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Ana Sayfa'ya Dön</span>
-              </button>
-              <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                Alt Sayfa: <strong className="text-rose-600 dark:text-rose-400">Adli Delil ve Şahit Çelişkisi (Cımbız Ajanı)</strong>
-              </div>
-            </div>
+
 
             <AdliDelilVeSahitAjanPaneli
               initialCaseNo=""
@@ -823,22 +787,7 @@ export default function App() {
             ======================================================== */}
         {currentPage === 'analyzer' && (
           <div className="w-full px-3 sm:px-6 py-3 space-y-4">
-            <div className="flex items-center justify-between bg-white dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => setCurrentPage('home')}
-                className="text-xs px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 font-bold transition flex items-center gap-1.5 shadow-sm"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Ana Sayfa'ya Dön</span>
-              </button>
-              <div className="flex items-center gap-2">
-                
-                <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                  Alt Sayfa: <strong className="text-emerald-600 dark:text-emerald-400">Dava Evrak Analizörü & Harp Odası (Gemini 3.1 Pro Derin Muhakeme)</strong>
-                </div>
-              </div>
-            </div>
+
 
             <DavaDerinAnaliz
               lawyerSicilNo={currentLawyer.sicilNo}
@@ -854,19 +803,7 @@ export default function App() {
             ======================================================== */}
         {currentPage === 'petitions' && (
           <div className="w-full px-3 sm:px-6 py-3 space-y-4">
-            <div className="flex items-center justify-between bg-white dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => setCurrentPage('home')}
-                className="text-xs px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 font-bold transition flex items-center gap-1.5 shadow-sm"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Ana Sayfa'ya Dön</span>
-              </button>
-              <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                Alt Sayfa: <strong className="text-indigo-600 dark:text-indigo-400">UYAP Dava Dilekçesi ve Savunma Harp Odası</strong>
-              </div>
-            </div>
+
 
             <LawyerWorkspace
               user={currentLawyer}
@@ -881,29 +818,7 @@ export default function App() {
             ======================================================== */}
         {currentPage === 'legislation' && (
           <div className="w-full px-3 sm:px-6 py-3 space-y-4">
-            <div className="flex items-center justify-between bg-white dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => setCurrentPage('home')}
-                className="text-xs px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 font-bold transition flex items-center gap-1.5 shadow-sm"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Ana Sayfa'ya Dön</span>
-              </button>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setWorkspaceInitialTab(workspaceInitialTab === 'sozluk' ? 'mevzuat' : 'sozluk')}
-                  className="px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                  <span>{workspaceInitialTab === 'sozluk' ? 'Kanun Maddeleri Dizinine Geç' : 'Hukuk Terimleri Sözlüğü (AI)'}</span>
-                </button>
-                <div className="text-xs font-semibold text-slate-600 dark:text-slate-300 hidden sm:block">
-                  Alt Sayfa: <strong className="text-amber-600 dark:text-amber-400">Türk Pozitif Mevzuat & Terimler Sözlüğü</strong>
-                </div>
-              </div>
-            </div>
+
 
             <LawyerWorkspace
               user={currentLawyer}
@@ -918,19 +833,7 @@ export default function App() {
             ======================================================== */}
         {currentPage === 'apk_download' && (
           <div className="w-full px-3 sm:px-6 py-3 space-y-4">
-            <div className="flex items-center justify-between bg-white dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => setCurrentPage('home')}
-                className="text-xs px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 font-bold transition flex items-center gap-1.5 shadow-sm"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Ana Sayfa'ya Dön</span>
-              </button>
-              <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                Alt Sayfa: <strong className="text-teal-600 dark:text-teal-400">Kişiye Özel Mobil APK İndirme & Donanım Kilidi</strong>
-              </div>
-            </div>
+
 
             <KisiselApkIndirmePaneli
               user={currentLawyer}
@@ -944,19 +847,7 @@ export default function App() {
             ======================================================== */}
         {currentPage === 'workspace_full' && (
           <div className="w-full px-3 sm:px-6 py-3 space-y-4">
-            <div className="flex items-center justify-between bg-white dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => setCurrentPage('home')}
-                className="text-xs px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 font-bold transition flex items-center gap-1.5 shadow-sm"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Ana Sayfa'ya Dön</span>
-              </button>
-              <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                Alt Sayfa: <strong className="text-amber-600 dark:text-amber-400">Tümleşik Avukat Çalışma Masası</strong>
-              </div>
-            </div>
+
 
             <LawyerWorkspace
               user={currentLawyer}
@@ -1016,8 +907,9 @@ export default function App() {
         onClose={() => setHesaplamaModalOpen(false)}
       />
 
-      {/* 5 Grup ve 17 Uzman Ajan Beceri & Bağlantı Matrisi Açılır Penceresi */}
-      <AgentCapabilitiesDrawer
+      {/* 5 Grup ve 17 Uzman Ajan Beceri & Bağlantı Matrisi Açılır Penceresi (Yalnızca Ana Sayfada) */}
+      {currentPage === 'home' && (
+        <AgentCapabilitiesDrawer
         onNavigateToPage={(page) => {
           setCurrentPage(page);
           window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1028,6 +920,7 @@ export default function App() {
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
       />
+      )}
     </div>
   );
 }

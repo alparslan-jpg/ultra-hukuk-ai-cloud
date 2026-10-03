@@ -799,15 +799,13 @@ ZORUNLU ŞERH: 1136 Sayılı Avukatlık Kanunu m. 34 ve KVKK uyarınca bu analiz
                   <button
                     type="button"
                     onClick={() => {
-                      const nextMode = modelMode === 'flash' ? 'pro' : 'flash';
-                      setModelMode(nextMode);
-                      handleRunAnalysis(nextMode);
+                      handleRunAnalysis('pro');
                     }}
                     className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl border border-slate-700 flex items-center gap-1.5 transition font-medium"
-                    title="Diğer modelle yeniden analiz et"
+                    title="Derin analiz motoruyla yeniden incele"
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>{modelMode === 'flash' ? "Pro'ya Geç" : "Flash'a Geç"}</span>
+                    <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Yeniden Derin Analiz Yap</span>
                   </button>
                 </div>
               </div>
