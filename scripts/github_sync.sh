@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Ultra Hukuk AI - GitHub Synchronization Script (Bash)
-# Repository: https://github.com/alparslan-jpg/ultra-hukuk-ai
+# Repository: https://github.com/alparslan-jpg/ultra-hukuk-ai-cloud
 
 set -e
 
@@ -22,7 +22,7 @@ fi
 # Set remote
 echo "[3/4] Remote repository ayarlanıyor..."
 git remote remove origin 2>/dev/null || true
-git remote add origin https://github.com/alparslan-jpg/ultra-hukuk-ai.git
+git remote add origin https://github.com/alparslan-jpg/ultra-hukuk-ai-cloud.git
 
 # Stage, commit and push
 echo "[4/4] Commit ve GitHub'a push işlemi..."

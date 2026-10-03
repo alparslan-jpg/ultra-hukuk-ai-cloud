@@ -1,5 +1,5 @@
 # Ultra Hukuk AI - GitHub Senkronizasyon Betiği (PowerShell)
-# Hedef Depo: https://github.com/alparslan-jpg/ultra-hukuk-ai
+# Hedef Depo: https://github.com/alparslan-jpg/ultra-hukuk-ai-cloud
 
 Write-Host "=================================================" -ForegroundColor Cyan
 Write-Host " ULTRA HUKUK AI -> GITHUB SENKRONİZASYONU" -ForegroundColor Green
@@ -18,7 +18,7 @@ if (-not (Test-Path ".git")) {
 
 # 3. Remote URL ayarla
 Write-Host "[3/5] GitHub Remote bağlanıyor..." -ForegroundColor Yellow
-$remoteUrl = "https://github.com/alparslan-jpg/ultra-hukuk-ai.git"
+$remoteUrl = "https://github.com/alparslan-jpg/ultra-hukuk-ai-cloud.git"
 git remote remove origin 2>$null
 git remote add origin $remoteUrl
 

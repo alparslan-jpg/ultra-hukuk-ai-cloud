@@ -6,8 +6,8 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
-const REPO = 'alparslan-jpg/ultra-hukuk-ai';
-const BRANCH = 'master';
+const REPO = 'alparslan-jpg/ultra-hukuk-ai-cloud';
+const BRANCH = 'main';
 
 function gh(cmd) {
   return execSync(`gh api ${cmd}`, { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 });
