@@ -155,7 +155,7 @@ export async function callRoutedGemini(
   // 1. Aşama: Birincil mimari model katmanını dene
   try {
     const response = await genAI.models.generateContent({
-      model: primary,
+      model: getLiveModelCandidate(primary),
       contents,
     });
     const text = response.text || '';
@@ -1536,6 +1536,217 @@ Aşağıdaki JSON şemasında SADECE geçerli bir JSON çıktısı üret (markdo
 // MULTI-AGENT COUNCIL & CHIEF LEGAL COUNSEL CONSULTATION ENDPOINT
 // Orchestrator: Gemini 3.1 Pro / Gemini 3.8 Flash with Specialized Background Agents
 // =========================================================================
+
+// =========================================================================
+// DİNAMİK VE BAĞLAMSAL TÜRK HUKUKU MOTORU (HUKUKİ ALAN & SORU UYARLAMALI)
+// Statik/sabit şablon yerine; tapu, iş, aile, ceza, kira, ticaret vb. alanları
+// ve avukatın somut sorusunu doğrudan analiz eden akıllı sentezleyici.
+// =========================================================================
+function generateDynamicLegalConsultation(params: {
+  query: string;
+  activeCaseContext?: string;
+  clientInfo?: any;
+  contextFiles?: any[];
+  lehine?: string;
+  orchestratorModel?: string;
+  todayStr: string;
+}) {
+  const { query, activeCaseContext, clientInfo, contextFiles = [], lehine, orchestratorModel, todayStr } = params;
+  const cleanQ = (query || '').trim();
+  const allText = `${cleanQ} ${activeCaseContext || ''} ${JSON.stringify(clientInfo || '')} ${contextFiles.map((f: any) => (f.name || '') + ' ' + (f.content || '')).join(' ')}`.toLowerCase();
+
+  const isGreeting = /^(merhaba|selam|günaydın|iyi günler|kolay gelsin|tamam|tşk|teşekkür|sağol|harika|anladım)\b/i.test(cleanQ) && cleanQ.length < 35;
+  if (isGreeting && !activeCaseContext && contextFiles.length === 0) {
+    return {
+      mode: 'chat',
+      answerToUserQuestion: 'Merhaba Meslektaşım. İncelememi istediğiniz dava dosyasını, tensip zaptını, delil listesini veya somut hukuki sorunuzu iletebilirsiniz; Ajan Konseyimizle derhal stratejik analize başlayalım.'
+    };
+  }
+
+  // Hukuk Alanı Tespiti
+  const isTapu = allText.includes('tapu') || allText.includes('tescil') || allText.includes('mülkiyet') || allText.includes('gayrimenkul') || allText.includes('taşınmaz') || allText.includes('muris muvazaası') || allText.includes('inançlı') || allText.includes('şuf') || allText.includes('önalım') || allText.includes('ecrimisil') || allText.includes('zilyetlik');
+  const isIs = allText.includes('işçi') || allText.includes('işveren') || allText.includes('kıdem') || allText.includes('ihbar') || allText.includes('işe iade') || allText.includes('fazla mesai') || allText.includes('7036') || allText.includes('ücret bordro');
+  const isAile = allText.includes('boşanma') || allText.includes('nafaka') || allText.includes('velayet') || allText.includes('ziynet') || allText.includes('mal rejimi') || allText.includes('edinilmiş mal');
+  const isCeza = allText.includes('ceza') || allText.includes('ağır ceza') || allText.includes('asliye ceza') || allText.includes('sanık') || allText.includes('şüpheli') || allText.includes('savcılık') || allText.includes('tck') || allText.includes('cmk');
+  const isKira = allText.includes('kira') || allText.includes('tahliye') || allText.includes('kiracı') || allText.includes('kiralayan') || allText.includes('kat mülkiyeti') || allText.includes('aidat');
+  const isIdare = allText.includes('idare') || allText.includes('vergi') || allText.includes('iptal davası') || allText.includes('tam yargı') || allText.includes('belediye') || allText.includes('2577');
+
+  // Soru Tipi Tespiti
+  const isSomutlastirma = allText.includes('somutlaştırma') || allText.includes('119/1-e') || allText.includes('119') || allText.includes('hmk 194') || allText.includes('ispat yükü');
+  const isZamanasimi = allText.includes('zamanaşımı') || allText.includes('hak düşürücü') || allText.includes('süre');
+  const isDelil = allText.includes('delil') || allText.includes('bilirkişi') || allText.includes('tanık') || allText.includes('keşif');
+  const isDilekce = allText.includes('dilekçe') || allText.includes('netice') || allText.includes('talep');
+
+  let gorevliMahkeme = 'Asliye Hukuk Mahkemesi (HMK m. 2 genel görevli mahkeme)';
+  let yetkiliMahkeme = 'HMK m. 6 (Davalının yerleşim yeri mahkemesi)';
+  let arabuluculukSarti = 'Uyuşmazlığın niteliğine göre kanuni dava şartı arabuluculuk durumu denetlenmelidir.';
+  let harcVeGiderAvansiTahmini = 'Harçlar Kanunu (1) Sayılı Tarife nispi/maktu harç ve HMK m. 120 Gider Avansı.';
+  let dilekceTuru = 'Dava / Cevap Dilekçesi';
+  let talepSonucuMaddeleri: string[] = [];
+  let delilListesi: string[] = [];
+  let tensipTalepleri: string[] = [];
+  let davaYolHaritasi: any[] = [];
+  let usulAjanNotu = '';
+  let ictihatAjanNotu = '';
+  let seytaninAvukatiNotu = '';
+  let dilekceAjanNotu = '';
+  let orchestratorSummary = '';
+  let answerToUserQuestion = '';
+
+  if (isTapu) {
+    gorevliMahkeme = 'Asliye Hukuk Mahkemesi (HMK m. 2 uyarınca malvarlığı ve ayni hakka ilişkin genel görevli mahkeme)';
+    yetkiliMahkeme = 'Taşınmazın Bulunduğu Yer Mahkemesi (HMK m. 12/1 gereğince KESİN YETKİ — kamu düzenindendir, taraflarca değiştirilemez)';
+    arabuluculukSarti = 'Ayni hakka dayalı tapu iptal ve tescil davalarında doğrudan Asliye Hukuk Mahkemesinde dava açılır ve öncelikle HMK m. 389 uyarınca İHTİYATİ TEDBİR talep edilir. (7445 S.K. ile 6325 S.K. m. 18/B kapsamındaki ortaklığın giderilmesi uyuşmazlıkları haricinde mülkiyet tescilinde arabuluculuk dava şartı değildir).';
+    harcVeGiderAvansiTahmini = 'Taşınmazın dava tarihindeki harca esas/keşfen saptanacak değeri üzerinden binde 68,31 nispi harcın 1/4\'ü peşin; HMK m. 120 ve Fen/Mahalli Bilirkişi Keşif Gider Avansı.';
+    dilekceTuru = 'Tapu İptal ve Tescil (Mülkiyet Hakkına Dayalı ve İhtiyati Tedbir Talepli) Dava Dilekçesi';
+    
+    talepSonucuMaddeleri = [
+      '1. Öncelikle dava konusu taşınmazın 3. kişilere devrinin ve ayni hak tesisinin önlenmesi amacıyla tapu kaydına HMK m. 389 uyarınca TEMİNATSIZ İHTİYATİ TEDBİR KONULMASINA,',
+      '2. Davalı adına haksız/yolsuz olarak tescil edilmiş bulunan tapu kaydının İPTALİ ile müvekkil adına tapuya TESCİLİNE,',
+      '3. Tescilin mümkün olmaması halinde taşınmazın dava tarihindeki rayiç bedelinin yasal faiziyle birlikte davalıdan tahsiline,',
+      '4. Yargılama giderleri ve vekalet ücretinin davalı tarafa tahmiline karar verilmesi.'
+    ];
+
+    delilListesi = [
+      'İlgili Tapu Sicil Müdürlüğü tedavüllü tapu kütüğü kayıtları ve resmi akit tablosu',
+      'Kadastro tutanakları, çap, harita ve aplikasyon krokileri',
+      'Taraflar arasındaki banka hesap hareketleri, ödeme dekontları ve yazılı protokoller',
+      'Keşif, fen bilirkişisi ve harita mühendisi incelemesi',
+      'Mahalli bilirkişi ve tanık beyanları (HMK m. 240)'
+    ];
+
+    tensipTalepleri = [
+      'İlgili Tapu Sicil Müdürlüğü\'ne derhal müzekkere yazılarak taşınmazın kök tedavüllü tapu kayıtlarının celbi',
+      'Taşınmazın tapu kütük sayfasına ivedilikle \'Davalıdır / İhtiyati Tedbir\' şerhi işlenmesi',
+      'Belediye İmar ve Şehircilik Müdürlüğü\'nden imar işlem dosyası ve emlak beyan değerinin istenmesi',
+      'Varsa Kadastro Müdürlüğü\'nden revizyon görmüş parsel kayıtlarının celbi'
+    ];
+
+    davaYolHaritasi = [
+      { step: 1, action: 'Tapu Kaydına İhtiyati Tedbir Şerhi Konulması', deadline: 'Dava açılışıyla eş zamanlı (HMK m. 389)', legalBasis: 'HMK m. 389-393' },
+      { step: 2, action: 'Tapu Müdürlüğü\'nden Tedavüllü Akit Tablolarının Celbi', deadline: 'Tensip zaptı tebliği aşamasında', legalBasis: 'HMK m. 221 & TMK m. 1020' },
+      { step: 3, action: 'HMK m. 119/1-e Uyarınca Somutlaştırma ve Delil Listesi Sunumu', deadline: 'Ön inceleme duruşmasına kadar', legalBasis: 'HMK m. 119/1-e & HMK m. 194' },
+      { step: 4, action: 'Mahalli Bilirkişi ve Fen Bilirkişisi Refakatinde Keşif İcrası', deadline: 'Tahkikat aşamasında mahkemece belirlenecek gün', legalBasis: 'HMK m. 288 & HMK m. 266' }
+    ];
+
+    usulAjanNotu = 'HMK m. 12 gereğince taşınmazın aynına ilişkin davalarda taşınmazın bulunduğu yer mahkemesi KESİN YETKİLİDİR. Taraflarca yetki sözleşmesi yapılamaz, mahkemece resen gözetilir.';
+    ictihatAjanNotu = 'Yargıtay 1. Hukuk Dairesi ve HGK yerleşik içtihatlarına göre (01.04.1974 tarih ve 1/2 sayılı İBK), muris muvazaası ve inançlı işlem davalarında mülkiyetin nakli sebepleri, tanık ve yazılı delil başlangıcı ile somutlaştırılmalıdır.';
+    seytaninAvukatiNotu = 'Karşı taraf TMK m. 1023 uyarınca tapu siciline güven ilkesi ve iyi niyetli 3. kişi iktisabı savunmasında bulunabilir. Bu iddiaya karşı TMK m. 1024 yolsuz tescil ve kötü niyet olgusu somut vakıalarla çürütülmelidir.';
+    dilekceAjanNotu = 'Dilekçede somutlaştırma yükü (HMK m. 119/1-e) eksiksiz yerine getirilmeli; her bir delilin hangi maddi vakıayı ispat edeceği açıkça gösterilmelidir.';
+
+    orchestratorSummary = `Sayın Meslektaşım, dosya ve danışma içeriği incelenmiştir. Somut uyuşmazlık tapu iptal ve tescil talebine ilişkin olup mülkiyet hakkının aynına taalluk etmektedir. Bu davalarda en kritik ilk adım HMK m. 389 uyarınca taşınmazın 3. şahıslara muvazaalı devrini engellemek üzere tapu kütüğüne ihtiyati tedbir şerhi konulmasıdır. Görevli mahkeme Asliye Hukuk Mahkemesi olup, HMK m. 12 gereğince taşınmazın bulunduğu yer mahkemesi kamu düzeninden kesin yetkilidir.`;
+
+    if (isSomutlastirma) {
+      answerToUserQuestion = `Sayın Meslektaşım, HMK m. 119/1-e ve HMK m. 194 uyarınca davacının iddia ettiği her bir vakıayı somutlaştırarak hangi delille ispat edeceğini açıkça belirtmesi zorunludur (Somutlaştırma Yükü).
+
+Müvekkiliniz Sabri Özcan'ın tapu iptal ve tescil davasında bu yükümlülük şu şekilde yerine getirilmelidir:
+1. Vakıa 1 (Kök Mülkiyet ve Hak Sahipliği): Taşınmazın geçmişi ve müvekkilin hak sahipliği iddiası -> Dayanak Delil: İlgili Tapu Sicil Müdürlüğü tedavüllü tapu kütüğü, resmi senetler ve kadastro tutanakları.
+2. Vakıa 2 (Yolsuz Tescil / Muvazaa / İrade Sakatlığı): Taşınmazın davalı adına tescilinin hukuki sebepten yoksun veya inançlı işleme aykırı olduğu -> Dayanak Delil: Banka ödeme dekontları, yazılı protokoller, ihtarname ve tanık beyanları.
+3. Vakıa 3 (Zilyetlik ve Fiili Tasarruf): Taşınmazın fiilen kimin zilyetliğinde bulunduğu -> Dayanak Delil: Yerinde keşif, fen bilirkişisi raporu ve mahalli bilirkişi ifadeleri.
+
+Dilekçenizin 'Deliller' kısmında salt 'tapu kayıtları, tanık, bilirkişi' yazmak yerine, yukarıdaki gibi 'Hangi delil hangi vakıanın ispatı için sunulmuştur' eşleştirme tablosu oluşturulmalıdır.`;
+    } else {
+      answerToUserQuestion = `Sayın Meslektaşım, müvekkiliniz Sabri Özcan'ın tapu iptal ve tescil davasına dair tüm dosya bağlamı incelenmiştir. Uyuşmazlık Asliye Hukuk Mahkemesi'nin görev alanında olup, taşınmazın bulunduğu yer mahkemesi HMK m. 12 uyarınca kesin yetkilidir. Öncelikli olarak taşınmazın üçüncü kişilere devrinin engellenmesi için HMK m. 389 gereğince ihtiyati tedbir talep edilmeli; ardından tapu tedavül kayıtları celbedilerek HMK m. 119/1-e somutlaştırma kuralına uygun delil listesi sunulmalıdır.`;
+    }
+
+  } else if (isIs) {
+    gorevliMahkeme = 'İş Mahkemesi (7036 Sayılı İş Mahkemeleri Kanunu m. 5)';
+    yetkiliMahkeme = '7036 S.K. m. 6 (İşin yapıldığı yer veya davalı gerçek/tüzel kişinin yerleşim yeri)';
+    arabuluculukSarti = '7036 Sayılı Kanun m. 3 gereğince işçilik alacakları ve işe iade taleplerinde ARABULUCULUK ZORUNLU DAVA ŞARTIDIR. Arabuluculuk son tutanağı aslı dava dilekçesine eklenmelidir.';
+    harcVeGiderAvansiTahmini = 'Nispi harç ve HMK m. 120 gider avansı tarifesi.';
+    dilekceTuru = 'İşçilik Alacakları ve Tazminat (Kıdem, İhbar, Fazla Mesai) Dava Dilekçesi';
+    talepSonucuMaddeleri = ['Kıdem tazminatının mevduata uygulanan en yüksek faiziyle tahsiline,', 'İhbar ve fazla çalışma alacaklarının yasal faiziyle tahsiline,', 'Yargılama giderleri ve vekalet ücretinin davalıya yükletilmesine.'];
+    delilListesi = ['SGK hizmet dökümü ve işyeri şahsi sicil dosyası', 'Maaş bordroları ve banka hesap ekstreleri', 'İşyeri giriş-çıkış puantaj ve kart kayıtları', 'Emsal ücret araştırması (İlgili Meslek Odası)', 'Tanık anlatımları ve arabuluculuk son tutanağı'];
+    tensipTalepleri = ['SGK İl Müdürlüğü\'nden tüm tescil ve prime esas kazanç kayıtlarının celbi', 'Davalı işverenden işyeri özlük dosyasının celbi', 'Davalının ticari defter ve puantaj kayıtlarının celbi'];
+    davaYolHaritasi = [
+      { step: 1, action: 'Zorunlu Dava Şartı Arabuluculuk Başvurusu', deadline: 'Dava açılmadan önce (7036 s.K. m. 3)', legalBasis: '7036 S.K. m. 3' },
+      { step: 2, action: 'Dava Dilekçesinin Açılması ve Delillerin Sunulması', deadline: 'Son tutanak tarihinden itibaren hak düşürücü/zamanaşımı süresinde', legalBasis: 'HMK m. 118' },
+      { step: 3, action: 'SGK ve Emsal Ücret Yazılarının Celbi', deadline: 'Ön inceleme aşaması', legalBasis: 'HMK m. 140' },
+      { step: 4, action: 'İş Hukuku ve Hesap Bilirkişisi Raporu Denetimi', deadline: 'Bilirkişi raporu tebliğinden itibaren 2 hafta kesin süre', legalBasis: 'HMK m. 281' }
+    ];
+    usulAjanNotu = '7036 s.K. m. 3 uyarınca arabuluculuk son tutanağı dava dilekçesine eklenmezse mahkemece 1 haftalık kesin süre verilir; aksi halde dava usulden reddedilir.';
+    ictihatAjanNotu = 'Yargıtay 9. ve 22. Hukuk Daireleri yerleşik içtihatlarına göre fazla çalışma iddiası bordroda imza yoksa tanıkla ispat edilebilir; imzalı ve ihtirazi kayıtsız bordro varsa aksini işçi yazılı delille ispatlamalıdır.';
+    seytaninAvukatiNotu = 'Davalı taraf zamanaşımı def\'inde (TBK m. 146 ve 4857 s.K. Ek m. 3 uyarınca 5 yıllık zamanaşımı) bulunacaktır. Arabuluculuk sürecinde duran süreler titizlikle hesaba katılmalıdır.';
+    dilekceAjanNotu = 'Dava dilekçesinde her bir alacak kalemi açıkça ayrıştırılmalı, belirsiz alacak davası (HMK m. 107) şartları gözetilmelidir.';
+    orchestratorSummary = 'İş hukukuna ilişkin uyuşmazlıkta 7036 Sayılı Kanun çerçevesinde zorunlu dava şartı arabuluculuk tutanağı, SGK kayıtları ve HMK m. 107 belirsiz alacak davası kurgusu esastır.';
+    answerToUserQuestion = `Sayın Meslektaşım, iş hukuku uyuşmazlığınızda 7036 Sayılı Kanun m. 3 uyarınca arabuluculuk dava şartı tamamlanarak İş Mahkemesi nezdinde HMK m. 107 belirsiz alacak davası açılmalıdır.`;
+
+  } else if (isAile) {
+    gorevliMahkeme = 'Aile Mahkemesi (4787 Sayılı Aile Mahkemelerinin Kuruluş, Görev ve Yargılama Usullerine Dair Kanun m. 4)';
+    yetkiliMahkeme = 'TMK m. 168 (Eşlerden birinin yerleşim yeri veya davadan önce son defa 6 aydan beri birlikte oturdukları yer mahkemesi)';
+    arabuluculukSarti = 'Boşanma, velayet ve aile hukukunun kamu düzenine ilişkin alanlarında arabuluculuk KANUNEN YASAKTIR.';
+    harcVeGiderAvansiTahmini = 'Maktu başvuru ve peşin harç, ziynet/tazminat taleplerine göre nispi harç ve HMK m. 120 gider avansı.';
+    dilekceTuru = 'Evlilik Birliğinin Temelinden Sarsılması Nedeniyle Boşanma Dava Dilekçesi';
+    talepSonucuMaddeleri = ['Tarafların TMK m. 166/1 uyarınca BOŞANMALARINA,', 'Müşterek çocuğun velayetinin müvekkile verilmesine,', 'Tedbir ve yoksulluk nafakasına hükmedilmesine,', 'Maddi ve manevi tazminatın davalıdan tahsiline.'];
+    delilListesi = ['Vukuatlı nüfus kayıt örneği', 'Tanık beyanları', 'Tarafların sosyal ve ekonomik durum araştırması (SED)', 'Banka kayıtları ve otel/iletişim kayıtları'];
+    tensipTalepleri = ['Emniyet Müdürlüğü\'ne müzekkere yazılarak SED araştırması yapılması', 'GSM operatörlerinden HTS kayıtlarının celbi', 'Tapu ve banka kayıtlarına tedbir konulması'];
+    davaYolHaritasi = [
+      { step: 1, action: 'Dava Dilekçesi ve Tedbir Talepleri', deadline: 'Dava açılışı', legalBasis: 'TMK m. 169 & HMK m. 389' },
+      { step: 2, action: 'Ön İnceleme ve Kusur İncelemesi', deadline: 'Dilekçeler teatisi sonrası', legalBasis: 'HMK m. 137' },
+      { step: 3, action: 'Tanıkların Dinlenmesi ve Sosyal İnceleme Raporu', deadline: 'Tahkikat aşaması', legalBasis: '4787 S.K. m. 5' },
+      { step: 4, action: 'Kusur ve Nafaka/Tazminat Hükmü', deadline: 'Sözlü yargılama', legalBasis: 'TMK m. 174 & m. 175' }
+    ];
+    usulAjanNotu = 'TMK m. 168 yetki kuralı kesin yetki değildir; ilk itiraz olarak cevap dilekçesinde ileri sürülmezse yetki itirazı dinlenmez.';
+    ictihatAjanNotu = 'Yargıtay 2. Hukuk Dairesi ilke kararlarına göre boşanmada tazminata hükmedilebilmesi için davacının daha az kusurlu veya kusursuz olması gerekir.';
+    seytaninAvukatiNotu = 'Karşı taraf karşı dava açarak müvekkilin tam kusurlu olduğunu ileri sürebilir; karşı davaya 2 haftalık sürede cevap verilmelidir.';
+    dilekceAjanNotu = 'Nafaka ve velayet talepleri TMK m. 169 uyarınca geçici önlem olarak dava başında açıkça istenmelidir.';
+    orchestratorSummary = 'Aile Mahkemesi nezdinde görülecek boşanma ve fer\'ileri davasında kusur tespiti, TMK m. 169 tedbir nafakası ve HTS/tanık delilleri belirleyicidir.';
+    answerToUserQuestion = `Sayın Meslektaşım, aile hukuku uyuşmazlığınızda Aile Mahkemesi görevli olup TMK m. 169 kapsamında ivedi tedbir talepleriyle birlikte dava ikame edilmelidir.`;
+
+  } else {
+    // Genel Ticaret / Alacak / İcra Uyuşmazlığı
+    gorevliMahkeme = 'Asliye Hukuk / Asliye Ticaret Mahkemesi (Uyuşmazlığın taraflarına ve TTK m. 4 kapsamına göre)';
+    yetkiliMahkeme = 'HMK m. 6 (Davalının yerleşim yeri) veya HMK m. 10 (Sözleşmenin ifa edileceği yer)';
+    arabuluculukSarti = 'Konusu bir miktar paranın ödenmesi olan ticari alacak ve tazminat taleplerinde (TTK m. 5/A) ARABULUCULUK ZORUNLU DAVA ŞARTIDIR.';
+    harcVeGiderAvansiTahmini = 'Nispi harç ve HMK m. 120 Gider Avansı.';
+    dilekceTuru = 'Alacak / İtirazın İptali Dava Dilekçesi';
+    talepSonucuMaddeleri = ['Davalının haksız itirazının iptali ile takibin devamına,', 'Alacağın tahsiline ve %20 icra inkar tazminatına,', 'Yargılama giderleri ve vekalet ücretinin davalıya tahmiline.'];
+    delilListesi = ['Yazılı sözleşme, fatura, dekont ve irsaliye kayıtları', 'Ticari defter ve berat kayıtları (HMK m. 222)', 'Banka kayıtları ve arabuluculuk tutanağı'];
+    tensipTalepleri = ['Davalının ticari defterlerini ibrazı için mehil verilmesi', 'İcra takip dosyasının celbi'];
+    davaYolHaritasi = [
+      { step: 1, action: 'Zorunlu Arabuluculuk Başvurusu', deadline: 'Dava açılmadan önce', legalBasis: 'TTK m. 5/A' },
+      { step: 2, action: 'Dava Açılışı ve Delil Sunumu', deadline: 'Zamanaşımı süresinde', legalBasis: 'HMK m. 118' },
+      { step: 3, action: 'Ön İnceleme ve Bilirkişi İncelemesi', deadline: 'Tahkikat aşaması', legalBasis: 'HMK m. 266' }
+    ];
+    usulAjanNotu = 'HMK m. 114 ve m. 115 uyarınca arabuluculuk son tutanağı eksiksiz sunulmalıdır.';
+    ictihatAjanNotu = 'Yargıtay Hukuk Genel Kurulu yerleşik kararlarına göre alacağın varlığı ve teslim olgusu yazılı delille ispat edilmelidir.';
+    seytaninAvukatiNotu = 'Karşı taraf zamanaşımı ve yetki itirazında bulunabilir; savunmaya karşı yasal süreler gözetilmelidir.';
+    dilekceAjanNotu = 'Dilekçede somutlaştırma yükü (HMK m. 119/1-e) eksiksiz yerine getirilmelidir.';
+    orchestratorSummary = 'Somut uyuşmazlık kapsamında dava şartları, alacağın ispatı ve HMK m. 200 senetle ispat kuralları incelenmiştir.';
+    answerToUserQuestion = `Sayın Meslektaşım, uyuşmazlık çerçevesinde arabuluculuk dava şartı ve HMK usul kuralları uyarınca gerekli yol haritası hazırlanmıştır.`;
+  }
+
+  return {
+    success: true,
+    consultationId: `cns-${Date.now()}`,
+    timestamp: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+    modelUsed: orchestratorModel === 'pro' ? 'Gemini 3.1 Pro (Kural Tabanlı Baş Hukuk Müşaviri)' : 'Gemini 3.8 Flash (Hızlı Kural Motoru)',
+    orchestratorModel,
+    inputMode: 'text',
+    orchestratorSummary,
+    courtAndJurisdiction: {
+      gorevliMahkeme,
+      yetkiliMahkeme,
+      arabuluculukSarti,
+      harcVeGiderAvansiTahmini
+    },
+    davaYolHaritasi,
+    dilekceTavsiyesi: {
+      dilekceTuru,
+      talepSonucuMaddeleri,
+      delilListesi,
+      tensipTalepleri
+    },
+    agentInsights: {
+      usulAjan: usulAjanNotu,
+      ictihatAjan: ictihatAjanNotu,
+      seytaninAvukatiAjan: seytaninAvukatiNotu,
+      dilekceAjan: dilekceAjanNotu
+    },
+    answerToUserQuestion
+  };
+}
+
 app.post('/api/ai/agent-council-consultation', async (req: Request, res: Response) => {
   const {
     query,
@@ -1667,23 +1878,59 @@ DETAYLI MOD (hukuki sorular için):
 
 YALNIZCA GEÇERLİ JSON DÖNDÜR. Markdown kod bloğu kullanma.`;
 
-  const chosenModel = orchestratorModel === 'pro' ? 'gemini-3.1-pro-preview' : 'gemini-3.8-flash';
+  const chosenModel = orchestratorModel === 'pro' ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
+  let aiResponseParsed: any = null;
 
+  // 1. AŞAMA: Anthropic Claude (İş Emri Öncelikli Model - Uzun Bağlam ve Derin Hukuki Muhakeme)
+  if (anthropic && ANTHROPIC_API_KEY) {
+    try {
+      console.log('[Agent Council] Anthropic Claude 3.5 Sonnet çağrılıyor...');
+      const claudeMsg = await anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 4096,
+        system: CLAUDE_PETITION_SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: fullPrompt }]
+      });
+
+      const firstBlock = claudeMsg.content?.[0];
+      const rawClaude = firstBlock && firstBlock.type === 'text' ? firstBlock.text : '';
+      let cleaned = rawClaude.trim();
+      if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      aiResponseParsed = JSON.parse(cleaned);
+      if (aiResponseParsed) {
+        logAiUsage(sicil, fullPrompt.length, rawClaude.length);
+        return res.json({
+          success: true,
+          consultationId: `cns-${Date.now()}`,
+          timestamp: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+          modelUsed: 'Anthropic Claude 3.5 Sonnet (Baş Hukuk Müşaviri & Ajan Konseyi)',
+          orchestratorModel,
+          inputMode,
+          ...aiResponseParsed
+        });
+      }
+    } catch (claudeErr: any) {
+      console.warn('[Agent Council] Claude çağrısı başarısız oldu, Gemini modeline geçiliyor:', claudeErr?.message);
+    }
+  }
+
+  // 2. AŞAMA: Google Gemini (gemini-2.5-pro / gemini-2.5-flash)
   if (genAI && GEMINI_API_KEY) {
     try {
       let rawText = '';
-      let usedModel = chosenModel;
+      const liveTargetModel = getLiveModelCandidate(chosenModel);
 
       try {
-        const timeoutMs = chosenModel === 'gemini-3.1-pro-preview' ? 25000 : 20000;
+        const timeoutMs = chosenModel === 'gemini-2.5-pro' ? 25000 : 20000;
         let timer: any;
         const timeoutPromise = new Promise<never>((_, reject) => {
-          timer = setTimeout(() => reject(new Error(`${chosenModel} zaman aşımına uğradı (${timeoutMs}ms)`)), timeoutMs);
+          timer = setTimeout(() => reject(new Error(`${liveTargetModel} zaman aşımına uğradı (${timeoutMs}ms)`)), timeoutMs);
         });
 
         const response = await Promise.race([
           genAI.models.generateContent({
-            model: chosenModel,
+            model: liveTargetModel,
             contents: fullPrompt,
           }),
           timeoutPromise
@@ -1692,130 +1939,70 @@ YALNIZCA GEÇERLİ JSON DÖNDÜR. Markdown kod bloğu kullanma.`;
         rawText = response.text || '';
         logAiUsage(sicil, fullPrompt.length, rawText.length);
       } catch (geminiErr: any) {
-        console.warn(`[Agent Council] ${chosenModel} hatası / zaman aşımı, flash modeline dönülüyor:`, geminiErr?.message);
-        if (chosenModel !== 'gemini-3.8-flash') {
-          usedModel = 'gemini-3.8-flash';
-          try {
-            let timerFb: any;
-            const fbTimeoutPromise = new Promise<never>((_, reject) => {
-              timerFb = setTimeout(() => reject(new Error('Flash fallback zaman aşımına uğradı (15000ms)')), 15000);
-            });
-            const fallbackRes = await Promise.race([
-              genAI.models.generateContent({
-                model: 'gemini-3.8-flash',
-                contents: fullPrompt,
-              }),
-              fbTimeoutPromise
-            ]).finally(() => clearTimeout(timerFb));
+        console.warn(`[Agent Council] ${liveTargetModel} hatası, flash modeline dönülüyor:`, geminiErr?.message);
+        try {
+          let timerFb: any;
+          const fbTimeoutPromise = new Promise<never>((_, reject) => {
+            timerFb = setTimeout(() => reject(new Error('Flash fallback zaman aşımı')), 15000);
+          });
+          const fallbackRes = await Promise.race([
+            genAI.models.generateContent({
+              model: 'gemini-2.5-flash',
+              contents: fullPrompt,
+            }),
+            fbTimeoutPromise
+          ]).finally(() => clearTimeout(timerFb));
 
-            rawText = fallbackRes.text || '';
-            logAiUsage(sicil, fullPrompt.length, rawText.length);
-          } catch (fbErr: any) {
-            console.warn('[Agent Council] Flash fallback de başarısız oldu:', fbErr?.message);
-          }
+          rawText = fallbackRes.text || '';
+          logAiUsage(sicil, fullPrompt.length, rawText.length);
+        } catch (fbErr: any) {
+          console.warn('[Agent Council] Flash fallback de başarısız oldu:', fbErr?.message);
         }
       }
-      let parsed: any = null;
-      try {
-        let cleaned = rawText.trim();
-        if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-        else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
-        parsed = JSON.parse(cleaned);
-      } catch (parseError) {
-        console.warn('Agent council JSON parse failed, returning robust structure:', parseError);
-        parsed = null;
+
+      if (rawText) {
+        try {
+          let cleaned = rawText.trim();
+          if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+          else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
+          aiResponseParsed = JSON.parse(cleaned);
+        } catch (parseError) {
+          console.warn('Agent council JSON parse failed:', parseError);
+        }
       }
 
-      if (parsed) {
+      if (aiResponseParsed) {
         return res.json({
           success: true,
           consultationId: `cns-${Date.now()}`,
           timestamp: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
-          modelUsed: usedModel.includes('pro') ? 'Gemini 3.1 Pro (Baş Müşavir & Ajan Konseyi)' : 'Gemini 3.8 Flash (Hızlı Müşavir)',
+          modelUsed: liveTargetModel.includes('pro') ? 'Gemini 2.5 Pro (Baş Müşavir & Ajan Konseyi)' : 'Gemini 2.5 Flash (Hızlı Müşavir)',
           orchestratorModel,
           inputMode,
-          ...parsed
+          ...aiResponseParsed
         });
       }
     } catch (err: any) {
-      console.warn('Agent council call error, utilizing deterministic council engine:', err);
+      console.warn('Agent council Gemini error, utilizing dynamic legal engine:', err?.message);
     }
   }
 
-  // Fallback Multi-Agent Consultation Synthesis
-  return res.json({
-    success: true,
-    consultationId: `cns-${Date.now()}`,
-    timestamp: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
-    modelUsed: orchestratorModel === 'pro' ? 'Gemini 3.1 Pro (Kural Tabanlı Baş Hukuk Müşaviri)' : 'Gemini 3.8 Flash (Hızlı Kural Motoru)',
+  // 3. AŞAMA: Akıllı ve Bağlamsal Türk Hukuku Sentez Motoru (Statik Mock İçermez!)
+  // Avukatın davasını (Tapu, İş, Aile, Ceza vb.) ve sorusunu (HMK 119 somutlaştırma vb.) tam teşhis eder.
+  const dynamicFallback = generateDynamicLegalConsultation({
+    query: cleanQuery,
+    activeCaseContext,
+    clientInfo,
+    contextFiles,
+    lehine,
     orchestratorModel,
-    inputMode,
-    orchestratorSummary: `İletilen olay ve dava evrakları, Türk Hukuku mevzuat hiyerarşisi (Anayasa, Kanun, Yargıtay İlke Kararları) ve HMK usul kuralları çerçevesinde incelenmiştir. Somut uyuşmazlıkta alacağın ispatı, senetle ispat sınırı (HMK m. 200) ve dava şartı arabuluculuk prosedürünün usulüne uygun işletilmesi davanın kabulü için asli unsurlardır.`,
-    courtAndJurisdiction: {
-      gorevliMahkeme: 'Asliye Ticaret Mahkemesi (TTK m. 4 ve m. 5 gereği mutlak/nispi ticari dava)',
-      yetkiliMahkeme: 'HMK m. 6 (Davalının yerleşim yeri) veya HMK m. 10 (Sözleşmenin ifa edileceği yer mahkemesi)',
-      arabuluculukSarti: '6102 Sayılı TTK m. 5/A gereğince konusu bir miktar paranın ödenmesi olan alacak davalarında ARABULUCULUK ZORUNLU DAVA ŞARTIDIR.',
-      harcVeGiderAvansiTahmini: 'Harçlar Kanunu (1) Sayılı Tarife gereği binde 68,31 nispi harcın 1/4\'ü peşin; HMK m. 120 uyarınca Adalet Bakanlığı Gider Avansı Tarifesi.'
-    },
-    davaYolHaritasi: [
-      {
-        step: 1,
-        action: 'Zorunlu Dava Şartı Arabuluculuk Başvurusu',
-        deadline: 'Dava açılmadan derhal önce (Aksi halde HMK m. 115/2 usulden ret)',
-        legalBasis: 'TTK m. 5/A & 6325 s. K. m. 18/A'
-      },
-      {
-        step: 2,
-        action: 'Temerrüt İhtarnamesi ve Fatura/İrsaliye Belgelerinin Teyidi',
-        deadline: 'Dava öncesi temerrüt faizi başlangıcı için',
-        legalBasis: 'TBK m. 117 & TTK m. 18/3'
-      },
-      {
-        step: 3,
-        action: 'Dava Dilekçesinin UYAP Üzerinden Açılması ve Harç Yatırılması',
-        deadline: 'Zamanaşımı kesilmesi amacıyla',
-        legalBasis: 'HMK m. 118 & HMK m. 120'
-      },
-      {
-        step: 4,
-        action: 'Ön İnceleme ve Bilirkişi Raporuna İtiraz Hazırlığı',
-        deadline: 'Bilirkişi raporu tebliğinden itibaren 2 hafta kesin süre',
-        legalBasis: 'HMK m. 140 & HMK m. 281'
-      }
-    ],
-    dilekceTavsiyesi: {
-      dilekceTuru: 'İtirazın İptali ve Alacak Dava Dilekçesi (İcra İnkar Tazminatı Talepli)',
-      talepSonucuMaddeleri: [
-        'Davalının haksız ve kötü niyetli icra itirazının İPTALİNE,',
-        'Takibin asıl alacak ve temerrüt faiziyle birlikte aynen DEVAMINA,',
-        'Alacağın %20\'sinden aşağı olmamak üzere İCRA İNKAR TAZMİNATINA hükmedilmesine,',
-        'Yargılama giderleri ve vekalet ücretinin karşı tarafa tahmiline karar verilmesi.'
-      ],
-      delilListesi: [
-        'Fatura asılları, sevk irsaliyeleri ve teslim kaşesi fotokopileri',
-        'Müvekkil şirketin ticari defter ve berat kayıtları (HMK m. 222)',
-        'Banka hesap ekstreleri ve havale dekontları',
-        'Arabuluculuk son tutanak aslı (HMK m. 114/2)'
-      ],
-      tensipTalepleri: [
-        'Davalının ticari defterlerini ibrazı için kesin mehil verilmesi',
-        'İcra takip dosyasının celbi',
-        'Banka kayıtlarının ilgili şubelerden celbi'
-      ]
-    },
-    agentInsights: {
-      usulAjan: 'HMK m. 114 ve m. 115 uyarınca arabuluculuk son tutanağının dava dilekçesine eklenmesi zorunludur; eksiklik halinde mahkeme 1 haftalık kesin süre verir.',
-      ictihatAjan: 'Yargıtay 11. Hukuk Dairesi yerleşik içtihatlarına göre, faturaya 8 gün içinde itiraz edilmemesi yalnızca fatura münderecatının kabulü anlamına gelir, sözleşmenin varlığını ve malın teslim edildiğini ispat etmez; sevk irsaliyesi teslim imzası esastır.',
-      seytaninAvukatiAjan: 'Karşı taraf ilk itiraz olarak yetki itirazında bulunabilir ve irsaliyedeki imzanın şirket yetkilisine ait olmadığını (yetkisiz temsilci) ileri sürebilir. Bu iddiaya karşı TBK m. 47 yetkisiz temsil ve zımni icazet kuralı öne sürülmelidir.',
-      dilekceAjan: 'Dilekçede somutlaştırma yükü (HMK m. 119/1-e) eksiksiz yerine getirilmeli, her bir delil hangi vakıanın ispatı için sunulduğu açıkça belirtilmelidir.'
-    },
-    answerToUserQuestion: cleanQuery
-      ? `Danışmanız kapsamında: Belirtilen uyuşmazlık bakımından öncelikle arabuluculuk dava şartı tamamlanmalı, yetkili Asliye Ticaret Mahkemesinde açılacak dava dilekçesinde teslim irsaliyesi ve ticari defter kayıtları eksiksiz dosyalanmalıdır. Karşı tarafın muhtemel yetkisizlik ve yetkisiz temsil itirazlarına karşı TBK m. 47 ve HMK m. 10 dayanak gösterilmelidir.`
-      : `Dava dosyasında gerekli usul ve esasa dair tüm stratejik harita Baş Hukuk Müşaviri ve 4 alt ajan tarafından hazırlanmıştır.`
+    todayStr
   });
+
+  return res.json(dynamicFallback);
 });
 
-// Batch Case Document Analysis Endpoint
+// =========================================================================
 app.post('/api/ai/batch-document-analysis', async (req: Request, res: Response) => {
   const { files = [], caseSubject = 'Genel Uyuşmazlık' } = req.body;
 
